@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import aiohttp
+from fastapi import Request
 
 
 async def download_file(url: str, target_path: Path) -> None:
@@ -33,3 +34,7 @@ def save_json(data: dict[str, str], target_path: Path) -> None:
 def load_json_files(target_path: Path) -> list[dict[str, str]]:
     files = [file for file in target_path.iterdir() if file.suffix == ".json"]
     return [json.load(file.open(encoding="utf-8")) for file in files]
+
+
+def is_hx_request(request: Request) -> bool:
+    return request.headers.get("hx-request") == "true"

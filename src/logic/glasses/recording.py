@@ -2,10 +2,9 @@ import os
 from pathlib import Path
 
 from g3pylib import connect_to_glasses
-
-from src.config import DEFAULT_GLASSES_HOSTNAME, RECORDINGS_PATH
-from src.glasses.domain import RecordingMetadata
-from src.utils import download_file, load_json_files, save_json
+from src.core.config import DEFAULT_GLASSES_HOSTNAME, RECORDINGS_PATH
+from src.core.utils import download_file, load_json_files, save_json
+from src.logic.glasses.domain import RecordingMetadata
 
 
 def recording_exists(recording: RecordingMetadata, output_path: Path = RECORDINGS_PATH) -> bool:

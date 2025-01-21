@@ -1,6 +1,24 @@
 {
-  "latex-workshop.latex.outDir": "../output",
-  "latex-workshop.latex.recipes": [
+    // My jinja-templates use the extension `.jinja2`. To make it work with the "Django" plugin I add this to my settings:
+    "files.associations": {
+        "*.jinja2": "django-html"
+    },
+    // Add emmet tag autocomplete for jinja and django templates
+    "emmet.includeLanguages": {
+        "jinja2": "html",
+        "jinja-html": "html",
+        "django-html": "html",
+    },
+    // Set djLint as formatter for html, jinja, jinja-html, django-html
+    "[html][jinja][jinja-html][django-html]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "monosans.djlint",
+        "editor.detectIndentation": false,
+        "editor.linkedEditing": true,
+        "editor.tabSize": 2
+    },
+    "latex-workshop.latex.outDir": "../output",
+    "latex-workshop.latex.recipes": [
         {
             "name": "xelatex ➞ biber ➞ xelatex× 2",
             "tools": [

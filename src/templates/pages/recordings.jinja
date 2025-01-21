@@ -1,0 +1,26 @@
+<div class="recordings container-md">
+  <h2>Local Recordings</h2>
+  <hr>
+  {% if local_recordings|length > 0 %}
+    <p>recordings!</p>
+  {% else %}
+    <p>
+      There are currently no local recordings.
+      <br>
+      Import recordings from Tobii Glasses using the table below to view them here.
+    </p>
+  {% endif %}
+  <h2>Recordings on Tobii Glasses</h2>
+  <hr>
+  <div id="glasses-recordings"
+       hx-get="/glasses/recordings"
+       hx-trigger="load"
+       hx-target="#glasses-recordings"
+       hx-swap="outerHTML"
+       class="d-flex align-items-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <span class="ms-2">Attempting connection to Tobii Glasses...</span>
+  </div>
+</div>

@@ -1,0 +1,19 @@
+.spinner {
+  display: none;
+}
+
+.htmx-request .spinner {
+  display: inline-block;
+}
+
+.htmx-request.spinner {
+  display: inline-block;
+}
+
+.htmx-request.htmx-hide {
+  display: none;
+}
+
+select[aria-controls="glasses-recordings-table"] {
+  margin-right: 8px;
+}
