@@ -1,87 +1,73 @@
 <div id="glasses-recordings" class="table-responsive">
-  {% if glasses_connected %}
+  <span id="glasses-recordings-error-message" class="text-danger"></span>
+  {% if not glasses_connected %}
+    <div id="connecting-to-glasses"
+         hx-get="/glasses/recordings"
+         hx-trigger="load"
+         hx-target="#glasses-recordings"
+         hx-target-503="#connecting-to-glasses"
+         hx-swap="outerHTML"
+         class="d-flex align-items-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <span class="ms-2">Connecting to Tobii Glasses...</span>
+    </div>
+  {% else %}
     {% if glasses_recordings|length == 0 %}
-      <p class="htmx-hide" id="no-glasses-recordings">There are currently no recordings on Tobii Glasses.</p>
+      <p class="htmx-request-hide" id="no-glasses-recordings">There are currently no recordings on Tobii Glasses.</p>
       <button class="btn btn-primary"
               hx-get="/glasses/recordings"
               hx-trigger="click"
               hx-target="#glasses-recordings"
-              hx-indicator="#retry-spinner, #no-glasses-recordings">
+              hx-target-503="#glasses-recordings"
+              hx-indicator="#retry-spinner, #no-glasses-recordings"
+              hx-disabled-elt="this">
         <div id="retry-spinner"
              class="spinner spinner-border spinner-border-sm"
              role="status"></div>
         Refresh Recordings
       </button>
     {% else %}
-      <table class="table w-100" id="glasses-recordings-table">
+      <table class="table w-100 datatable" id="glasses-recordings-table">
         <thead>
           <tr>
-            <th scope="col">Visible Name</th>
+            <th scope="col">Participant Name</th>
             <th scope="col">Date and Time</th>
             <th scope="col">Duration</th>
-            <th scope="col">Folder Name</th>
+            <th width="10%" scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for recording in glasses_recordings %}
             <tr>
-              <td>{{ recording.visible_name }}</td>
+              <td>{{ recording.participant }}</td>
               <td>{{ recording.created }}</td>
               <td>{{ recording.duration }}</td>
-              <td>{{ recording.folder_name }}</td>
+              <td class="text-center">
+                <button class="btn btn-primary pt-1 px-2"
+                        hx-trigger="click"
+                        hx-get="/glasses/recordings/{{ recording.uuid }}/download"
+                        hx-indicator="find .spinner, find .bi"
+                        hx-target="#local-recordings"
+                        hx-target-4xx="#glasses-recordings-error-message"
+                        hx-target-500="#glasses-recordings-error-message"
+                        hx-target-503="#glasses-recordings"
+                        hx-disabled-elt="this"
+                        hx-on::before-request="document.getElementById('glasses-recordings-error-message').innerHTML = ''">
+                  <i class="bi bi-download htmx-request-hide"></i>
+                  <div class="spinner spinner-border spinner-border-sm" role="status"></div>
+                </button>
+              </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     {% endif %}
-  {% else %}
-    <p>Failed to connect to Tobii Glasses.</p>
-    <button class="btn btn-primary"
-            hx-get="/glasses/recordings"
-            hx-trigger="click"
-            hx-target="#glasses-recordings"
-            hx-indicator="#retry-spinner">
-      <div id="retry-spinner"
-           class="spinner spinner-border spinner-border-sm"
-           role="status"></div>
-      Retry Connection
-    </button>
   {% endif %}
   <script>
-  // This script is used to sort the "Created" column in the DataTable
-
-  function parseCustomDate(s) {
-    // Expected format: "03/02/23 at 08:16 AM"
-    var parts = s.match(/(\d{2})\/(\d{2})\/(\d{2})\s+at\s+(\d{2}):(\d{2})\s+(AM|PM)/);
-    if (!parts) return new Date(0); // default fallback date
-
-    var day = parseInt(parts[1], 10);
-    var month = parseInt(parts[2], 10) - 1;  // JavaScript months are 0-indexed
-    var year = parseInt(parts[3], 10) + 2000; // adjust as needed for 2-digit year
-   
-    var hour = parseInt(parts[4], 10);
-    var minute = parseInt(parts[5], 10);
-    var ampm = parts[6];
-
-    if (ampm === 'PM' && hour < 12) hour += 12;
-    if (ampm === 'AM' && hour === 12) hour = 0;
-
-    return new Date(year, month, day, hour, minute);
-  }
-
-  jQuery.extend(jQuery.fn.dataTable.ext.type.order, {
-    "custom-date-pre": function(d) {
-      return parseCustomDate(d).getTime();
-    }
-  });
-  
   $(document).ready(function() {
-    $('#glasses-recordings-table').DataTable({
-      columnDefs: [
-        { type: "custom-date", targets: 1 }
-      ],
-      order: [[1, 'desc']]
-    });
-  });
+    registerRecordingsTable('#glasses-recordings-table');
+  }); 
   </script>
 </div>

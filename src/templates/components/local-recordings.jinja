@@ -1,0 +1,47 @@
+<div id="local-recordings">
+  {% if local_recordings|length > 0 %}
+    <table class="table w-100" id="local-recordings-table">
+      <thead>
+        <tr>
+          <th scope="col">Participant Name</th>
+          <th scope="col">Date and Time</th>
+          <th scope="col">Duration</th>
+          <th width="10%" scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for recording in local_recordings %}
+          <tr>
+            <td>{{ recording.participant }}</td>
+            <td>{{ recording.created }}</td>
+            <td>{{ recording.duration }}</td>
+            <td class="text-center">
+              <button class="btn btn-danger pt-1 px-2"
+                      hx-trigger="click"
+                      hx-delete="/local/recordings/{{ recording.uuid }}"
+                      hx-indicator="find .spinner, find .bi"
+                      hx-target="#local-recordings"
+                      hx-target-500="#local-recordings-error-message"
+                      hx-disabled-elt="this"
+                      hx-on::before-request="document.getElementById('local-recordings-error-message').innerHTML = ''">
+                <i class="bi bi-trash-fill htmx-request-hide"></i>
+                <div class="spinner spinner-border spinner-border-sm" role="status"></div>
+              </button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>
+      There are currently no local recordings.
+      <br>
+      Import recordings from Tobii Glasses using the table below to view them here.
+    </p>
+  {% endif %}
+  <script>
+  $(document).ready(function() {
+    registerRecordingsTable('#local-recordings-table');
+  }); 
+  </script>
+</div>
