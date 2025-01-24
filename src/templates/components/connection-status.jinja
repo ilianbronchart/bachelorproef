@@ -1,0 +1,31 @@
+<div id="connection-status" class="d-flex justify-content-center">
+  <div id="connection-retry"
+       hx-get="/glasses/connection"
+       hx-trigger="every 2s"
+       hx-target="#connection-status"
+       hx-swap="outerHTML"></div>
+  <div class="connection-info d-flex flex-column justify-content-center">
+    {% if glasses_connected %}
+      <div class="d-flex align-items-center">
+        <i class="info-icon bi bi-circle-fill text-success"></i>
+        <span class="ms-2 align-middle info-text">Glasses Connected</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <i class="info-icon bi bi-battery-full"></i>
+        <span class="ms-2 align-middle info-text">Battery Level {{ battery_level }}%</span>
+      </div>
+    {% else %}
+      <div class="d-flex align-items-center">
+        <i class="info-icon bi bi-circle-fill text-danger"></i>
+        <span class="ms-2 align-middle info-text">Glasses Disconnected</span>
+      </div>
+    {% endif %}
+  </div>
+  <style>
+    .info-icon {
+      display: block;
+      height: 16px;
+      line-height: 12px;
+    }
+  </style>
+</div>

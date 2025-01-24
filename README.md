@@ -16,12 +16,27 @@ sudo apt install just
 
 ### Cuda
 
+Set CUDA_HOME (for grounding dino)
+```bash
+export CUDA_HOME=/usr/local/cuda-12.1/
+```
+
 
 ### Python Requirements
 
 ```bash
 mkdir libs 
 git clone https://github.com/tobiipro/g3pylib.git libs/g3pylib
+git clone https://github.com/facebookresearch/sam2.git  libs/sam2
+git clone https://github.com/IDEA-Research/GroundingDINO.git libs/groundingdino
 poetry install
-poetry run pip install libs/g3pylib
+poetry run pip install -e libs/sam2/
+poetry run pip install -e libs/groundingdino/
+sudo cp libs/sam2/sam2/configs/sam2.1*.yaml libs/sam2/sam2/
+```
+
+### Model Checkpoints
+
+```bash
+just download-checkpoints
 ```

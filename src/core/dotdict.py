@@ -12,5 +12,5 @@ class DotDict(dict):
     def __delattr__(self, item):
         try:
             del self[item]
-        except KeyError:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'")
+        except KeyError as e:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{item}'") from e

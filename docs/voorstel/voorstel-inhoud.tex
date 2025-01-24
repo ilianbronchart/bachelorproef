@@ -42,7 +42,7 @@ Recente ontwikkelingen in deep learning hebben de toepassingen van eye-tracking 
 integreert voor kwaliteitsinspectie in productieomgevingen, waarbij real-time analyse mogelijk ge\-maakt wordt ondanks variabele posities en bewegingen. 
 
 \textcite{CederinBremberg2023} onderzochten automatische objectdetectie en tracking in eye tracking analyses en verbeterden de nauwkeurigheid 
-door motion deblurring technieken toe te passen, zoals DeblurGAN-v2 gecombineerd met geavanceerde objectdetectoren en trackers. 
+door motion deblurring technieken toe te passen, zoals DeblurGAN-v2 gecombineerd met objectdetectoren en trackers. 
 
 Daarnaast combineerde \textcite{Kulyk2023} objectdetectie met eye-tracking data in een virtuele kunsttentoonstelling 
 om bezoekersinteresses en visuele aandachtspunten te identificeren. 
@@ -57,8 +57,11 @@ bekend staat om zijn hoge nauwkeurigheid bij objectdetectie.
 \textcite{CederinBremberg2023} breidden hun onderzoek uit door 
 naast Faster R-CNN ook andere CNN-gebaseerde architecturen zoals Feature Pyramid Network (FPN), Spatial Pyramid Pooling Network (SPP-Net), 
 You Only Look Once (YOLO) en Single Shot MultiBox Detector (SSD) te evalueren. 
-Daarnaast onderzochten ze transformer gebaseerde modellen zoals DEtection TRansformer (DETR) en DINO, 
+Ze onderzochten ook transformer gebaseerde modellen zoals DEtection TRansformer (DETR) en DINO, 
 die recentelijk aanzienlijke verbeteringen hebben laten zien in het omgaan met complexe en dynamische scènes.
+\par
+\textcite{liu2023grounding} introduceerden in 2023 Grounding DINO, een voorgetraind model dat objecten in afbeeldingen kan detecteren op basis van tekstprompts.
+Dit model zou eventueel objecten binnen het Zorglab kunnen detecteren zonder fine-tuning op specifieke data, wat de gebruiksvriendelijkheid van de software zou verbeteren.
 \par
 Dit bachelorproefonderzoek zal verder gaan dan alleen objectdetectie door ook segmentatiemodellen te verkennen 
 die mogelijk via finetuning en tekstprompting specifiek kunnen worden aangepast aan de use case van het 360° Zorglab. 
@@ -71,6 +74,7 @@ data gebruikt als inputprompt voor SAM om real-time segmentatiemasks te generere
 
 Daarnaast biedt het state-of-the-art werk van \textcite{Bagchi2024} met het ReferEverything framework een model voor het segmenteren van concepten in 
 videodata via natuurlijke taal-\newline beschrijvingen, wat relevant kan zijn voor het verwerken van de dynamische videodata van Tobii Glasses.
+Momenteel is de code van ReferEverything nog niet beschikbaar, maar de onderzoekers hebben aangegeven dat deze binnenkort open-source zal worden gemaakt.
 
 % Voor literatuurverwijzingen zijn er twee belangrijke commando's:
 % \autocite{KEY} => (Auteur, jaartal) Gebruik dit als de naam van de auteur
@@ -82,107 +86,108 @@ videodata via natuurlijke taal-\newline beschrijvingen, wat relevant kan zijn vo
 %---------- Methodologie ------------------------------------------------------
 \section{Methodologie}%
 \label{sec:methodologie}
-De bachelorproef zal worden uitgewerkt in verschillende fasen zoals hierna beschreven.
 
-\subsection{Onderzoek \& Dataverzameling}
+De bachelorproef zal worden uitgevoerd\newline volgens een agile aanpak, waarbij iteratieve cycli (sprints) 
+en overlappende fasen worden gebruikt om flexibiliteit en continue verbetering mogelijk te maken. 
+Deze aanpak zorgt ervoor dat verschillende onderdelen van het project parallel kunnen verlopen en snel 
+kunnen worden aangepast op basis van tussentijdse bevindingen. Nieuwe taken worden doorheen de sprints toegevoegd 
+aan een backlog binnen een Trello-bord, en worden doorheen de sprints opgepakt en afgerond.
+\par
+Het doel voor de PoC is om een user-flow te ontwikkelen die het mogelijk maakt om de volgende zaken uit te voeren:
+\begin{itemize}
+    \item 1. Het ophalen van eyetrackingdata van de Tobii Glasses
+    \item 2. Het definiëren van kritische objecten die geobserveerd moeten worden.
+    \item 3. Het analyseren van van de data met\newline objectdetectie- en segmentatiemodellen.\newline
+    Deze stap wordt hierna de data-architectuur genoemd.
+    \item 4. Het al dan niet manueel wegfilteren van vals-positieve objectdetecties.
+    \item 5. Het visualiseren van de resultaten van de analyse via een metriek die de blik-punten van de studenten koppelt aan de gedetecteerde objecten.
+\end{itemize}
+\par
+De voorkeur gaat naar het gebruik van voorgetrainde modellen om de nood aan hertrainen te minimaliseren en zo de gebruikerservaring te verbeteren.
+Indien nodig kan de PoC uitgebreid worden met extra functionaliteiten zoals het finetunen van modellen met simulatiespecifieke data.
 
-In deze eerste fase wordt een literatuuronderzoek uitgevoerd naar bestaande objectdetectie- en segmentatiemodellen die relevant zijn 
-voor de toepassing in het 360° Zorglab. Daarnaast wordt er ook relevante real-world data verzameld.
-De doelstellingen zijn: 
-\begin{itemize} 
-  \item Het identificeren van de meest recente en effectieve machine-learning modellen voor objectherkenning en -segmentatie. 
-  \item Identificatie van eventuele nodige pre-pro-\newline cessing stappen op de videodata.
-  \item Nagaan hoe Tobii Eyetracking Glasses precies werken in tandem met Tobii Pro Lab en in welk formaat de eyetrackingdata aangeboden wordt.
-  \item Verzamelen van bestaande data, of aanvragen van nieuwe data van simulaties in het Zorglab.
-  \item Labelen van verzamelde simulatiedata en\newline objectdata. (Hoeveel keer en wanneer keek een student naar bepaalde objecten?)
-  \item Een architectuur bedenken voor de uiteindelijke proof-of-concept (PoC).
+%---------- Tijdsplanning ------------------------------------------------------
+\section{Tijdsplanning}
+De bachelorproef is gepland van 10 februari 2025 tot en met 23 mei 2025, met een totaal van 7 sprints van 2 weken.
+De activiteiten binnen elke sprint omvatten, in geen specifieke volgorde:
+\begin{itemize}
+    \item Literatuurstudie
+    \item Dataverzameling en labeling
+    \item Modelselectie en implementatie
+    \item Schrijven van Python Notebooks voor experimenten
+    \item Ontwikkelen van de data-architectuur binnen de PoC
+    \item Ontwikkelen van de user interface voor de PoC
+    \item Uitbreiding van de PoC met nieuwe functionaliteiten
+    \item Unit-testen schrijven voor de PoC
+    \item Meetings met de co-promotor voor\newline feedback en verfijning van de oplossing
+    \item Documentatie van het proces en resultaten
+    \item Uitschrijven, aanpassen van het proefschrift
+\end{itemize}
+\par
+De onderstaande tijdsplanning geeft een overzicht van de beoogde deliverables en mijlpalen per sprint.
+\begin{itemize}
+    \item \textbf{Sprint 1}
+        \begin{itemize}
+            \item Relevante modellen zijn verzameld en uitgetest binnen een Python Notebook.
+            \item Er is huisgemaakte data verzameld via geleende Tobii Glasses uit het Zorglab.
+            \item Potentiële segmentatie- en detectiepipeline architecturen voor de PoC zijn uitgestippeld.
+            \item Er is een user interface binnen de PoC om opnames op te halen van de Tobii Glasses.
+        \end{itemize}
+    \item \textbf{Sprint 2}
+        \begin{itemize}
+            \item Er is zorglab-specifieke data\newline aangevraagd.
+            \item De abstract en inleiding van het proefschrift zijn geschreven.
+            \item Het literatuurstudie onderdeel van het proefschrift is uitgewerkt.
+        \end{itemize}
+        \item \textbf{Sprint 3}
+        \begin{itemize}
+            \item Er is een demo gegeven aan de\newline co-promotor voor een kandidaat\newline architectuur van de PoC.
+            \item De feedback van de co-promotor is verwerkt en gedocumenteerd.
+            \item Er is een metriek ontwikkeld voor het meten van waar een student naar heeft gekeken en voor hoe lang.
+            \item Er zijn verschillende data-architecturen geëvalueerd.
+        \end{itemize}
+    \item \textbf{Sprint 4}
+        \begin{itemize}
+            \item De segmentatie- en detectiepipeline is geïntegreerd binnen de user interface van de PoC
+            \item De vergelijking tussen verschillende\newline data-architecturen is toegevoegd aan\newline het proefschrift.
+            \item Er is een meeting gebeurd met de co-promotor voor feedback op de PoC.
+        \end{itemize}
+    \item \textbf{Sprint 5}
+        \begin{itemize}
+            \item De objectdetectie- en segmentatiemodellen zijn geïntegreerd binnen de PoC.
+            \item Zorglab-specifieke data is gelabeld en gebruikt voor het valideren van de PoC.
+        \end{itemize}
+    \item \textbf{Sprint 6}
+        \begin{itemize}
+            \item De visualisatie-interface is ontwikkeld\newline en geïntegreerd binnen de PoC.
+            \item De gebruiker kan nieuwe video's analyseren en de resultaten bekijken.
+            \item De PoC is gevalideerd in het Zorglab.
+        \end{itemize}
+    \item \textbf{Sprint 7}
+        \begin{itemize}
+            \item Het proefschrift is gefinaliseerd en ingediend.
+        \end{itemize}
 \end{itemize}
 
-\subsection{Selectie \& Evaluatie van Modellen}
-
-Op basis van de bevindingen uit de literatuurstudie worden een aantal state-of-the-art modellen geselecteerd voor verdere evaluatie. 
-Deze fase omvat: 
-\begin{itemize} 
-  \item Implementatie van geselecteerde object-\newline detectie- en segmentatiemodellen, zoals \newline YOLOv8, SAM 2, en GazeSAM. 
-  \item Fine-tuning van de modellen met Zorglab-specifieke data.
-  \item Ontwikkelen van metrieken die meten hoe dicht de blik van de student bij een target-object is gekomen binnen een simulatie.
-  \item Uitvoeren van experimentele tests om de\newline prestaties van elk model te meten op basis van deze metrieken.
-  \item Documenteren van resultaten.
-\end{itemize}
-
-\subsection{Praktijk}
-
-In deze fase wordt een PoC ontwikkeld die de geselecteerde machine-learning modellen integreert met de videodata van de Tobii Glasses. 
-De ontwikkelingsactiviteiten omvatten: 
-\begin{itemize} 
-  \item Ontwerpen van een interface dat een trainer toelaat om nieuwe data over kritische objecten te uploaden.
-  \item Ontwerpen van een data pipeline voor het importeren, preprocessen en verwerken van de videodata. 
-  \item Integreren van de objectdetectie- en/of segmentatiemodellen binnen de pipeline.
-  \item Ontwikkelen van een visualisatie interface waarmee trainers de analyse-resultaten\newline kunnen bekijken.
-  \item Documenteren van het gebruik van en verdere ontwikkeling binnen de PoC software.
-\end{itemize}
-
-\subsection{Bachelorproef Finaliseren}
-
+%---------- Tools en Technologieën ----------------------------------------------
 \subsection{Tools en Technologieën}
 
 \begin{itemize} 
   \item \textbf{Programmeertaal en Frameworks}: Python, PyTorch, TensorFlow voor machine-learning modellering en implementatie. 
+  \item \textbf{Programmeerstack van de PoC}: FastAPI\newline voor de backend, HTMX en Jinja2 voor de frontend.
   \item \textbf{Data Verwerking en Visualisatie}: OpenCV voor videoverwerking, Matplotlib voor datavisualisatie. 
-  \item \textbf{Ontwikkelomgeving}: Visual Studio Code,\newline Jupyter Notebooks voor experimenten, Git voor versiebeheer. Poetry voor dependency management.
+  \item \textbf{Ontwikkelomgeving}: Visual Studio Code,\newline Python Notebooks voor experimenten, Git voor versiebeheer. Poetry voor dependency management.
   \item \textbf{GPU}: At-home Nvidia RTX 4090 en eventuele GPUs van HoGent.
-  \item \textbf{Eyetracking}: Tobii Eyetracking Glasses, en Tobii Pro Lab Software
-  \item \textbf{Planning}: Trello en git voor projectmanagement.
-\end{itemize}
-
-\subsection{Tijdsplanning}
-
-De bachelorproef is gepland van 10 februari 2025 tot en met 23 mei 2025. 
-De onderstaande tijdsplanning geeft een overzicht van de verdeling van de werkzaamheden over de beschikbare periode.
-
-Taken zoals literatuuronderzoek en dataverzameling zullen doorheen de gehele periode plaatsvinden.
-Het uitschrijven van het bachelorschrift zal iteratief gebeuren.
-
-\begin{itemize}
-  \item \textbf{Week 1-4 (10 feb - 23 feb): Initieel Onderzoek \& Dataverzameling}
-      \begin{itemize}
-          \item Verzamelen van relevante modellen en aanvragen van eyetrackingdata bij het Zorglab.
-          \item Huisgemaakte eyetracking-data voor\newline gebruik in het uitbouwen van de PoC is verzameld.
-          \item Nagaan of generieke segmentatiemodellen voldoende zijn voor de use case, of dat objectdetectie nodig is.
-          \item Als objectdetectie nodig is, aanvragen van foto's van kritische objecten in het Zorglab.
-          \item Initiële workflowarchitectuur (diagram) is opgesteld.
-          \item Formaat van Tobii eyetrackingdata is\newline onderzocht.
-          \item Verzamelde data is gelabeled.
-      \end{itemize}
-  \item \textbf{Week 3-4 (24 feb - 8 mrt): Eerste PoC}
-      \begin{itemize}
-          \item Basis data-pipeline met objectdetectie- en/of segmentatiemodellen is ontwikkeld.
-          \item Verbeteringen op basis van initiële tests.
-      \end{itemize}
-  \item \textbf{Week 5-8 (9 mrt - 6 apr): Modelselectie en PoC-uitbreiding}
-      \begin{itemize}
-          \item Eventuele fine-tuning van modellen\newline met Zorglab-data.
-          \item Testen en evaluatiemetrieken zijn ontwikkeld.
-      \end{itemize}
-  \item \textbf{Week 9-11 (7 apr - 27 apr): Integratie en visualisatie}
-      \begin{itemize}
-          \item Ontwikkelen van een visualisatie-inter-\newline face.
-          \item De gebruiker kan nieuwe video(s) uploaden en de resultaten bekijken.
-          \item De gebruiker kan eventueel nieuwe objecten toevoegen aan de database.
-      \end{itemize}
-  \item \textbf{Week 12-15 (28 apr - 23 mei): Validatie en afronding}
-      \begin{itemize}
-          \item Validatie van de software in het Zorglab.
-          \item Eindrapportage en presentatievoorbereiding.
-      \end{itemize}
+  \item \textbf{Eyetracking}: Tobii Eyetracking Glasses, en Tobii Pro Glasses 3 Controller App.
+  \item \textbf{Planning}: Trello voor projectmanagement.
 \end{itemize}
 
 %---------- Verwachte resultaten ----------------------------------------------
-\section{Verwacht resultaat, conclusie}%
+\section{Verwacht resultaat}%
 \label{sec:verwachte_resultaten}
 
 Het verwachte resultaat van dit bachelorproefonderzoek is de ontwikkeling van een functionele PoC 
-software die objectherkenningsmodellen integreert met de videodata van de Tobii Eyetracking Glasses. 
+software die objectherkennings- en segmentatiemodellen integreert met de videodata van de Tobii Eyetracking Glasses.
 Deze software zal in staat zijn om nauwkeurig te bepalen welke kritische objecten door studenten zijn waargenomen tijdens simulaties, 
 ondersteund door visuele representaties van de oogbewegingen. Verwacht wordt dat modellen na fine-tuning met Zorglab-specifieke data, 
 een hoge detectienauwkeurigheid zullen bereiken.

@@ -6,3 +6,8 @@ check:
 run:
     poetry run fastapi dev src/main.py
     
+download-sam2-checkpoints:
+    cd checkpoints && ../libs/sam2/checkpoints/download_ckpts.sh
+
+download-groundingdino-checkpoints:
+    cd checkpoints && wget -q https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth

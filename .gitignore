@@ -163,3 +163,7 @@ cython_debug/
 
 # Custom
 libs/*
+data/*
+checkpoints/*
+notebooks/output
+*.mp4

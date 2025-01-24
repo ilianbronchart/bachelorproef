@@ -10,10 +10,19 @@
   display: inline-block;
 }
 
-.htmx-request.htmx-hide {
+.htmx-request .htmx-request-hide {
   display: none;
 }
 
+.htmx-request.htmx-request-hide {
+  display: none;
+}
+
+/* TODO: unify these two */
 select[aria-controls="glasses-recordings-table"] {
+  margin-right: 8px;
+}
+
+select[aria-controls="local-recordings-table"] {
   margin-right: 8px;
 }

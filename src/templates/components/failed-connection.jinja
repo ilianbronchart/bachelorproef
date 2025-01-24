@@ -1,0 +1,16 @@
+<div id="failed-connection" class="d-flex flex-column">
+  <p class="text-danger">{{ error_message }}</p>
+  <button class="btn btn-primary align-self-start"
+          hx-get="{{ target_url }}"
+          hx-trigger="click"
+          hx-target="{{ retry_target }}"
+          hx-target-503="#failed-connection"
+          hx-swap="outerHTML"
+          hx-indicator="#retry-spinner"
+          hx-disabled-elt="this">
+    <div id="retry-spinner"
+         class="spinner spinner-border spinner-border-sm"
+         role="status"></div>
+    Retry Connection
+  </button>
+</div>

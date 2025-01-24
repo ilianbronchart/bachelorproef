@@ -1,10 +1,22 @@
-from .common import is_glasses_connected
-from .recording import download_recording, get_glasses_recordings, get_local_recordings, recording_exists
+from .common import get_battery_level, is_connected
+from .recording import (
+    clean_local_recordings,
+    delete_local_recording,
+    download_recording,
+    get_glasses_recordings,
+    get_local_recordings,
+    get_recording,
+    recording_exists,
+)
 
 __all__ = [
+    "clean_local_recordings",
+    "delete_local_recording",
     "download_recording",
+    "get_battery_level",
     "get_glasses_recordings",
     "get_local_recordings",
-    "is_glasses_connected",
+    "get_recording",
+    "is_connected",
     "recording_exists",
 ]
