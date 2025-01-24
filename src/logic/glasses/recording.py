@@ -18,6 +18,9 @@ async def download_recording(recording: RecordingMetadata, output_path: Path = R
     """
     if recording_exists(recording.uuid, output_path):
         raise ValueError(f"Recording {recording.uuid} already exists in {output_path}")
+    
+    # Clean up any existing files for the recording (in case of previous partial download)
+    delete_local_recording(recording.uuid, output_path)
 
     # Clean up any existing files for the recording (in case of previous partial download)
     delete_local_recording(recording.uuid, output_path)
@@ -37,7 +40,6 @@ async def download_recording(recording: RecordingMetadata, output_path: Path = R
 
         raise RuntimeError(f"Failed to download recording {recording.uuid}") from e
 
-
 async def get_glasses_recordings(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> list[RecordingMetadata]:
     """Retrieve metadata for all recordings on the glasses"""
     async with (
@@ -47,6 +49,14 @@ async def get_glasses_recordings(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAM
         recordings = g3.recordings.children
         return [await RecordingMetadata.from_recording(recording) for recording in recordings]
 
+async def get_recording(uuid: str, glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> RecordingMetadata:
+    """Retrieve metadata for recording by its UUID"""
+    async with (
+        connect_to_glasses.with_hostname(glasses_hostname, using_ip=True) as g3,
+        g3.recordings.keep_updated_in_context(),
+    ):
+        recording = g3.recordings.get_recording(uuid)
+        return await RecordingMetadata.from_recording(recording)
 
 async def get_recording(uuid: str, glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> RecordingMetadata:
     """Retrieve metadata for recording by its UUID"""
@@ -62,7 +72,6 @@ async def get_local_recordings(recordings_path: Path = RECORDINGS_PATH) -> list[
     """Retrieve metadata for all recordings in the local directory"""
     recordings_json = load_json_files(recordings_path)
     return [RecordingMetadata(**recording) for recording in recordings_json]
-
 
 def delete_local_recording(uuid: str, recordings_path: Path = RECORDINGS_PATH) -> None:
     """Delete a recording from the local directory"""

@@ -19,4 +19,8 @@ __all__ = [
     "get_recording",
     "is_connected",
     "recording_exists",
+    "get_battery_level",
+    "get_recording",
+    "delete_local_recording",
+    "clean_local_recordings"
 ]

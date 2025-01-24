@@ -6,7 +6,6 @@ from src.core.config import DEFAULT_GLASSES_HOSTNAME
 
 async def is_connected(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> bool:
     try:
-
         async def connect():
             async with connect_to_glasses.with_hostname(glasses_hostname, using_ip=True):
                 return True
@@ -15,7 +14,6 @@ async def is_connected(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> bool
         return await asyncio.wait_for(connect(), timeout=1)  # Timeout after 2 seconds
     except asyncio.TimeoutError:
         return False
-
 
 async def get_battery_level(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> float:
     try:

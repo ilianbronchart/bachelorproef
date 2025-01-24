@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import src.logic.glasses as glasses
 
 import src.logic.glasses as glasses
 from src.core import DotDict as dd
@@ -19,7 +20,6 @@ glasses.clean_local_recordings()
 async def root(request: Request):
     return templates.TemplateResponse("index.jinja", {"request": request})
 
-
 @app.get("/recording", response_class=HTMLResponse)
 async def recordings(request: Request):
     context = dd()
@@ -32,6 +32,31 @@ async def recordings(request: Request):
     context.content = "pages/recordings.jinja"
     return templates.TemplateResponse("index.jinja", context)
 
+@app.get("/local/recordings", response_class=HTMLResponse)
+async def local_recordings(request: Request):
+    """Retrieve metadata for all recordings in the local directory"""
+    context = dd()
+    context.request = request
+    context.local_recordings = await glasses.get_local_recordings()
+
+    if is_hx_request(request):
+        return templates.TemplateResponse("components/local-recordings.jinja", context)
+
+    # TODO if not hx request, return 404 page
+
+@app.delete("/local/recordings/{recording_id}", response_class=HTMLResponse)
+async def delete_local_recording(request: Request, response: Response, recording_id: str):
+    """Delete a recording from the local directory"""
+    context = dd()
+    context.request = request
+    context.local_recordings = await glasses.get_local_recordings()
+
+    try:
+        glasses.delete_local_recording(recording_id)
+        context.local_recordings = await glasses.get_local_recordings()
+        return templates.TemplateResponse("components/local-recordings.jinja", context)
+    except Exception:
+        return Response(status_code=500, content="Error: Something went wrong, please try again later")
 
 @app.get("/local/recordings", response_class=HTMLResponse)
 async def local_recordings(request: Request):
