@@ -8,6 +8,7 @@ packages = [
     { include = "src" },
 ]
 
+
 [[tool.poetry.source]]
 name = "torch-cu121"
 url = "https://download.pytorch.org/whl/cu121"
@@ -26,13 +27,19 @@ fastapi = {extras = ["standard"], version = "^0.115.6"}
 attr-dot-dict = "^0.1.0"
 djlint = "^1.36.4"
 matplotlib = "^3.10.0"
-opencv-python = "^4.11.0.86"
 ipykernel = "^6.29.5"
 torch = {version = ">=2.2.0", source = "torch-cu121"}
 torchvision = {version = ">=0.17.0", source = "torch-cu121"}
 torchaudio = {version = ">=2.2.0", source = "torch-cu121"}
 g3pylib = {path = "libs/g3pylib"}
 ipywidgets = "^8.1.5"
+ultralytics = "^8.3.67"
+wheel = "^0.45.1"
+opencv-python = "^4.11.0.86"
+onnx = "^1.17.0"
+onnxslim = "^0.1.48"
+onnxruntime-gpu = "^1.20.1"
+tensorflow = "^2.18.0"
 
 [build-system]
 requires = ["poetry-core"]

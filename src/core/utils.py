@@ -1,8 +1,15 @@
 import json
+import os
 from pathlib import Path
+import tempfile
+from typing import Generator, List
 
 import aiohttp
+import cv2
 from fastapi import Request
+import numpy as np
+import torch
+import gc
 
 
 async def download_file(url: str, target_path: Path) -> None:
@@ -38,3 +45,98 @@ def load_json_files(target_path: Path) -> list[dict[str, str]]:
 
 def is_hx_request(request: Request) -> bool:
     return request.headers.get("hx-request") == "true"
+
+def extract_frames_to_tmpdir(video_path):
+    if not os.path.isfile(video_path):
+        raise FileNotFoundError(f"The file {video_path} does not exist.")
+
+    temp_dir = tempfile.mkdtemp()
+    video_capture = cv2.VideoCapture(video_path)
+    frame_count = 0
+    success, frame = video_capture.read()
+
+    while success:
+        frame_filename = os.path.join(temp_dir, f"{frame_count:04d}.jpg")
+        cv2.imwrite(frame_filename, frame)
+        success, frame = video_capture.read()
+        frame_count += 1
+
+    video_capture.release()
+    return temp_dir
+
+def cv2_loadvideo(video_path: str) -> Generator[tuple[int, np.ndarray], None, None]:
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError(f"Video file not found: {video_path}")
+
+    frame_idx = 0
+    while(True):
+        ret, frame = cap.read()
+        if not ret:
+            # read over
+            break
+        
+        yield frame_idx, frame
+        frame_idx += 1
+
+    cap.release()
+
+def cv2_video_resolution(video_path: Path) -> tuple[int, int]:
+    """
+    Get the resolution of a video file using OpenCV.
+
+    Args:
+        video_path (str): Path to the video file.
+    
+    Returns:
+        tuple[int, int]: The resolution of the video (height, width).
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError(f"Video file not found: {video_path}")
+
+    resolution = (
+        int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+        int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    )
+    cap.release()
+    return resolution
+
+def cv2_video_fps(video_path: Path) -> float:
+    """
+    Get the frames per second (FPS) of a video file using OpenCV.
+
+    Args:
+        video_path (str): Path to the video file.
+    
+    Returns:
+        float: The FPS of the video.
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError(f"Video file not found: {video_path}")
+
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    cap.release()
+    return fps
+
+def cv2_video_frame_count(video_path: Path) -> int:
+    """
+    Get the frame count of a video file using OpenCV.
+
+    Args:
+        video_path (str): Path to the video file.
+    
+    Returns:
+        int: The number of frames in the video.
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError(f"Video file not found: {video_path}")
+
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.release()
+    return frame_count
+
+def clamp(x, lower, upper):
+    return max(lower, min(x, upper))

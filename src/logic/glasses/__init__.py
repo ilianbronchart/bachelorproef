@@ -8,6 +8,7 @@ from .recording import (
     get_recording,
     recording_exists,
 )
+from .domain import GazeData, GazeDataType, EyeGazeData
 
 __all__ = [
     "clean_local_recordings",
@@ -22,5 +23,10 @@ __all__ = [
     "get_battery_level",
     "get_recording",
     "delete_local_recording",
-    "clean_local_recordings"
+    "clean_local_recordings",
+    "parse_gazedata_file",
+    "get_2d_positions",
+    "GazeData",
+    "GazeDataType",
+    "EyeGazeData",
 ]

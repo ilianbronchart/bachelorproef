@@ -61,6 +61,29 @@ The code for this paper is not yet released, and thus cannot currently be used f
 }
 ```
 
+### EfficientViT-SAM: Accelerated Segment Anything Model Without Accuracy Loss
+
+```bibtex
+@misc{zhang2024efficientvitsamacceleratedsegmentmodel,
+      title={EfficientViT-SAM: Accelerated Segment Anything Model Without Accuracy Loss}, 
+      author={Zhuoyang Zhang and Han Cai and Song Han},
+      year={2024},
+      eprint={2402.05008},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2402.05008}, 
+}
+```
+
+# Gaze data analysis papers
+
+We want to know if a user is fixating on an object in the video.
+
+#### Strategies for enhancing automatic fixation detection in head-mounted eye tracking
+
+https://link.springer.com/article/10.3758/s13428-024-02360-0
+
+
 # Other Papers
 
 ### Automatic object detection and tracking for eye-tracking analysis

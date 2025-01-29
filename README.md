@@ -16,11 +16,7 @@ sudo apt install just
 
 ### Cuda
 
-Set CUDA_HOME (for grounding dino)
-```bash
-export CUDA_HOME=/usr/local/cuda-12.1/
-```
-
+install tensorrt (see nvidia)
 
 ### Python Requirements
 
@@ -29,9 +25,15 @@ mkdir libs
 git clone https://github.com/tobiipro/g3pylib.git libs/g3pylib
 git clone https://github.com/facebookresearch/sam2.git  libs/sam2
 git clone https://github.com/IDEA-Research/GroundingDINO.git libs/groundingdino
+git clone https://github.com/mit-han-lab/efficientvit.git libs/efficientvit
 poetry install
 poetry run pip install -e libs/sam2/
 poetry run pip install -e libs/groundingdino/
+poetry run pip install git+https://github.com/DiGyt/cateyes.git
+poetry run pip install -r libs/efficientvit/requirements.txt
+python3 -m pip install --upgrade tensorrt
+```
+
 sudo cp libs/sam2/sam2/configs/sam2.1*.yaml libs/sam2/sam2/
 ```
 
@@ -39,4 +41,12 @@ sudo cp libs/sam2/sam2/configs/sam2.1*.yaml libs/sam2/sam2/
 
 ```bash
 just download-checkpoints
+```
+
+### Fix tensorrt:
+
+```bash
+cd .venv/lib/python3.10/site-packages/tensorrt
+ln -s /usr/lib/x86_64-linux-gnu/libnvinfer.so.10 libnvinfer.so.8
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.venv/lib/python3.10/site-packages/tensorrt
 ```

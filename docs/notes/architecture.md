@@ -55,11 +55,15 @@ Ideally, we would define a catalog of target objects that we want to detect in a
 
 1. More work at video analysis time
 
-### Option 4: Eyetracking as a first-class citizen
+### Option 4: Eyetracking as a first-class citizen + Grounding DINO
 
 1. We use the eyetracking data to segment all objects the student looked at in the video
 2. We crop out these objects and use a zero-shot detection model like Grounding DINO to label the objects
 3. We filter away unwanted objects
+
+How do we choose which points to sample for SAM?
+Do we pick a region around the gaze point and sample from there?
+How do we choose the size of the region?
 
 #### Advantages:
 
@@ -71,3 +75,38 @@ Ideally, we would define a catalog of target objects that we want to detect in a
 #### Disadvantages:
 
 > Investigate accuracy of GazeSAM paper
+
+## Grounding using a Vision API like GPT-4o
+
+Our grounding images are small, but there are many of them, how much would this cost?
+Could we use structured inputs and outputs to allow the model to choose from a list of possible answers?
+
+### Option 5: Eyetracking as a first-class citizen + Content based image retrieval
+
+See https://www.reddit.com/r/opencv/comments/b8f4up/question_scale_invariant_template_matching/
+
+Preparation:
+1. We use the glasses to record video of each target object we want to detect
+2. We use SAM to track the objects in the video and put the objects in a Content Based Image Retrieval (CBIR) database
+
+Analysis:
+3. We use the eyetracking data to segment all objects the student looked at in the video using SAM
+    - Based on the average error of the headset, sample points around the gaze point for mask detection. 
+    - See https://connect.tobii.com/s/article/eye-tracker-accuracy-and-precision?language=en_US
+4. We filter away unwanted objects (too large, too many components, ...)
+5. We crop out the objects (how?) and use the CBIR database to label the objects
+6. We now have a few keypoints for each object and use these to track the objects throughout the video 
+7. We calculate when, for how long and how often the student looked at the objects using some metric
+
+#### Advantages:
+
+1. We already start with a catalog of objects the student looked at
+2. More preparation time needed, but less work at video analysis time
+
+#### Disadvantages:
+
+1. The pipeline is more complex and errors could pile up
+
+#### Feature Detectors:
+
+SURF, FlannBasedMatcher

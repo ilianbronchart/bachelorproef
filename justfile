@@ -11,3 +11,6 @@ download-sam2-checkpoints:
 
 download-groundingdino-checkpoints:
     cd checkpoints && wget -q https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
+
+tensorrt:
+    poetry run python scripts/export_fastsam_tensorrt.py

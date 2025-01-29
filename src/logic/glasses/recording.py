@@ -2,9 +2,11 @@ import os
 from pathlib import Path
 
 from g3pylib import connect_to_glasses
+from libs.g3pylib.src.g3pylib.recordings.recording import Recording
 from src.core.config import DEFAULT_GLASSES_HOSTNAME, RECORDINGS_PATH
 from src.core.utils import download_file, load_json_files, save_json
 from src.logic.glasses.domain import RecordingMetadata
+import requests
 
 
 def recording_exists(uuid: str, output_path: Path = RECORDINGS_PATH) -> bool:
@@ -57,6 +59,12 @@ async def get_recording(uuid: str, glasses_hostname: str = DEFAULT_GLASSES_HOSTN
     ):
         recording = g3.recordings.get_recording(uuid)
         return await RecordingMetadata.from_recording(recording)
+    
+# async def get_focal_length(recording: Recording) -> tuple[float]:
+#     """Get the focal length of the recording"""
+#     recording_url = f"{recording._http_url}{await recording.get_http_path()}"
+#     recording_json = requests.get(recording_url).json()
+#     return recording_json.get("scenecamera", {}).get("camera-calibration", {}).get("focal-length", None)
 
 async def get_recording(uuid: str, glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> RecordingMetadata:
     """Retrieve metadata for recording by its UUID"""
