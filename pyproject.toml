@@ -6,6 +6,7 @@ authors = ["Ilian Bronchart"]
 readme = "README.md"
 packages = [
     { include = "src" },
+    { include = "dinov2", from="libs/dinov2" }
 ]
 
 
@@ -17,29 +18,29 @@ priority = "explicit"
 [tool.poetry.dependencies]
 python = "^3.10"
 tqdm = "^4.67.1"
-transformers = "^4.48.0"
-streamlit = "^1.41.1"
-pytest = "^8.3.4"
-mypy = "^1.14.1"
-ruff = "^0.9.2"
-pytest-asyncio = "^0.25.2"
-fastapi = {extras = ["standard"], version = "^0.115.6"}
-attr-dot-dict = "^0.1.0"
-djlint = "^1.36.4"
-matplotlib = "^3.10.0"
-ipykernel = "^6.29.5"
-torch = {version = ">=2.2.0", source = "torch-cu121"}
-torchvision = {version = ">=0.17.0", source = "torch-cu121"}
-torchaudio = {version = ">=2.2.0", source = "torch-cu121"}
-g3pylib = {path = "libs/g3pylib"}
-ipywidgets = "^8.1.5"
-ultralytics = "^8.3.67"
-wheel = "^0.45.1"
-opencv-python = "^4.11.0.86"
-onnx = "^1.17.0"
-onnxslim = "^0.1.48"
-onnxruntime-gpu = "^1.20.1"
+transformers = "4.48.0"  # Remove ^ for exact version
+pytest = "8.3.4"
+mypy = "1.14.1"
+ruff = "0.9.2"
+pytest-asyncio = "0.25.2"
+fastapi = {extras = ["standard"], version = "0.115.6"}
+djlint = "1.36.4"
+matplotlib = "3.10.0"
+ipykernel = "6.29.5"
+torch = {version = "2.2.0", source = "torch-cu121"}
+torchvision = {version = "0.17.0", source = "torch-cu121"}
+torchaudio = {version = "2.2.0", source = "torch-cu121"}
+g3pylib = { path = "libs/g3pylib"}
+ipywidgets = "8.1.5"
+ultralytics = "8.3.67"
+wheel = "0.45.1"
+opencv-python = "4.11.0.86"
+onnx = "1.17.0"
+onnxslim = "0.1.48"
+onnxruntime-gpu = "1.20.1"
 tensorflow = "^2.18.0"
+numpy = "<2.0.0"
+faiss-gpu = "^1.7.2"
 
 [build-system]
 requires = ["poetry-core"]

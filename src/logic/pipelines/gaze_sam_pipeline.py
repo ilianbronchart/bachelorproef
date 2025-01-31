@@ -4,7 +4,7 @@ from pathlib import Path
 from src.logic.glasses.domain import GazeData, GazePoint
 from src.logic.glasses.gaze import get_gaze_points, match_frames_to_gaze
 import cv2
-from ultralytics.engine.results import Results
+from ultralytics.engine.results import Results, Boxes, Masks
 from typing import List
 import torch
 from torchvision.ops import masks_to_boxes
@@ -150,7 +150,7 @@ def get_viewed_masks(
     iou: float,
     viewed_radius: int,
     save_video=False,
-) -> List[Results | None]:
+) -> List[Results]:
     half_crop = crop_size // 2
     gaze_points = get_gaze_points(gaze_data, resolution)
     frame_gaze_mapping = match_frames_to_gaze(frame_count, gaze_points, fps)
@@ -174,7 +174,12 @@ def get_viewed_masks(
 
         if len(frame_gaze_points) == 0:
             # No gaze points for this frame
-            results_per_frame.append(None)
+            results = Results(
+                orig_img=torch.tensor([]), 
+                path="", 
+                names=""
+            )
+            results_per_frame.append(results)
             if save_video:
                 video_result.write(original_frame)
             continue
@@ -224,8 +229,23 @@ def get_viewed_masks(
             ] = cv2.cvtColor(result_unpad, cv2.COLOR_BGR2RGB)
             overlay_gaze_points(original_frame, frame_gaze_points, viewed_radius)
             video_result.write(original_frame)
-    
-    if save_video:
+
+    if save_video: 
         video_result.release()
 
     return results_per_frame
+
+def crop_box(orig_img: np.ndarray, box: Boxes, mask: Masks | None = None) -> np.ndarray:
+    x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)   
+
+    if mask is not None:
+        mask_np = mask.data.permute(1, 2, 0).cpu().numpy()
+        mask_np = np.repeat(mask_np, 3, axis=2)
+                
+        if orig_img.dtype != mask_np.dtype:
+            mask_np = mask_np.astype(orig_img.dtype)
+
+        masked_img = orig_img * mask_np
+        return masked_img[y1:y2, x1:x2]
+
+    return orig_img[y1:y2, x1:x2]

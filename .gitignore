@@ -167,4 +167,4 @@ data/*
 checkpoints/*
 notebooks/output
 *.mp4
-reference_images/*
+notebooks/reference_images/*

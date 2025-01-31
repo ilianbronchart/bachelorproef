@@ -26,12 +26,14 @@ git clone https://github.com/tobiipro/g3pylib.git libs/g3pylib
 git clone https://github.com/facebookresearch/sam2.git  libs/sam2
 git clone https://github.com/IDEA-Research/GroundingDINO.git libs/groundingdino
 git clone https://github.com/mit-han-lab/efficientvit.git libs/efficientvit
+git clone https://github.com/facebookresearch/dinov2.git libs/dinov2
 poetry install
 poetry run pip install -e libs/sam2/
 poetry run pip install -e libs/groundingdino/
 poetry run pip install git+https://github.com/DiGyt/cateyes.git
 poetry run pip install -r libs/efficientvit/requirements.txt
-python3 -m pip install --upgrade tensorrt
+poetry run python3 -m pip install --upgrade tensorrt tensorrt_bindings
+poetry run pip  install tensorrt_libs --index-url https://pypi.nvidia.com
 ```
 
 sudo cp libs/sam2/sam2/configs/sam2.1*.yaml libs/sam2/sam2/
