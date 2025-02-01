@@ -1,0 +1,412 @@
+<div id="recording-labeler">
+    <div class="d-flex flex-column gap-2">
+        <!-- Control Bar: Play, Select, Delete, Seek -->
+        <div id="controls" class="d-flex align-items-center gap-2">
+            <button id="play-pause-btn"
+                    class="btn btn-secondary"
+                    type="button"
+                    hx-on:click>
+                <i class="bi bi-play-fill"></i>
+            </button>
+            <button id="select-mode-btn"
+                    class="btn btn-secondary"
+                    type="button"
+                    hx-on:click>
+                <i class="bi bi-cursor"></i>
+            </button>
+            <button id="delete-mode-btn"
+                    class="btn btn-secondary"
+                    type="button"
+                    hx-on:click>
+                <i class="bi bi-trash"></i>
+            </button>
+            <input type="range"
+                   id="seek-slider"
+                   min="0"
+                   value="0"
+                   step="any"
+                   class="form-range flex-grow-1">
+        </div>
+        <!-- Class Management UI -->
+        <div id="class-management">
+            <div class="input-group mb-2">
+                <input type="text"
+                       class="form-control"
+                       id="class-name"
+                       placeholder="Class Name">
+                <input type="color"
+                       class="form-control form-control-color"
+                       id="class-color"
+                       value="#00ff00"
+                       title="Choose color">
+                <button class="btn btn-outline-secondary"
+                        id="add-class-btn"
+                        type="button"
+                        hx-on:click>Add Class</button>
+            </div>
+            <div id="class-list" class="d-flex gap-2 flex-wrap"></div>
+        </div>
+        <!-- The canvas where video, masks, and annotations are drawn -->
+        <canvas id="canvas"></canvas>
+    </div>
+    <!-- Hidden Video (offscreen) -->
+    <div class="d-flex justify-content-center">
+        <video id="video"
+               width="640"
+               height="360"
+               controls
+               style="position: absolute;
+                      left: -9999px">
+            <source src="{{ url_for('recordings', path=recording.uuid + '.mp4') }}"
+                    type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const video   = document.getElementById('video');
+  const canvas  = document.getElementById('canvas');
+  const slider  = document.getElementById('seek-slider');
+  const ctx     = canvas.getContext('2d');
+
+  // Control buttons
+  const playPauseBtn    = document.getElementById('play-pause-btn');
+  const selectModeBtn   = document.getElementById('select-mode-btn');
+  const deleteModeBtn   = document.getElementById('delete-mode-btn');
+
+  // Class management elements
+  const addClassBtn     = document.getElementById('add-class-btn');
+  const classNameInput  = document.getElementById('class-name');
+  const classColorInput = document.getElementById('class-color');
+  const classListDiv    = document.getElementById('class-list');
+
+  // ---------------- Global State ----------------
+  // Annotations are kept per frame (using the currentTime in ms as a proxy for frame number)
+  let annotationsByFrame = {}; // { frameId: { "classLabel": { points: [[x,y], ...], pointLabels: [1,0,...] }, ... } }
+  let masksByFrame       = {}; // { frameId: [ { class: "myClass", mask: <base64> }, ... ] }
+  let classesList        = []; // [ { label: "myClass", color: "#00ff00" }, ... ]
+  let activeClass        = null; // Currently selected class (annotations apply to this class)
+  let mode               = "select"; // "select" or "delete"
+  let hoveredPoint       = null; // Used in delete mode to highlight a point when hovered
+
+  // ---------------- Utility Functions ----------------
+  // Use currentTime in milliseconds (rounded) as a proxy for the current frame identifier
+  function getFrameId() {
+    return Math.floor(video.currentTime * 1000);
+  }
+
+  // Resize the canvas to fill the container width while maintaining the video’s aspect ratio.
+  function resizeCanvas() {
+    const containerWidth = document.getElementById('recording-labeler').offsetWidth;
+    if (video.videoWidth) {
+      canvas.width  = containerWidth;
+      canvas.height = containerWidth * (video.videoHeight / video.videoWidth);
+    } else {
+      canvas.width  = containerWidth;
+      canvas.height = containerWidth * (360 / 640);
+    }
+  }
+
+  // ---------------- Control Button Handlers ----------------
+  playPauseBtn.addEventListener('click', () => {
+    if (video.paused) {
+      video.play();
+      playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+    } else {
+      video.pause();
+      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+    }
+  });
+
+  selectModeBtn.addEventListener('click', () => {
+    mode = "select";
+    selectModeBtn.classList.add('active');
+    deleteModeBtn.classList.remove('active');
+  });
+
+  deleteModeBtn.addEventListener('click', () => {
+    mode = "delete";
+    deleteModeBtn.classList.add('active');
+    selectModeBtn.classList.remove('active');
+  });
+
+  // ---------------- Class Management ----------------
+  function updateClassListUI() {
+    classListDiv.innerHTML = '';
+    classesList.forEach(cls => {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-outline-secondary';
+      // Highlight active class with a darker background.
+      if (activeClass && activeClass.label === cls.label) {
+        btn.classList.add('active');
+        btn.style.backgroundColor = '#ccc';
+      }
+      btn.style.borderColor = cls.color;
+      btn.textContent = cls.label;
+      btn.addEventListener('click', () => {
+        activeClass = cls;
+        updateClassListUI();
+      });
+      // Add a small delete button to allow class removal.
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn btn-sm btn-danger';
+      delBtn.innerHTML = '<i class="bi bi-x"></i>';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        classesList = classesList.filter(c => c.label !== cls.label);
+        if (activeClass && activeClass.label === cls.label) {
+          activeClass = classesList.length > 0 ? classesList[0] : null;
+        }
+        updateClassListUI();
+      });
+      btn.appendChild(delBtn);
+      classListDiv.appendChild(btn);
+    });
+  }
+
+  addClassBtn.addEventListener('click', () => {
+    const name = classNameInput.value.trim();
+    const color = classColorInput.value;
+    if (name && !classesList.find(c => c.label === name)) {
+      const newClass = { label: name, color: color };
+      classesList.push(newClass);
+      activeClass = newClass;
+      updateClassListUI();
+      classNameInput.value = '';
+    }
+  });
+
+  // ---------------- Canvas Event Handlers ----------------
+  // Handle click events on the canvas:
+  // - In "select" mode, add a new point (with left click = positive [1] and right click = negative [0])
+  // - In "delete" mode, delete a point if the click is near an existing point.
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = parseInt(e.clientX - rect.left);
+    const y = parseInt(e.clientY - rect.top);
+    const frameId = getFrameId();
+
+    if (!annotationsByFrame[frameId]) {
+      annotationsByFrame[frameId] = {};
+    }
+    let frameAnnotations = annotationsByFrame[frameId];
+
+    if (mode === "select") {
+      if (!activeClass) {
+        alert("Please add/select a class first.");
+        return;
+      }
+      if (!frameAnnotations[activeClass.label]) {
+        frameAnnotations[activeClass.label] = { points: [], pointLabels: [] };
+      }
+      // Determine the point label: left click (button 0) is positive (1), right click is negative (0)
+      const pointLabel = (e.button === 0) ? 1 : 0;
+      frameAnnotations[activeClass.label].points.push([x, y]);
+      frameAnnotations[activeClass.label].pointLabels.push(pointLabel);
+      sendSegmentationRequest();
+    } else if (mode === "delete") {
+      let found = false;
+      for (let cls in frameAnnotations) {
+        const pts = frameAnnotations[cls].points;
+        for (let i = 0; i < pts.length; i++) {
+          const pt = pts[i];
+          const dx = pt[0] - x;
+          const dy = pt[1] - y;
+          if (Math.sqrt(dx * dx + dy * dy) < 10) { // Tolerance: 10 pixels
+            frameAnnotations[cls].points.splice(i, 1);
+            frameAnnotations[cls].pointLabels.splice(i, 1);
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+      if (found) {
+        sendSegmentationRequest();
+      }
+    }
+  });
+
+  // In delete mode, as the mouse moves over the canvas, check if it hovers near a point.
+  canvas.addEventListener('mousemove', (e) => {
+    if (mode !== "delete") {
+      hoveredPoint = null;
+      return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const frameId = getFrameId();
+    const frameAnnotations = annotationsByFrame[frameId] || {};
+    hoveredPoint = null;
+    for (let cls in frameAnnotations) {
+      const pts = frameAnnotations[cls].points;
+      for (let i = 0; i < pts.length; i++) {
+        const pt = pts[i];
+        const dx = pt[0] - x;
+        const dy = pt[1] - y;
+        if (Math.sqrt(dx * dx + dy * dy) < 10) {
+          hoveredPoint = { cls: cls, index: i };
+          break;
+        }
+      }
+      if (hoveredPoint) break;
+    }
+  });
+
+  // ---------------- Seek Slider ----------------
+  // When the user drags the seek slider, update the video’s current time.
+  slider.addEventListener('input', function() {
+    video.currentTime = parseFloat(this.value);
+    drawFrame();
+  });
+
+  // As the video plays, update the slider.
+  video.addEventListener('timeupdate', () => {
+    slider.value = video.currentTime;
+  });
+
+  // ---------------- Segmentation Request ----------------
+  // When annotations change (via point selection or deletion), capture the full‐resolution
+  // video frame and the current frame’s annotations, then send a JSON payload to the server.
+  // The JSON payload has the following format:
+  // {
+  //   annotations: [
+  //     { label: "myClass", points: [[x, y], ...], pointLabels: [0, 1, ...]},
+  //     ...
+  //   ],
+  //   frame: <base64 encoded image of the current frame>
+  // }
+  function sendSegmentationRequest() {
+    const frameId = getFrameId();
+    const frameAnnotations = annotationsByFrame[frameId] || {};
+    const annotationsPayload = [];
+    for (let cls in frameAnnotations) {
+      annotationsPayload.push({
+        label: cls,
+        points: frameAnnotations[cls].points,
+        point_labels: frameAnnotations[cls].pointLabels
+      });
+    }
+    // Capture the current video frame at full resolution (not the resized canvas)
+    const offscreen = document.createElement('canvas');
+    offscreen.width  = video.videoWidth;
+    offscreen.height = video.videoHeight;
+    const offCtx = offscreen.getContext('2d');
+    offCtx.drawImage(video, 0, 0, offscreen.width, offscreen.height);
+    const dataURL = offscreen.toDataURL('image/png');
+    const frameData = dataURL.split(',')[1];
+
+    const payload = {
+      annotations: annotationsPayload,
+      frame: frameData
+    };
+
+    console.log(payload)
+
+    fetch('/inference/segmentation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Expecting an array of objects: [{ class: "myClass", mask: <base64 encoded image> }, ...]
+        masksByFrame[frameId] = data;
+      })
+      .catch(err => console.error(err));
+  }
+
+  // ---------------- Canvas Drawing ----------------
+  // Draw the current video frame, overlay segmentation masks (if any), and draw annotation points.
+  function drawFrame() {
+    // Draw the current video frame (resized to canvas dimensions)
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const frameId = getFrameId();
+
+    // Draw segmentation masks for the current frame.
+    if (masksByFrame[frameId]) {
+      masksByFrame[frameId].forEach(maskData => {
+        // Determine the class color for the mask (if available).
+        const clsObj = classesList.find(c => c.label === maskData.class);
+        const maskColor = clsObj ? clsObj.color : "#000000";
+        const img = new Image();
+        img.src = "data:image/png;base64," + maskData.mask;
+        img.onload = () => {
+          ctx.save();
+          ctx.globalAlpha = 0.5;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          ctx.globalAlpha = 1.0;
+          ctx.strokeStyle = maskColor;
+          ctx.lineWidth = 2;
+          // For now, we outline the full canvas; in a full implementation the mask outline would follow the mask’s boundary.
+          ctx.strokeRect(0, 0, canvas.width, canvas.height);
+          ctx.restore();
+        }
+      });
+    }
+
+    // Draw annotation points.
+    const frameAnnotations = annotationsByFrame[frameId] || {};
+    for (let cls in frameAnnotations) {
+      const pts = frameAnnotations[cls].points;
+      const pointLabels = frameAnnotations[cls].pointLabels;
+      for (let i = 0; i < pts.length; i++) {
+        const pt = pts[i];
+        ctx.beginPath();
+        ctx.arc(pt[0], pt[1], 5, 0, 2 * Math.PI);
+        // Positive (left click, label 1) is green; negative (right click, label 0) is red.
+        ctx.fillStyle = (pointLabels[i] === 1) ? "green" : "red";
+        ctx.fill();
+        // If in delete mode and this point is being hovered, draw a yellow outline.
+        if (mode === "delete" && hoveredPoint && hoveredPoint.cls === cls && hoveredPoint.index === i) {
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "yellow";
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // Use requestVideoFrameCallback (if available) to update the canvas as new video frames are presented.
+  function updateCanvas(now, metadata) {
+    drawFrame();
+    video.requestVideoFrameCallback(updateCanvas);
+  }
+
+  // ---------------- Initialization ----------------
+  video.addEventListener('loadedmetadata', () => {
+    resizeCanvas();
+    slider.max = video.duration;
+    video.currentTime = 0; // Render the first frame.
+    if ("requestVideoFrameCallback" in HTMLVideoElement.prototype) {
+      video.requestVideoFrameCallback(updateCanvas);
+    } else {
+      console.error("Your browser does not support requestVideoFrameCallback().");
+    }
+  });
+
+  window.addEventListener('resize', resizeCanvas);
+});
+</script>
+<style>
+  /* Ensure the canvas always fills the width of its container */
+  #canvas {
+    display: block;
+    width: 100%;
+  }
+  /* Give the seek slider a top margin */
+  #seek-slider {
+    margin-top: 10px;
+  }
+  /* Highlight active buttons (for mode and class selection) */
+  #controls button.active,
+  #class-list button.active {
+    background-color: #ccc;
+  }
+  /* Use flex gap to space out buttons in the control bar and class list */
+  #controls, #class-list {
+    gap: 0.5rem;
+  }
+</style>

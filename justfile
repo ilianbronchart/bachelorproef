@@ -3,7 +3,7 @@ check:
     poetry run ruff check --fix
     poetry run mypy . 
 
-run:
+up:
     poetry run fastapi dev src/main.py
     
 download-sam2-checkpoints:

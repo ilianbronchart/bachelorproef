@@ -1,11 +1,11 @@
 import base64
-from enum import Enum
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from enum import Enum
 
-from g3pylib.recordings.recording import Recording
 import numpy as np
+from g3pylib.recordings.recording import Recording
 
 
 @dataclass
@@ -45,7 +45,8 @@ class RecordingMetadata:
     def get_formatted(self):
         formatted_dict = self.to_dict()
         formatted_dict["duration"] = self._format_duration(self.duration)
-        formatted_dict["created"] = self._format_datetime(self.created)
+        dt = datetime.fromisoformat(self.created)
+        formatted_dict["created"] = dt.strftime("%d/%m/%y at %I:%M %p")
         return formatted_dict
 
     def _format_duration(self, duration: str) -> str:
@@ -56,9 +57,6 @@ class RecordingMetadata:
         remaining_seconds = total_seconds % 60
         return f"{hours:02d}:{minutes:02d}:{remaining_seconds:02d}"
 
-    def _format_datetime(self, datetime_str: str) -> str:
-        dt = datetime.fromisoformat(datetime_str)
-        return dt.strftime("%d/%m/%y at %I:%M %p")
 
 @dataclass
 class GazePoint:
@@ -71,15 +69,18 @@ class GazePoint:
     def position(self) -> tuple[float, float]:
         return (self.x, self.y)
 
+
 @dataclass
 class EyeGazeData:
     origin: np.ndarray
     direction: np.ndarray
     pupil_diameter: float
 
+
 class GazeDataType(Enum):
     GAZE: str = "gaze"
     MISSING: str = "missing"
+
 
 @dataclass
 class GazeData:
@@ -102,12 +103,12 @@ class GazeData:
                 gaze2d=None,
                 gaze3d=None,
                 eye_data_left=None,
-                eye_data_right=None
+                eye_data_right=None,
             )
 
         left_eye = gaze_data.get("eyeleft", {})
         right_eye = gaze_data.get("eyeright", {})
-        
+
         return GazeData(
             type=GazeDataType.GAZE,
             timestamp=data["timestamp"],
@@ -116,11 +117,15 @@ class GazeData:
             eye_data_left=EyeGazeData(
                 origin=np.array(left_eye["gazeorigin"]),
                 direction=np.array(left_eye["gazedirection"]),
-                pupil_diameter=left_eye["pupildiameter"]
-            ) if left_eye else None,
+                pupil_diameter=left_eye["pupildiameter"],
+            )
+            if left_eye
+            else None,
             eye_data_right=EyeGazeData(
                 origin=np.array(right_eye["gazeorigin"]),
                 direction=np.array(right_eye["gazedirection"]),
-                pupil_diameter=right_eye["pupildiameter"]
-            ) if right_eye else None
+                pupil_diameter=right_eye["pupildiameter"],
+            )
+            if right_eye
+            else None,
         )

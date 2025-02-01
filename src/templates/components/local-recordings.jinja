@@ -18,7 +18,7 @@
             <td class="text-center">
               <button class="btn btn-danger pt-1 px-2"
                       hx-trigger="click"
-                      hx-delete="/local/recordings/{{ recording.uuid }}"
+                      hx-delete="/recordings/local/{{ recording.uuid }}"
                       hx-indicator="find .spinner, find .bi"
                       hx-target="#local-recordings"
                       hx-target-500="#local-recordings-error-message"

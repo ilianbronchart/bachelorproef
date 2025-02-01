@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,11 +34,11 @@
       <hr>
       <ul class="nav nav-pills flex-column mb-auto">
         <li class="nav-item">
-          <a href="/recording"
+          <a href="/recordings"
              id="nav-browse"
              class="nav-link"
              aria-current="page"
-             hx-get="/recording"
+             hx-get="/recordings"
              hx-trigger="click"
              hx-swap="innerHTML"
              hx-target="#main-content"
@@ -47,43 +47,55 @@
             Browse Recordings
           </a>
         </li>
-      </ul>
-      <hr>
-      <div id="connection-status"
-           hx-get="/glasses/connection"
-           hx-trigger="load"
-           hx-target="#connection-status"
-           hx-swap="outerHTML"></div>
-    </div>
-    <div id="main-content" class="flex-grow-1 p-3 mt-5">
-      {% if content %}
-        {% include content %}
-      {% endif %}
-    </div>
-  </body>
-  <script>
+        <a href="/labeling"
+           id="nav-labeling"
+           class="nav-link"
+           aria-current="page"
+           hx-get="/labeling"
+           hx-trigger="click"
+           hx-swap="innerHTML"
+           hx-target="#main-content"
+           hx-push-url="true">
+          <i class="bi bi-bullseye"></i>
+          Simulation Labeling
+        </a>
+      </li>
+    </ul>
+    <hr>
+    {% include "components/connection-status.jinja" %}
+  </div>
+  <div id="main-content" class="flex-grow-1 p-3 mt-5">
+    {% if content %}
+      {% include content %}
+    {% endif %}
+  </div>
+</body>
+<script>
   function updateActiveNav() {
     // Remove active class from all nav links.
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
 
-    // Determine the active page based on the current pathname.
-    if (window.location.pathname.startsWith('/recording')) {
-      document.getElementById('nav-browse').classList.add('active');
-    }
+    const navMap = {
+      '/recordings': 'nav-browse',
+      '/labeling': 'nav-labeling'
+    };
+
+    Object.entries(navMap).forEach(([path, id]) => {
+      if (window.location.pathname.startsWith(path)) {
+        document.getElementById(id).classList.add('active');
+      }
+    });
   }
 
-  // Run after the initial page load.
   document.addEventListener("DOMContentLoaded", updateActiveNav);
 
-  // Listen for htmx swaps to update nav when the content changes.
   document.body.addEventListener('htmx:afterSwap', event => {
-    // Optional: Check that the swap target is the main content div.
+    // Listen for htmx swaps to update nav when the content changes.
     if (event.detail.target.id === 'main-content') {
       updateActiveNav();
     }
   });
 
-  // Also update if the user navigates using browser history (back/forward).
   window.addEventListener('popstate', updateActiveNav);
-  </script>
+</script>
 </html>
