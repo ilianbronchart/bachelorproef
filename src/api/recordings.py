@@ -1,9 +1,10 @@
 import src.logic.glasses as glasses
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Response
 from fastapi.responses import HTMLResponse
-from src.config import Template, templates
+from src.config import Request, Template, templates
 from src.core import DotDict as dd
 from src.core.utils import is_hx_request
+from src.db import Recording
 
 router = APIRouter(prefix="/recordings")
 
@@ -12,7 +13,7 @@ router = APIRouter(prefix="/recordings")
 async def recordings(request: Request):
     context = dd()
     context.request = request
-    context.local_recordings = [rec.get_formatted() for rec in glasses.get_local_recordings()]
+    context.local_recordings = [rec.get_formatted() for rec in Recording.get_all()]
 
     if is_hx_request(request):
         return templates.TemplateResponse(Template.RECORDINGS, context)
@@ -26,35 +27,7 @@ async def local_recordings(request: Request):
     """Retrieve metadata for all recordings in the local directory"""
     context = dd()
     context.request = request
-    context.local_recordings = glasses.get_local_recordings()
-
-    if is_hx_request(request):
-        return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context)
-
-    # TODO if not hx request, return 404 page
-
-
-@router.delete("/local/{recording_id}", response_class=HTMLResponse)
-async def delete_local_recording(request: Request, response: Response, recording_id: str):
-    """Delete a recording from the local directory"""
-    context = dd()
-    context.request = request
-    context.local_recordings = glasses.get_local_recordings()
-
-    try:
-        glasses.delete_local_recording(recording_id)
-        context.local_recordings = glasses.get_local_recordings()
-        return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context)
-    except Exception:
-        return Response(status_code=500, content="Error: Something went wrong, please try again later")
-
-
-@router.get("/local", response_class=HTMLResponse)
-async def local_recordings(request: Request):
-    """Retrieve metadata for all recordings in the local directory"""
-    context = dd()
-    context.request = request
-    context.local_recordings = glasses.get_local_recordings()
+    context.local_recordings = [rec.get_formatted() for rec in Recording.get_all()]
 
     if is_hx_request(request):
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context)
@@ -67,13 +40,17 @@ async def delete_local_recording(request: Request, recording_id: str):
     """Delete a recording from the local directory"""
     context = dd()
     context.request = request
-    context.local_recordings = glasses.get_local_recordings()
 
     try:
-        glasses.delete_local_recording(recording_id)
-        context.local_recordings = glasses.get_local_recordings()
+        recording = Recording.get(recording_id)
+        if recording is None:
+            return Response(status_code=404, content="Error: Recording not found")
+
+        recording.remove()
+        context.local_recordings = [rec.get_formatted() for rec in Recording.get_all()]
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context)
-    except Exception:
+    except Exception as e:
+        print(e)
         return Response(status_code=500, content="Error: Something went wrong, please try again later")
 
 
@@ -83,13 +60,12 @@ async def glasses_recordings(request: Request, response: Response):
     context = dd()
     context.request = request
     context.glasses_connected = await glasses.is_connected()
-    context.table_type = "glasses"
 
     if context.glasses_connected:
-        context.glasses_recordings = [rec.get_formatted() for rec in await glasses.get_glasses_recordings()]
+        context.glasses_recordings = [rec.get_formatted() for rec in await glasses.get_recordings()]
     else:
         context.target_url = "/recordings/glasses"
-        context.error_msg = "Failed to connect to Tobii Glasses"
+        context.error_msg = "Could not connect to Tobii Glasses"
         context.retry_target = "#glasses-recordings"
         return templates.TemplateResponse(
             Template.FAILED_CONNECTION, context, headers=response.headers, status_code=503
@@ -101,8 +77,8 @@ async def glasses_recordings(request: Request, response: Response):
     # TODO if not hx request, return 404 page
 
 
-@router.get("/glasses/{recording_id}/download", response_class=HTMLResponse)
-async def download_recording(request: Request, recording_id: str):
+@router.get("/glasses/{recording_uuid}/download", response_class=HTMLResponse)
+async def download_recording(request: Request, recording_uuid: str):
     """Download a recording from the glasses"""
     context = dd()
     context.request = request
@@ -114,15 +90,17 @@ async def download_recording(request: Request, recording_id: str):
         context.retry_target = "#glasses-recordings"
         return templates.TemplateResponse(Template.FAILED_CONNECTION, context, status_code=503)
     try:
-        recording = await glasses.get_recording(recording_id)
-        await glasses.download_recording(recording)
-        context.local_recordings = [rec.get_formatted() for rec in glasses.get_local_recordings()]
+        recording = await glasses.get_recording(recording_uuid)
+        if recording.is_complete():
+            return Response(status_code=409, content="Error: Recording already exists in local directory")
+
+        await recording.download()
+
+        context.local_recordings = [rec.get_formatted() for rec in Recording.get_all()]
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context, status_code=200)
     except KeyError:
         return Response(status_code=404, content="Error: Recording not found on the glasses")
     except RuntimeError:
         return Response(status_code=500, content="Error: Failed to download recording")
-    except ValueError:
-        return Response(status_code=409, content="Error: Recording already exists in local directory")
     except Exception:
         return Response(status_code=500, content="Error: Something went wrong, please try again later")

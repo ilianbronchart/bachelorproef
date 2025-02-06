@@ -168,3 +168,4 @@ checkpoints/*
 notebooks/output
 *.mp4
 notebooks/reference_images/*
+database.db

@@ -1,16 +1,27 @@
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
-from fastapi import Request
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
-from contextlib import asynccontextmanager
 
 import src.logic.glasses as glasses
 from src.api import inference, labeling, recordings
-from src.config import BaseContext, Template, app, templates
+from src.config import App, BaseContext, Template, templates
+from src.db.db import Base, engine
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):  # noqa: ARG001
+    # Create all database tables if they do not exist yet
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = App(lifespan=lifespan)
 app.include_router(recordings.router)
 app.include_router(inference.router)
 app.include_router(labeling.router)
+
 
 @dataclass
 class GlassesConnectionContext(BaseContext):

@@ -223,6 +223,7 @@ def crop_box(orig_img: np.ndarray, box: Boxes, mask: Masks | None = None) -> np.
 
     return orig_img[y1:y2, x1:x2]
 
+
 def get_mask(
     image: np.ndarray,
     model: FastSAM,
@@ -246,13 +247,7 @@ def get_mask(
         torch.Tensor: Merged mask
     """
     results: Results = model(
-        source=image, 
-        points=points,
-        labels=point_labels,
-        device="cuda",
-        verbose=False,
-        conf=conf,
-        iou=iou
+        source=image, points=points, labels=point_labels, device="cuda", verbose=False, conf=conf, iou=iou
     )[0]
 
     if len(results.masks) == 0:

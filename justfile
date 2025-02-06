@@ -1,7 +1,7 @@
 check:
     poetry run ruff format
     poetry run ruff check --fix
-    poetry run mypy . 
+    poetry run mypy . --strict
 
 up:
     poetry run fastapi dev src/main.py

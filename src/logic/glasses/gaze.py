@@ -79,7 +79,7 @@ def match_frames_to_gaze(num_frames: int, gaze_points: list[GazePoint], fps: flo
 
         frame_gaze_mapping.append(frame_gazes)
 
-    gaze_counts = set(sorted([len(points) for points in frame_gaze_mapping], reverse=True))
+    gaze_counts = {len(points) for points in frame_gaze_mapping}
     if 3 in gaze_counts:
         raise Warning("Detected 3 gaze points for a frame in the video. This is unexpected.")
 

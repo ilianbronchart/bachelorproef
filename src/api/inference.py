@@ -1,12 +1,11 @@
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
-from src.config import app, FAST_SAM_CHECKPOINT
-from ultralytics import FastSAM
-from src.logic.inference import fastsam
-
+from src.config import FAST_SAM_CHECKPOINT, Request
 from src.core.utils import base64_to_numpy
+from src.logic.inference import fastsam
+from ultralytics import FastSAM
 
 router = APIRouter(prefix="/inference")
 
@@ -25,18 +24,17 @@ class PointSegmentationRequest:
 
 
 @router.put("/FastSAM")
-async def load_sam_model():
-    if app.is_inference_running and app.inference_model is not None:
-        del app.inference_model
+async def load_sam_model(request: Request):
+    if request.app.is_inference_running and request.app.inference_model is not None:
+        del request.app.inference_model
 
-    app.inference_model = FastSAM(FAST_SAM_CHECKPOINT)
-    app.is_inference_running = True
+    request.app.inference_model = FastSAM(FAST_SAM_CHECKPOINT)
+    request.app.is_inference_running = True
     return Response(content="Model loaded successfully", status_code=200)
 
 
 @router.post("/FastSAM", response_class=JSONResponse)
 async def get_point_segmentation(request: Request, body: PointSegmentationRequest):
-    
     # read base64 encoded image from request to numpy array
     image = base64_to_numpy(body.frame)
     results = []
@@ -49,12 +47,7 @@ async def get_point_segmentation(request: Request, body: PointSegmentationReques
 
         # get masks for each annotation
         mask = fastsam.get_mask(
-            image=image,
-            model=app.inference_model,
-            points=points,
-            point_labels=point_labels,
-            conf=0.6,
-            iou=0.8
+            image=image, model=request.app.inference_model, points=points, point_labels=point_labels, conf=0.6, iou=0.8
         )
 
         print(mask.shape)

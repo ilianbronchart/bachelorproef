@@ -3,11 +3,11 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import src.logic.glasses as glasses
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Form
 from fastapi.responses import HTMLResponse
-from src.config import BaseContext, Template, app, templates
+from src.config import BaseContext, Request, Template, templates
 from src.core.utils import is_hx_request
-from src.logic.glasses.recording import recording_exists
+from src.db import Recording
 
 router = APIRouter(prefix="/labeling")
 
@@ -25,9 +25,10 @@ async def labeling(request: Request, recording_uuid: Annotated[str, Form()] | No
     context = LabelingContext(request=request)
 
     if recording_uuid:
-        if not recording_exists(recording_uuid):
+        recording = Recording.get(recording_uuid)
+        if recording is None:
             context.error_msg = "Recording does not exist"
-        elif app.is_inference_running:
+        elif request.app.is_inference_running:
             context.recording = glasses.get_local_recording(recording_uuid)
         else:
             context.error_msg = "Inference is not running, please try again"
