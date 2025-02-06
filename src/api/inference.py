@@ -1,42 +1,71 @@
 from dataclasses import dataclass
-from typing import List
+
 from fastapi import APIRouter, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse
-import base64
-from src.api.settings import app
+from fastapi.responses import JSONResponse
+from src.config import app, FAST_SAM_CHECKPOINT
+from ultralytics import FastSAM
+from src.logic.inference import fastsam
+
+from src.core.utils import base64_to_numpy
 
 router = APIRouter(prefix="/inference")
+
 
 @dataclass
 class PointAnnotation:
     label: str
-    points: List[tuple[int, int]]
-    point_labels: List[int]
+    points: list[tuple[int, int]]
+    point_labels: list[int]
+
 
 @dataclass
 class PointSegmentationRequest:
-    annotations: List[PointAnnotation]
+    annotations: list[PointAnnotation]
     frame: str
 
-@router.post("/", response_class=HTMLResponse)
-async def create_inference(response: Response, model_name: str):
-    print("Creating inference")
+
+@router.put("/FastSAM")
+async def load_sam_model():
+    if app.is_inference_running and app.inference_model is not None:
+        del app.inference_model
+
+    app.inference_model = FastSAM(FAST_SAM_CHECKPOINT)
     app.is_inference_running = True
-    return response
-    
-@router.post("/segmentation")
+    return Response(content="Model loaded successfully", status_code=200)
+
+
+@router.post("/FastSAM", response_class=JSONResponse)
 async def get_point_segmentation(request: Request, body: PointSegmentationRequest):
-    print(await request.json())
-    print(body)
+    
+    # read base64 encoded image from request to numpy array
+    image = base64_to_numpy(body.frame)
+    results = []
+    print(body.frame[:100])
 
-    # data = await request.json()
+    for annotation in body.annotations:
+        points = annotation.points
+        point_labels = annotation.point_labels
+        label = annotation.label
 
-    # # For now, generate a dummy mask for each class.
-    # # This dummy mask is a 1x1 transparent PNG encoded in base64.
-    # dummy_png_base64 = (
-    #     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAD"
-    #     "hgH9Z0Z/gAAAAABJRU5ErkJggg=="
-    # )
+        # get masks for each annotation
+        mask = fastsam.get_mask(
+            image=image,
+            model=app.inference_model,
+            points=points,
+            point_labels=point_labels,
+            conf=0.6,
+            iou=0.8
+        )
+
+        print(mask.shape)
+
+        # convert torch tensor to base64 encoded str
+
+        # results.append({
+        #         "class": label,
+        #         "mask": mask,
+        #         "point_label": point_labels[i]
+        #     })
 
     # dummy_masks = []
     # for cls in classes:

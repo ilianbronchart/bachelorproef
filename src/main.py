@@ -1,11 +1,12 @@
-
 from dataclasses import dataclass
+
 from fastapi import Request
 from fastapi.responses import HTMLResponse
+from contextlib import asynccontextmanager
 
 import src.logic.glasses as glasses
 from src.api import inference, labeling, recordings
-from src.api.settings import Template, app, templates, BaseContext
+from src.config import BaseContext, Template, app, templates
 
 app.include_router(recordings.router)
 app.include_router(inference.router)
@@ -16,16 +17,16 @@ class GlassesConnectionContext(BaseContext):
     glasses_connected: bool
     battery_level: int
 
+
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse(Template.INDEX, {"request": request})
+
 
 @app.get("/glasses/connection", response_class=HTMLResponse)
 async def glasses_connection(request: Request):
     """Retrieve connection details for the glasses"""
     context = GlassesConnectionContext(
-        request=request,
-        glasses_connected=await glasses.is_connected(), 
-        battery_level=await glasses.get_battery_level()
+        request=request, glasses_connected=await glasses.is_connected(), battery_level=await glasses.get_battery_level()
     )
     return templates.TemplateResponse(Template.CONNECTION_STATUS, context.to_dict())

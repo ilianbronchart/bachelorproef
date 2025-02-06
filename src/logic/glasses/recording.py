@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from g3pylib import connect_to_glasses
-from src.core.config import DEFAULT_GLASSES_HOSTNAME, RECORDINGS_PATH
+from src.config import DEFAULT_GLASSES_HOSTNAME, RECORDINGS_PATH
 from src.core.utils import download_file, load_json_files, save_json
 from src.logic.glasses.domain import RecordingMetadata
 

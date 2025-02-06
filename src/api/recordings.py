@@ -1,7 +1,7 @@
 import src.logic.glasses as glasses
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import HTMLResponse
-from src.api.settings import Template, templates
+from src.config import Template, templates
 from src.core import DotDict as dd
 from src.core.utils import is_hx_request
 

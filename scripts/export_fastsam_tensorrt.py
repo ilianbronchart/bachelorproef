@@ -1,4 +1,4 @@
-from src.core.config import CHECKPOINTS_PATH
+from src.config import CHECKPOINTS_PATH
 from ultralytics import FastSAM
 
 models = ["FastSAM-x.pt"]

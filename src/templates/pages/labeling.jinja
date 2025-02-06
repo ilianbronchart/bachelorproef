@@ -7,11 +7,7 @@
     {% else %}
         <h3>Select a recording to start labeling:</h3>
         <br>
-        <form hx-post="/inference"
-              method="post"
-              hx-on::before-request="handleRecordingSelection(event)"
-              hx-on::after-request="startLabeling()"
-              class="recording-select d-flex flex-row gap-3">
+        <div class="recording-select d-flex flex-row gap-3">
             <select class="select-recording form-select form-select-lg mb-3"
                     aria-label=".form-select-lg example"
                     onchange="updateButtonState(this)"
@@ -22,8 +18,13 @@
                     <option value="{{ recording.uuid }}">{{ recording.participant }} - {{ recording.created }}</option>
                 {% endfor %}
             </select>
-            <button type="submit" class="btn-select-recording btn btn-primary" disabled>Start Labeling</button>
-        </form>
+            <button type="submit"
+                    class="btn-select-recording btn btn-primary"
+                    disabled
+                    hx-put="/inference/FastSAM"
+                    hx-on::before-request="handleRecordingSelection(event)"
+                    hx-on::after-request="startLabeling()">Start Labeling</button>
+        </div>
     {% endif %}
 </div>
 <script>

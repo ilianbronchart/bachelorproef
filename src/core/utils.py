@@ -1,3 +1,5 @@
+import base64
+import io
 import json
 import os
 import tempfile
@@ -8,7 +10,7 @@ import aiohttp
 import cv2
 import numpy as np
 from fastapi import Request
-
+from PIL import Image
 
 async def download_file(url: str, target_path: Path) -> None:
     """
@@ -141,3 +143,9 @@ def cv2_video_frame_count(video_path: Path) -> int:
 
 def clamp(x, lower, upper):
     return max(lower, min(x, upper))
+
+def base64_to_numpy(img: str):
+    imgdata = base64.b64decode(img)
+    nparr = np.frombuffer(imgdata, np.uint8)
+    img_bgr = cv2.imdecode(nparr, flags=cv2.IMREAD_COLOR)
+    return cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)

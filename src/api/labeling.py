@@ -1,35 +1,32 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 import src.logic.glasses as glasses
-from fastapi import APIRouter, Form, Request, Response
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
-from src.api.settings import BaseContext, Template, app, templates
+from src.config import BaseContext, Template, app, templates
+from src.core.utils import is_hx_request
 from src.logic.glasses.recording import recording_exists
 
 router = APIRouter(prefix="/labeling")
 
+
 @dataclass
 class LabelingContext(BaseContext):
-    local_recordings: Optional[list[dict[str, Any]]] = None
-    recording: Optional[dict[str, Any]] = None
-    error_msg: Optional[str] = None
+    local_recordings: list[dict[str, Any]] | None = None
+    recording: dict[str, Any] | None = None
+    error_msg: str | None = None
     content: str = Template.LABELING
 
 
 @router.get("/", response_class=HTMLResponse)
-async def labeling(
-    request: Request, 
-    recording_uuid: Optional[Annotated[str, Form()]] = None
-):
+async def labeling(request: Request, recording_uuid: Annotated[str, Form()] | None = None):
     context = LabelingContext(request=request)
-
-    print("AMONG US?", app.is_inference_running)
 
     if recording_uuid:
         if not recording_exists(recording_uuid):
-            context.error_msg = "Recording does not exist"    
+            context.error_msg = "Recording does not exist"
         elif app.is_inference_running:
             context.recording = glasses.get_local_recording(recording_uuid)
         else:
@@ -40,4 +37,6 @@ async def labeling(
         recordings.sort(key=lambda x: datetime.fromisoformat(x.created), reverse=True)
         context.local_recordings = [rec.get_formatted() for rec in recordings]
 
+    if is_hx_request(request):
+        return templates.TemplateResponse(Template.LABELING, context.to_dict())
     return templates.TemplateResponse(Template.INDEX, context.to_dict())
