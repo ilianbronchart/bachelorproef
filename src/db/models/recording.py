@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Union
+from typing import List, Union
 
 from g3pylib.recordings.recording import Recording as GlassesRecording
 from sqlalchemy import Column, String
@@ -62,12 +62,12 @@ class Recording(Base):
         return parsed_data["name"] or "N/A"
 
     @staticmethod
-    def get(uuid: str | None = None) -> Union["Recording", None]:
+    def get(uuid: str) -> Union["Recording", None]:
         with Session(engine) as session:
             return session.query(Recording).filter(Recording.uuid == uuid).first()
 
     @staticmethod
-    def get_all() -> list["Recording"]:
+    def get_all() -> List["Recording"]:
         with Session(engine) as session:
             return session.query(Recording).all()
 

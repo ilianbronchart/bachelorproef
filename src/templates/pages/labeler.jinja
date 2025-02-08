@@ -1,0 +1,484 @@
+<div id="recording-labeler" class="container-fluid px-4">
+  <div class="row">
+    <!-- Left Column: Class List -->
+    <div class="col-md-3">
+      {% with
+        can_add_classes=True,
+        can_delete=False,
+        classes=classes,
+        onclick="window.labeler.setActiveClass"
+        %}
+        {% include "components/class-list.jinja" %}
+      {% endwith %}
+    </div>
+    <!-- Right Column: Canvas and Controls -->
+    <div class="col-md-9">
+      <!-- The canvas where video, masks, and annotations are drawn -->
+      <canvas id="canvas"
+              class="mb-3"
+              hx-on:click="window.labeler.canvasClick(event)"
+              hx-on:mousemove="window.labeler.canvasMouseMove(event)"></canvas>
+      <!-- Control Bar: Play, Select, Delete, Seek -->
+      <div id="controls" class="d-flex align-items-center gap-2 mb-3">
+        <button id="play-pause-btn"
+                class="btn btn-secondary"
+                type="button"
+                hx-on:click="window.labeler.togglePlayPause()">
+          <i class="bi bi-play-fill"></i>
+        </button>
+        <button id="select-mode-btn"
+                class="btn btn-secondary"
+                type="button"
+                hx-on:click="window.labeler.setMode('select')">
+          <i class="bi bi-cursor"></i>
+        </button>
+        <button id="delete-mode-btn"
+                class="btn btn-secondary"
+                type="button"
+                hx-on:click="window.labeler.setMode('delete')">
+          <i class="bi bi-trash"></i>
+        </button>
+        <input type="range"
+               id="seek-slider"
+               min="0"
+               value="0"
+               step="any"
+               class="form-range flex-grow-1">
+      </div>
+    </div>
+  </div>
+  <!-- Hidden Video (offscreen) -->
+  <video id="video"
+         width="640"
+         height="360"
+         controls
+         class="offscreen-video"
+         hx-on:loadedmetadata="window.labeler.videoLoadedMetadata(event)"
+         hx-on:timeupdate="window.labeler.videoTimeUpdate(event)">
+    <source src="{{ url_for('recordings', path=recording_uuid + '.mp4') }}"
+            type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</div>
+<script>
+  (function() {
+    // Cache DOM elements
+    const video          = document.getElementById('video');
+    const canvas         = document.getElementById('canvas');
+    const slider         = document.getElementById('seek-slider');
+    const ctx           = canvas.getContext('2d');
+    const playPauseBtn  = document.getElementById('play-pause-btn');
+    const selectModeBtn = document.getElementById('select-mode-btn');
+    const deleteModeBtn = document.getElementById('delete-mode-btn');
+
+    // Global labeler object to be used by hx-on event handlers.
+    window.labeler = {
+      video: video,
+      canvas: canvas,
+      slider: slider,
+      ctx: ctx,
+      playPauseBtn: playPauseBtn,
+      selectModeBtn: selectModeBtn,
+      deleteModeBtn: deleteModeBtn,
+
+      // Global state
+      annotationsByFrame: {}, // { frameId: { "classLabel": { points: [[x,y], ...], pointLabels: [1,0,...] }, ... } }
+      masksByFrame: {},       // { frameId: [ { class: "myClass", mask: <base64> }, ... ] }
+      classesList: {{ classes | tojson | safe }}, // Initial class list
+      activeClass: {{ classes[0] | tojson | safe if classes else 'null' }},      // Active class for annotations
+      initialAnnotations: {{ annotations | tojson | safe }},
+      mode: "select",         // "select" or "delete"
+      hoveredPoint: null,     // Used in delete mode to highlight a point
+
+      // Utility: use current video time (in ms) as a proxy frame identifier.
+      getFrameId: function() {
+        return Math.floor(this.video.currentTime * 1000);
+      },
+
+      // Resize canvas to fill container width and maintain video aspect ratio.
+      resizeCanvas: function() {
+        const containerWidth = document.getElementById('recording-labeler').offsetWidth;
+        if (this.video.videoWidth) {
+          this.canvas.width  = containerWidth;
+          this.canvas.height = containerWidth * (this.video.videoHeight / this.video.videoWidth);
+        } else {
+          this.canvas.width  = containerWidth;
+          this.canvas.height = containerWidth * (360 / 640);
+        }
+      },
+
+      // Draw the video frame, segmentation masks, and annotation points.
+      drawFrame: function() {
+        this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+        const frameId = this.getFrameId();
+
+        // Draw segmentation masks for the current frame.
+        if (this.masksByFrame[frameId]) {
+          this.masksByFrame[frameId].forEach(maskData => {
+            const clsObj   = this.classesList.find(c => c.label === maskData.class);
+            const maskColor= clsObj ? clsObj.color : "#000000";
+            const img = new Image();
+            img.src = "data:image/png;base64," + maskData.mask;
+            img.onload = () => {
+              this.ctx.save();
+              this.ctx.globalAlpha = 0.5;
+              this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+              this.ctx.globalAlpha = 1.0;
+              this.ctx.strokeStyle = maskColor;
+              this.ctx.lineWidth = 2;
+              // Outline the full canvas (placeholder for a proper mask outline)
+              this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
+              this.ctx.restore();
+            }
+          });
+        }
+
+        // Draw annotation points.
+        const frameAnnotations = this.annotationsByFrame[frameId] || {};
+        for (let cls in frameAnnotations) {
+          const pts         = frameAnnotations[cls].points;
+          const pointLabels = frameAnnotations[cls].pointLabels;
+          for (let i = 0; i < pts.length; i++) {
+            const pt = pts[i];
+            this.ctx.beginPath();
+            this.ctx.arc(pt[0], pt[1], 5, 0, 2 * Math.PI);
+            // Left click (1) is green; right click (0) is red.
+            this.ctx.fillStyle = (pointLabels[i] === 1) ? "green" : "red";
+            this.ctx.fill();
+            // If in delete mode and this point is hovered, draw a yellow outline.
+            if (this.mode === "delete" && this.hoveredPoint && this.hoveredPoint.cls === cls && this.hoveredPoint.index === i) {
+              this.ctx.lineWidth = 3;
+              this.ctx.strokeStyle = "yellow";
+              this.ctx.stroke();
+            }
+          }
+        }
+      },
+
+      // Called by the video frame callback to update the canvas.
+      updateCanvas: function(now, metadata) {
+        this.drawFrame();
+        this.video.requestVideoFrameCallback((now, metadata) => { this.updateCanvas(now, metadata); });
+      },
+
+      // Toggle video play/pause state.
+      togglePlayPause: function() {
+        if (this.video.paused) {
+          this.video.play();
+          this.playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+        } else {
+          this.video.pause();
+          this.playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+        }
+      },
+
+      // Set labeling mode to "select" or "delete" and update button styling.
+      setMode: function(newMode) {
+        this.mode = newMode;
+        if (newMode === "select") {
+          this.selectModeBtn.classList.add('active');
+          this.deleteModeBtn.classList.remove('active');
+        } else if (newMode === "delete") {
+          this.deleteModeBtn.classList.add('active');
+          this.selectModeBtn.classList.remove('active');
+        }
+      },
+
+      // Update the Class List UI.
+      updateClassListUI: function() {
+        this.classListDiv.innerHTML = '';
+        this.classesList.forEach(cls => {
+          const btn = document.createElement('button');
+          btn.className = 'btn btn-outline-secondary';
+          // Highlight the active class.
+          if (this.activeClass && this.activeClass.label === cls.label) {
+            btn.classList.add('active');
+            btn.style.backgroundColor = '#ccc';
+          }
+          btn.style.borderColor = cls.color;
+          btn.textContent = cls.label;
+          btn.addEventListener('click', () => {
+            this.activeClass = cls;
+            this.updateClassListUI();
+          });
+          // Add a delete button for removing classes.
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn btn-sm btn-danger';
+          delBtn.innerHTML = '<i class="bi bi-x"></i>';
+          delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.classesList = this.classesList.filter(c => c.label !== cls.label);
+            if (this.activeClass && this.activeClass.label === cls.label) {
+              this.activeClass = this.classesList.length > 0 ? this.classesList[0] : null;
+            }
+            this.updateClassListUI();
+          });
+          btn.appendChild(delBtn);
+          this.classListDiv.appendChild(btn);
+        });
+      },
+
+      // Add a new class from the UI inputs.
+      addClass: function() {
+        const name  = this.classNameInput.value.trim();
+        const color = this.classColorInput.value;
+        if (name && !this.classesList.find(c => c.label === name)) {
+          const newClass = { label: name, color: color };
+          this.classesList.push(newClass);
+          this.activeClass = newClass;
+          this.updateClassListUI();
+          this.classNameInput.value = '';
+        }
+      },
+
+      // Handle click events on the canvas.
+      canvasClick: function(event) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = parseInt(event.clientX - rect.left);
+        const y = parseInt(event.clientY - rect.top);
+        const frameId = this.getFrameId();
+
+        if (!this.annotationsByFrame[frameId]) {
+          this.annotationsByFrame[frameId] = {};
+        }
+        let frameAnnotations = this.annotationsByFrame[frameId];
+
+        if (this.mode === "select") {
+          if (!this.activeClass) {
+            alert("Please add/select a class first.");
+            return;
+          }
+          if (!frameAnnotations[this.activeClass.label]) {
+            frameAnnotations[this.activeClass.label] = { points: [], pointLabels: [] };
+          }
+          // Left click (button 0) is positive (1), right click is negative (0).
+          const pointLabel = (event.button === 0) ? 1 : 0;
+          frameAnnotations[this.activeClass.label].points.push([x, y]);
+          frameAnnotations[this.activeClass.label].pointLabels.push(pointLabel);
+          this.sendSegmentationRequest();
+        } else if (this.mode === "delete") {
+          let found = false;
+          for (let cls in frameAnnotations) {
+            const pts = frameAnnotations[cls].points;
+            for (let i = 0; i < pts.length; i++) {
+              const pt = pts[i];
+              const dx = pt[0] - x;
+              const dy = pt[1] - y;
+              if (Math.sqrt(dx * dx + dy * dy) < 10) { // 10px tolerance
+                frameAnnotations[cls].points.splice(i, 1);
+                frameAnnotations[cls].pointLabels.splice(i, 1);
+                found = true;
+                break;
+              }
+            }
+            if (found) break;
+          }
+          if (found) {
+            this.sendSegmentationRequest();
+          }
+        }
+      },
+
+      // In delete mode, track the mouse movement to highlight points for deletion.
+      canvasMouseMove: function(event) {
+        if (this.mode !== "delete") {
+          this.hoveredPoint = null;
+          return;
+        }
+        const rect = this.canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const frameId = this.getFrameId();
+        const frameAnnotations = this.annotationsByFrame[frameId] || {};
+        this.hoveredPoint = null;
+        for (let cls in frameAnnotations) {
+          const pts = frameAnnotations[cls].points;
+          for (let i = 0; i < pts.length; i++) {
+            const pt = pts[i];
+            const dx = pt[0] - x;
+            const dy = pt[1] - y;
+            if (Math.sqrt(dx * dx + dy * dy) < 10) {
+              this.hoveredPoint = { cls: cls, index: i };
+              break;
+            }
+          }
+          if (this.hoveredPoint) break;
+        }
+      },
+
+      // Handle seek slider input.
+      sliderInput: function(event) {
+        this.video.currentTime = parseFloat(event.target.value);
+        this.drawFrame();
+      },
+
+      // Called when the video metadata is loaded.
+      videoLoadedMetadata: function(event) {
+        this.resizeCanvas();
+        this.slider.max = this.video.duration;
+        this.video.currentTime = 0; // Render first frame.
+        if ("requestVideoFrameCallback" in HTMLVideoElement.prototype) {
+          this.video.requestVideoFrameCallback((now, metadata) => { this.updateCanvas(now, metadata); });
+        } else {
+          console.error("Your browser does not support requestVideoFrameCallback().");
+        }
+      },
+
+      // Update the seek slider as the video plays.
+      videoTimeUpdate: function(event) {
+        this.slider.value = this.video.currentTime;
+      },
+
+      // Send segmentation request with the current frame and annotations.
+      sendSegmentationRequest: function() {
+        const frameId = this.getFrameId();
+        const frameAnnotations = this.annotationsByFrame[frameId] || {};
+        const annotationsPayload = [];
+        for (let cls in frameAnnotations) {
+          annotationsPayload.push({
+            label: cls,
+            points: frameAnnotations[cls].points,
+            point_labels: frameAnnotations[cls].pointLabels
+          });
+        }
+
+        // Capture full-resolution video frame.
+        const offscreen = document.createElement('canvas');
+        offscreen.width  = this.video.videoWidth;
+        offscreen.height = this.video.videoHeight;
+        const offCtx = offscreen.getContext('2d');
+        offCtx.drawImage(this.video, 0, 0, offscreen.width, offscreen.height);
+        const dataURL = offscreen.toDataURL('image/png');
+        const frameData = dataURL.split(',')[1];
+
+        // Send segmentation request
+        fetch('/labeling/segmentation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            annotations: annotationsPayload,
+            frame: frameData
+          })
+        })
+          .then(response => response.json())
+          .then(data => {
+            this.masksByFrame[frameId] = data;
+            // Save annotations to database after successful segmentation
+            this.saveAnnotations(frameId, annotationsPayload);
+          })
+          .catch(err => console.error(err));
+      },
+
+      // Save annotations to the database
+      saveAnnotations: function(frameId, annotations) {
+        fetch('/labeling/{{ calibration_recording.id if calibration_recording else "" }}/annotations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            frame_id: frameId,
+            annotations: annotations
+          })
+        }).catch(err => console.error('Failed to save annotations:', err));
+      },
+
+      // Load initial data
+      initializeAnnotations() {
+        // Convert initial annotations to our frame-based format
+        // For now, all annotations are shown on frame 0 since we don't store frame info yet
+        const frameId = 0;
+        this.annotationsByFrame[frameId] = {};
+        
+        this.initialAnnotations.forEach(annotation => {
+          this.annotationsByFrame[frameId][annotation.label] = {
+            points: annotation.points,
+            pointLabels: annotation.point_labels
+          };
+        });
+
+        // Request segmentation masks for initial annotations
+        if (Object.keys(this.annotationsByFrame[frameId] || {}).length > 0) {
+          this.sendSegmentationRequest();
+        }
+      },
+
+      // Override loadInitialClasses since we now get them from the backend
+      async loadInitialClasses() {
+        this.updateClassListUI();
+      },
+
+      // Modified class management functions
+      setActiveClass: function(element, label) {
+        // Remove active class from all elements
+        document.querySelectorAll('.class-list .list-group-item').forEach(item => {
+          item.classList.remove('active');
+        });
+        // Add active class to clicked element
+        element.classList.add('active');
+        // Set active class in state
+        this.activeClass = this.classesList.find(c => c.label === label);
+      },
+    };
+
+    // Initialize annotations when the video is loaded
+    video.addEventListener('loadedmetadata', () => {
+      window.labeler.initializeAnnotations();
+      // Activate first class if available
+      if (window.labeler.classesList.length > 0) {
+        const firstClassItem = document.querySelector('.class-list .list-group-item');
+        if (firstClassItem) {
+          window.labeler.setActiveClass(firstClassItem, window.labeler.classesList[0].label);
+        }
+      }
+    });
+
+    // Update canvas size when the window is resized.
+    window.addEventListener('resize', () => { window.labeler.resizeCanvas(); });
+  })();
+</script>
+<style>
+  /* Ensure the canvas fills its container width */
+  #canvas {
+    width: 100%;
+    display: block;
+    background-color: #000;
+  }
+  .offscreen-video {
+    position: absolute;
+    left: -9999px;
+  }
+  /* Control styling */
+  #controls {
+    background: rgba(0,0,0,.03);
+    padding: 1rem;
+    border-radius: 0.375rem;
+  }
+  #controls button.active {
+    background-color: #666;
+    color: white;
+  }
+  /* Add vertical spacing between components */
+  #recording-labeler {
+    min-height: calc(100vh - 56px);  /* Subtract navbar height */
+  }
+  #recording-labeler .row {
+    min-height: inherit;
+  }
+  #recording-labeler .col-md-3 {
+    background: rgba(0,0,0,.01);
+    padding: 1.5rem;
+    border-right: 1px solid rgba(0,0,0,.1);
+  }
+  #recording-labeler .col-md-9 {
+    padding: 1.5rem;
+  }
+  /* Make list take full height */
+  .class-management {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .class-list {
+    flex-grow: 1;
+    overflow-y: auto;
+  }
+</style>

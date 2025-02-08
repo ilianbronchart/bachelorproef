@@ -51,11 +51,11 @@ class Template:
     # Pages
     INDEX: str = "index.jinja"
     RECORDINGS: str = "pages/recordings.jinja"
-    LABELING: str = "pages/labeling.jinja"
+    SIMROOMS: str = "pages/simrooms.jinja"
+    LABELER: str = "pages/labeler.jinja"
 
     # Components
     CONNECTION_STATUS: str = "components/connection-status.jinja"
     LOCAL_RECORDINGS: str = "components/local-recordings.jinja"
     GLASSES_RECORDINGS: str = "components/glasses-recordings.jinja"
-    LABELER: str = "components/labeler.jinja"
     FAILED_CONNECTION: str = "components/failed-connection.jinja"

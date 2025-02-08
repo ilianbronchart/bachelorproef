@@ -47,17 +47,17 @@
             Browse Recordings
           </a>
         </li>
-        <a href="/labeling"
-           id="nav-labeling"
+        <a href="/simrooms"
+           id="nav-simrooms"
            class="nav-link"
            aria-current="page"
-           hx-get="/labeling"
+           hx-get="/simrooms"
            hx-trigger="click"
            hx-swap="innerHTML"
            hx-target="#main-content"
            hx-push-url="true">
           <i class="bi bi-bullseye"></i>
-          Simulation Labeling
+          Manage Sim Rooms
         </a>
       </li>
     </ul>
@@ -77,7 +77,7 @@
 
     const navMap = {
       '/recordings': 'nav-browse',
-      '/labeling': 'nav-labeling'
+      '/simrooms': 'nav-simrooms'
     };
 
     Object.entries(navMap).forEach(([path, id]) => {
