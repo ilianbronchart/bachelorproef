@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from src.api.models.labeling import AnnotationSaveRequest, PointSegmentationRequest
 from src.config import FAST_SAM_CHECKPOINT, BaseContext, Request, Template, templates
 from src.core.utils import base64_to_numpy, is_hx_request
-from src.db import CalibrationRecording, engine
+from src.db import CalibrationRecording, engine, SimRoom
 from ultralytics import FastSAM
 
 router = APIRouter(prefix="/labeling")
@@ -16,24 +16,9 @@ router = APIRouter(prefix="/labeling")
 class LabelingContext(BaseContext):
     recording_uuid: str | None = None
     calibration_recording: CalibrationRecording | None = None
-    # Add more specific type annotations for these lists
-    classes: list[dict[str, str | int | bool]] = field(default_factory=list)
     annotations: list[dict[str, str | list[tuple[float, float]] | list[int]]] = field(default_factory=list)
+    classes: list[dict] = field(default_factory=list)
     content: str = Template.LABELER
-
-    @classmethod
-    def create_from_calibration(
-        cls, request: Request, calibration_recording: CalibrationRecording
-    ) -> "LabelingContext":
-        """Factory method to create context from a calibration recording"""
-        context = cls(request=request)
-        labeling_data = calibration_recording.get_labeling_data()
-        context.classes = labeling_data["classes"]
-        context.annotations = labeling_data["annotations"]
-        context.calibration_recording = labeling_data["calibration_recording"]
-        context.recording_uuid = labeling_data["recording_uuid"]
-        return context
-
 
 async def ensure_inference_running(request: Request) -> tuple[bool, str]:
     """Ensure inference model is loaded and running"""
@@ -60,15 +45,23 @@ async def labeling(request: Request, calibration_id: int | None = None):
         return Response(status_code=400, content="Error: No calibration_id provided")
 
     with Session(engine) as session:
-        cal_rec = session.query(CalibrationRecording).filter(CalibrationRecording.id == calibration_id).first()
+        cal_rec = (
+            session.query(CalibrationRecording)
+            .filter(CalibrationRecording.id == calibration_id)
+            .first()
+        )
 
         if not cal_rec:
             return Response(status_code=404, content="Error: Calibration recording not found")
 
-        context.classes = [_cls.to_dict() for _cls in cal_rec.sim_room.classes]
+        sim_room = session.query(SimRoom).get(cal_rec.sim_room_id)
+        if not sim_room:
+            return Response(status_code=404, content="Error: Sim Room not found")
+
         context.annotations = [annotation.to_dict() for annotation in cal_rec.annotations]
         context.calibration_recording = cal_rec
         context.recording_uuid = cal_rec.recording_uuid
+        context.classes = [cls.to_dict() for cls in sim_room.classes]
 
     if is_hx_request(request):
         return templates.TemplateResponse(Template.LABELER, context.to_dict())

@@ -104,21 +104,24 @@ async def add_sim_room_class(
             sim_room = session.query(SimRoom).get(sim_room_id)
             if not sim_room:
                 return Response(status_code=404, content="Sim Room not found")
-            session.add(
-                SimRoomClass(
-                    sim_room_id=sim_room.id,
-                    class_name=class_name,
-                    color=color,
-                )
+            new_class = SimRoomClass(
+                sim_room_id=sim_room.id,
+                class_name=class_name,
+                color=color,
             )
+            session.add(new_class)
             session.commit()
+            session.refresh(new_class)  # Refresh to get the ID
+            # Get updated classes
+            classes = [cls.to_dict() for cls in sim_room.classes]
     except Exception as e:
         return Response(status_code=500, content=f"Error: {str(e)}")
 
-    # Add hx-push-url header to update URL with sim room id
-    headers = {"HX-Push-Url": f"/simrooms/?sim_room_id={sim_room_id}"}
-    context = build_simrooms_context(request, selected_sim_room_id=sim_room_id)
-    return templates.TemplateResponse(Template.SIMROOMS, context.to_dict(), headers=headers)
+    # Return just the class list component
+    return templates.TemplateResponse(
+        "components/class-list.jinja",
+        {"request": request, "sim_room_id": sim_room_id, "classes": classes}
+    )
 
 
 @router.delete("/{sim_room_id}/classes/{class_id}", response_class=HTMLResponse)
@@ -130,11 +133,17 @@ async def delete_sim_room_class(request: Request, sim_room_id: int, class_id: in
                 return Response(status_code=404, content="Class not found")
             session.delete(sim_class)
             session.commit()
+            # Get updated classes
+            sim_room = session.query(SimRoom).get(sim_room_id)
+            classes = [cls.to_dict() for cls in sim_room.classes]
     except Exception as e:
         return Response(status_code=500, content=f"Error: {str(e)}")
-    headers = {"HX-Push-Url": f"/simrooms/?sim_room_id={sim_room_id}"}
-    context = build_simrooms_context(request, selected_sim_room_id=sim_room_id)
-    return templates.TemplateResponse(Template.SIMROOMS, context.to_dict(), headers=headers)
+
+    # Return just the class list component
+    return templates.TemplateResponse(
+        "components/class-list.jinja",
+        {"request": request, "sim_room_id": sim_room_id, "classes": classes}
+    )
 
 
 @router.post("/{sim_room_id}/calibration_recordings", response_class=HTMLResponse)
@@ -175,21 +184,15 @@ async def delete_calibration_recording(request: Request, sim_room_id: int, calib
 
 
 @router.put("/{sim_room_id}/classes/{class_id}/color", response_class=JSONResponse)
-async def update_sim_room_class_color(
-    request: Request, 
-    sim_room_id: int, 
-    class_id: int,
-    color: str = Form(...)  # Use Form to get the color from form data
-):
+async def update_class_color(request: Request, sim_room_id: int, class_id: int, color: str = Form(...)):
     try:
         with Session(engine) as session:
             sim_class = session.query(SimRoomClass).get(class_id)
             if not sim_class:
                 return Response(status_code=404, content="Class not found")
             sim_class.color = color
-            session.add(sim_class)  # Add this to ensure the change is tracked
             session.commit()
+            # Return the updated class data
+            return JSONResponse(content=sim_class.to_dict())
     except Exception as e:
         return Response(status_code=500, content=f"Error: {str(e)}")
-        
-    return JSONResponse(content={"success": True})

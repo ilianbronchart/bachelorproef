@@ -3,12 +3,7 @@
   <div class="row">
     <!-- Left Column: Class List -->
     <div class="col-md-3">
-      {% with
-        can_add_classes=True,
-        can_delete=True,
-        classes=classes,
-        onclick="window.labeler.setActiveClass"
-        %}
+      {% with sim_room_id=calibration_recording.sim_room_id, classes=classes %}
         {% include "components/class-list.jinja" %}
       {% endwith %}
     </div>
@@ -66,13 +61,13 @@
     // Cache DOM elements
     const video          = document.getElementById('video');
     const canvas         = document.getElementById('canvas');
-    const slider         = document.getElementById('seek-slider');
+    const slider        = document.getElementById('seek-slider');
     const ctx           = canvas.getContext('2d');
     const playPauseBtn  = document.getElementById('play-pause-btn');
     const selectModeBtn = document.getElementById('select-mode-btn');
     const deleteModeBtn = document.getElementById('delete-mode-btn');
 
-    // Global labeler object to be used by hx-on event handlers.
+    // Global labeler object to be used by hx-on event handlers
     window.labeler = {
       video: video,
       canvas: canvas,
@@ -85,9 +80,6 @@
       // Global state
       annotationsByFrame: {}, // { frameId: { "classLabel": { points: [[x,y], ...], pointLabels: [1,0,...] }, ... } }
       masksByFrame: {},       // { frameId: [ { class: "myClass", mask: <base64> }, ... ] }
-      classesList: {{ classes | tojson | safe }}, // Initial class list
-      activeClass: {{ classes[0] | tojson | safe if classes else 'null' }},      // Active class for annotations
-      initialAnnotations: {{ annotations | tojson | safe }},
       mode: "select",         // "select" or "delete"
       hoveredPoint: null,     // Used in delete mode to highlight a point
 
@@ -116,8 +108,8 @@
         // Draw segmentation masks for the current frame.
         if (this.masksByFrame[frameId]) {
           this.masksByFrame[frameId].forEach(maskData => {
-            const clsObj   = this.classesList.find(c => c.label === maskData.class);
-            const maskColor= clsObj ? clsObj.color : "#000000";
+            const clsObj = window.classManager.classes.find(c => c.label === maskData.class);
+            const maskColor = clsObj ? clsObj.color : "#000000";
             const img = new Image();
             img.src = "data:image/png;base64," + maskData.mask;
             img.onload = () => {
@@ -127,7 +119,6 @@
               this.ctx.globalAlpha = 1.0;
               this.ctx.strokeStyle = maskColor;
               this.ctx.lineWidth = 2;
-              // Outline the full canvas (placeholder for a proper mask outline)
               this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
               this.ctx.restore();
             }
@@ -185,53 +176,6 @@
         }
       },
 
-      // Update the Class List UI.
-      updateClassListUI: function() {
-        this.classListDiv.innerHTML = '';
-        this.classesList.forEach(cls => {
-          const btn = document.createElement('button');
-          btn.className = 'btn btn-outline-secondary';
-          // Highlight the active class.
-          if (this.activeClass && this.activeClass.label === cls.label) {
-            btn.classList.add('active');
-            btn.style.backgroundColor = '#ccc';
-          }
-          btn.style.borderColor = cls.color;
-          btn.textContent = cls.label;
-          btn.addEventListener('click', () => {
-            this.activeClass = cls;
-            this.updateClassListUI();
-          });
-          // Add a delete button for removing classes.
-          const delBtn = document.createElement('button');
-          delBtn.className = 'btn btn-sm btn-danger';
-          delBtn.innerHTML = '<i class="bi bi-x"></i>';
-          delBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.classesList = this.classesList.filter(c => c.label !== cls.label);
-            if (this.activeClass && this.activeClass.label === cls.label) {
-              this.activeClass = this.classesList.length > 0 ? this.classesList[0] : null;
-            }
-            this.updateClassListUI();
-          });
-          btn.appendChild(delBtn);
-          this.classListDiv.appendChild(btn);
-        });
-      },
-
-      // Add a new class from the UI inputs.
-      addClass: function() {
-        const name  = this.classNameInput.value.trim();
-        const color = this.classColorInput.value;
-        if (name && !this.classesList.find(c => c.label === name)) {
-          const newClass = { label: name, color: color };
-          this.classesList.push(newClass);
-          this.activeClass = newClass;
-          this.updateClassListUI();
-          this.classNameInput.value = '';
-        }
-      },
-
       // Handle click events on the canvas.
       canvasClick: function(event) {
         const rect = this.canvas.getBoundingClientRect();
@@ -245,17 +189,18 @@
         let frameAnnotations = this.annotationsByFrame[frameId];
 
         if (this.mode === "select") {
-          if (!this.activeClass) {
+          const activeClass = window.classManager.activeClass;
+          if (!activeClass) {
             alert("Please add/select a class first.");
             return;
           }
-          if (!frameAnnotations[this.activeClass.label]) {
-            frameAnnotations[this.activeClass.label] = { points: [], pointLabels: [] };
+          if (!frameAnnotations[activeClass.label]) {
+            frameAnnotations[activeClass.label] = { points: [], pointLabels: [] };
           }
           // Left click (button 0) is positive (1), right click is negative (0).
           const pointLabel = (event.button === 0) ? 1 : 0;
-          frameAnnotations[this.activeClass.label].points.push([x, y]);
-          frameAnnotations[this.activeClass.label].pointLabels.push(pointLabel);
+          frameAnnotations[activeClass.label].points.push([x, y]);
+          frameAnnotations[activeClass.label].pointLabels.push(pointLabel);
           this.sendSegmentationRequest();
         } else if (this.mode === "delete") {
           let found = false;
@@ -385,7 +330,6 @@
       // Load initial data
       initializeAnnotations() {
         // Convert initial annotations to our frame-based format
-        // For now, all annotations are shown on frame 0 since we don't store frame info yet
         const frameId = 0;
         this.annotationsByFrame[frameId] = {};
         
@@ -396,56 +340,38 @@
           };
         });
 
-        // Request segmentation masks for initial annotations
+        // Select first class if none is selected
+        if (!window.classManager.activeClass && window.classManager.classes.length > 0) {
+          const firstClassLi = document.querySelector('.class-list li[data-class-id]');
+          if (firstClassLi) {
+            window.classManager.setActiveClass(firstClassLi, window.classManager.classes[0].label);
+          }
+        }
+
         if (Object.keys(this.annotationsByFrame[frameId] || {}).length > 0) {
           this.sendSegmentationRequest();
         }
-      },
-
-      // Override loadInitialClasses since we now get them from the backend
-      async loadInitialClasses() {
-        this.updateClassListUI();
-      },
-
-      // Modified class management functions
-      setActiveClass: function(element, label) {
-        // Remove active class from all elements
-        document.querySelectorAll('.class-list .list-group-item').forEach(item => {
-          item.classList.remove('active');
-        });
-        // Add active class to clicked element
-        element.classList.add('active');
-        // Set active class in state
-        this.activeClass = this.classesList.find(c => c.label === label);
-      },
+      }
     };
 
     // Initialize annotations when the video is loaded
     video.addEventListener('loadedmetadata', () => {
       window.labeler.initializeAnnotations();
-      // Activate first class if available
-      if (window.labeler.classesList.length > 0) {
-        const firstClassItem = document.querySelector('.class-list .list-group-item');
-        if (firstClassItem) {
-          window.labeler.setActiveClass(firstClassItem, window.labeler.classesList[0].label);
-        }
-      }
     });
 
-    // Update canvas size when the window is resized.
+    // Update canvas size when the window is resized
     window.addEventListener('resize', () => { window.labeler.resizeCanvas(); });
   })();
 </script>
 <style>
-  /* Ensure the canvas fills its container width */
-  #canvas {
-    width: 100%;
-    display: block;
-    background-color: #000;
-  }
   .offscreen-video {
     position: absolute;
     left: -9999px;
+  }
+  #canvas {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 0.375rem;
   }
   /* Control styling */
   #controls {

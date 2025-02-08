@@ -1,40 +1,41 @@
-<div id="class-management"
+<div id="class-management-{{ sim_room_id }}"
      class="class-management"
      {% if sim_room_id %}data-sim-room-id="{{ sim_room_id }}"{% endif %}>
-  {% if can_add_classes %}
-    <form class="mb-3"
-          {% if add_endpoint %} hx-post="{{ add_endpoint }}" hx-target="{{ add_target }}" hx-target-4xx="#error" hx-target-5xx="#error" hx-swap="{{ add_swap }}" {% endif %}
-          hx-on::before-request="clearError()">
-      <div class="mb-3">
-        <label for="class-name" class="form-label">New Object Name:</label>
-        <div class="d-flex gap-2 align-items-stretch">
-          <div class="class-color position-relative">
-            <input type="text"
-                   id="colorpicker-input"
-                   class="color-input"
-                   name="color"
-                   value="#198754"
-                   data-color="#198754">
-            <div id="colorpicker-preview"
-                 class="color-preview flex-shrink-0 form-color-preview"
-                 style="background-color: #198754"></div>
-          </div>
+  <form class="mb-3"
+        hx-post="/simrooms/{{ sim_room_id }}/classes/add"
+        hx-target="#class-management-{{ sim_room_id }}"
+        hx-target-4xx="#error"
+        hx-target-5xx="#error"
+        hx-swap="outerHTML"
+        hx-on::before-request="clearError()">
+    <div class="mb-3">
+      <label for="class-name" class="form-label">New Object Name:</label>
+      <div class="d-flex gap-2 align-items-stretch">
+        <div class="class-color position-relative">
           <input type="text"
-                 class="form-control"
-                 id="class-name"
-                 name="class_name"
-                 placeholder="Enter object name"
-                 required>
+                 id="colorpicker-input"
+                 class="color-input"
+                 name="color"
+                 value="#198754"
+                 data-color="#198754">
+          <div id="colorpicker-preview"
+               class="color-preview flex-shrink-0 form-color-preview default-preview"></div>
         </div>
+        <input type="text"
+               class="form-control"
+               id="class-name"
+               name="class_name"
+               placeholder="Enter object name"
+               required>
       </div>
-      <button type="submit" class="btn btn-success">Add Object</button>
-    </form>
-  {% endif %}
+    </div>
+    <button type="submit" class="btn btn-success">Add Object</button>
+  </form>
   <ul class="list-group class-list user-select-none">
     {% if classes|length == 0 %}<li class="list-group-item text-muted text-center">No objects defined</li>{% endif %}
     {% for class in classes %}
       <li class="list-group-item d-flex justify-content-between align-items-center transition-bg {% if class.active %}active{% endif %}"
-          {% if onclick %}onclick="{{ onclick }}(this, '{{ class.label }}')"{% endif %}
+          onclick="window.classManager.setActiveClass(this, '{{ class.label }}')"
           data-class-id="{{ class.id }}">
         <div class="d-flex align-items-center gap-2">
           <div class="class-color position-relative">
@@ -48,13 +49,17 @@
           </div>
           <span class="class-label">{{ class.label }}</span>
         </div>
-        {% if can_delete %}
-          <button class="btn btn-sm btn-danger"
-                  {% if delete_endpoint %} hx-confirm="Are you sure? This will delete all annotations linked to this class." hx-delete="{{ delete_endpoint }}/{{ class.id }}" hx-target="{{ delete_target }}" hx-target-400="#error" hx-target-404="#error" hx-target-500="#error" hx-swap="{{ delete_swap }}" {% endif %}
-                  hx-on::before-request="clearError()">
-            <i class="bi bi-trash"></i>
-          </button>
-        {% endif %}
+        <button class="btn btn-sm btn-danger"
+                hx-confirm="Are you sure? This will delete all annotations linked to this class."
+                hx-delete="/simrooms/{{ sim_room_id }}/classes/{{ class.id }}"
+                hx-target="#class-management-{{ sim_room_id }}"
+                hx-target-400="#error"
+                hx-target-404="#error"
+                hx-target-500="#error"
+                hx-swap="outerHTML"
+                hx-on::before-request="clearError()">
+          <i class="bi bi-trash"></i>
+        </button>
       </li>
     {% endfor %}
   </ul>
@@ -111,17 +116,28 @@
   .colorpicker-bs-popover {
     z-index: 1060;
   }
+  .default-preview {
+    background-color: #198754;
+  }
 </style>
 <!-- Pickr color picker dependencies -->
 <link rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.es5.min.js"></script>
 <script>
-  function initColorPickers() {
-    // Common Pickr config
+  if (window.__classListScriptInitialized) {
+    // Reinitialize listeners on subsequent swaps.
+    initColorPickerListeners();
+  } else {
+    window.__classListScriptInitialized = true;
+    // Global variables and functions
+    let globalPickr = null;
+    let currentInput = null;
+    // Updated Pickr configuration
     const pickrConfig = {
       theme: 'classic',
       useAsButton: true,
+      closeOnSave: true, // Change this to true
       comparison: false,
       components: {
         preview: true,
@@ -134,120 +150,163 @@
       }
     };
 
-    // Destroy existing pickers
-    document.querySelectorAll('.pickr').forEach(el => {
-      if (el._pickr) {
-        el._pickr.destroyAndRemove();
+    // Initialize the global Pickr if it doesn't already exist.
+    function initGlobalPickr() {
+      if (globalPickr) {
+        return;
       }
-    });
-
-    // Initialize new class form color picker
-    const newClassPreview = document.getElementById('colorpicker-preview');
-    const newClassInput = document.getElementById('colorpicker-input');
-    if (newClassPreview && newClassInput) {
-      const newClassPickr = Pickr.create({
-        el: newClassPreview,
+      
+      globalPickr = Pickr.create({
+        el: document.body,
         ...pickrConfig,
-        default: newClassInput.value
+        default: '#198754'
       });
 
-      newClassPickr.on('save', (color) => {
+      globalPickr.hide();
+
+      globalPickr.on('save', (color) => {
+        if (!currentInput) return;
+        
         const newColor = color.toHEXA().toString();
-        newClassInput.value = newColor;
-        newClassPreview.style.backgroundColor = newColor;
-        newClassPickr.hide();
+        currentInput.value = newColor;
+        const preview = currentInput.closest('.class-color').querySelector('.color-preview');
+        if (preview) {
+          preview.style.backgroundColor = newColor;
+        }
+
+        // If this is an existing class, trigger the fetch call
+        if (currentInput.id !== 'colorpicker-input') {
+          const li = currentInput.closest('li');
+          const classManagement = currentInput.closest('.class-management');
+          const simRoomId = classManagement.dataset.simRoomId;
+          if (!simRoomId) {
+            console.error('No sim_room_id found');
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = 'Configuration error: No simulation room ID found';
+            errorEl.style.display = 'block';
+            return;
+          }
+          
+          const classId = li.dataset.classId;
+          const endpoint = `/simrooms/${simRoomId}/classes/${classId}/color`;
+          const formData = new FormData();
+          formData.append('color', newColor);
+          
+          preview.style.opacity = '0.5';
+          
+          fetch(endpoint, {
+            method: 'PUT',
+            body: formData,
+          })
+          .then(response => {
+            preview.style.opacity = '1';
+            if (!response.ok) {
+              return response.text().then(text => {
+                throw new Error(text);
+              });
+            }
+            return response.json();
+          })
+          .then(updatedClass => {
+            if (updatedClass) {
+              currentInput.value = updatedClass.color;
+              preview.style.backgroundColor = updatedClass.color;
+              window.classManager.updateClass(parseInt(classId), updatedClass);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            preview.style.backgroundColor = currentInput.value;
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = error.message || 'Failed to update color';
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+              errorEl.textContent = '';
+              errorEl.style.display = 'none';
+            }, 5000);
+          });
+        }
+      });
+
+      // Add a handler for the hide event to cleanup
+      globalPickr.on('hide', () => {
+        currentInput = null;
       });
     }
 
-    // Initialize existing class color pickers
-    document.querySelectorAll('.color-preview').forEach(preview => {
-      const input = preview.parentElement.querySelector('.color-input');
-      if (!input || preview.id === 'colorpicker-preview') return;
+    // Attach the global picker to a given input.
+    function attachPickerToInput(inputElement) {
+      currentInput = inputElement;
+      // Update the picker's color.
+      globalPickr.setColor(inputElement.value);
+      // Optionally, reposition the picker's container near the clicked preview.
+      // Here we simply show it. (Advanced: adjust globalPickr.getRoot().style.top/left using inputElement.getBoundingClientRect())
+      globalPickr.show();
+    }
 
-      const pickr = Pickr.create({
-        el: preview,
-        ...pickrConfig,
-        default: input.value
-      });
-
-      pickr.on('save', (color) => {
-        const newColor = color.toHEXA().toString();
-        if (newColor === input.value) {
-          pickr.hide();
-          return;
-        }
-
-        const formData = new FormData();
-        formData.append('color', newColor);
-
-        const li = preview.closest('li');
-        const classManagement = document.querySelector('.class-management');
-        const simRoomId = classManagement.dataset.simRoomId;
-        if (!simRoomId) {
-          console.error('No sim_room_id found');
-          const errorEl = document.getElementById('error');
-          errorEl.innerHTML = 'Configuration error: No simulation room ID found';
-          errorEl.style.display = 'block';
-          return;
-        }
-
-        const classId = li.dataset.classId;
-        const endpoint = `/simrooms/${simRoomId}/classes/${classId}/color`;
-
-        fetch(endpoint, {
-          method: 'PUT',
-          body: formData,
-        }).then(response => {
-          if (!response.ok) {
-            preview.style.backgroundColor = input.value;
-            return response.text().then(text => {
-              const errorEl = document.getElementById('error');
-              errorEl.innerHTML = text;
-              errorEl.style.display = 'block';
-              setTimeout(() => {
-                errorEl.innerHTML = '';
-                errorEl.style.display = 'none';
-              }, 5000);
-            });
-          }
-          input.value = newColor;
-          preview.style.backgroundColor = newColor;
-          return response.json();
-        }).catch(error => {
-          console.error('Error:', error);
-          preview.style.backgroundColor = input.value;
-          const errorEl = document.getElementById('error');
-          errorEl.innerHTML = 'Failed to update color';
-          errorEl.style.display = 'block';
-        });
-        pickr.hide();
-      });
-
-      // Close other pickers when one is shown
-      pickr.on('show', () => {
-        document.querySelectorAll('.pickr').forEach(el => {
-          if (el._pickr && el._pickr !== pickr) {
-            el._pickr.hide();
-          }
-        });
-      });
-    });
-
-    // Close all pickers when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.pickr') && !e.target.closest('.color-preview')) {
-        document.querySelectorAll('.pickr').forEach(el => {
-          if (el._pickr) {
-            el._pickr.hide();
-          }
+    // Set up event listeners on the color preview elements.
+    function initColorPickerListeners() {
+      // For the new class form.
+      const newClassPreview = document.getElementById('colorpicker-preview');
+      const newClassInput = document.getElementById('colorpicker-input');
+      if (newClassPreview && newClassInput) {
+        newClassPreview.addEventListener('click', (e) => {
+          e.stopPropagation();
+          attachPickerToInput(newClassInput);
         });
       }
+
+      // For each existing class preview.
+      document.querySelectorAll('.class-list .color-preview').forEach(preview => {
+        // Skip the new class preview (if it shares an id).
+        if (preview.id === 'colorpicker-preview') return;
+        const input = preview.closest('.class-color').querySelector('.color-input');
+        if (!input) return;
+        preview.addEventListener('click', (e) => {
+          e.stopPropagation();
+          attachPickerToInput(input);
+        });
+      });
+    }
+
+    // Hide the picker when clicking outside.
+    document.addEventListener('click', (e) => {
+      // Check if click is inside the Pickr app, color preview, or save button
+      const isPickrClick = e.target.closest('.pcr-app') || 
+                          e.target.closest('.color-preview') ||
+                          e.target.closest('.pcr-save');
+      
+      if (!isPickrClick && globalPickr) {
+        globalPickr.hide();
+      }
     });
+
+    // Stop click propagation from Pickr elements
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.pcr-app')) {
+        e.stopPropagation();
+      }
+    }, true);  // Using capture phase to stop propagation early
+
+    // Initialize the global picker and listeners on DOMContentLoaded.
+    document.addEventListener('DOMContentLoaded', () => {
+      initGlobalPickr();
+      initColorPickerListeners();
+    });
+
+    // Reinitialize the listeners after an htmx swap (if new color previews are added)
+    document.addEventListener('htmx:afterSettle', initColorPickerListeners);
+
+    // Fallback definition for window.classManager if not already defined
+    if (!window.classManager) {
+      window.classManager = {
+        setActiveClass: function(element, label) {
+          console.log('Fallback: setActiveClass called', element, label);
+        },
+        updateClass: function(classId, updatedClass) {
+          console.log('Fallback: updateClass called', classId, updatedClass);
+        }
+      };
+    }
   }
-
-  // Initialize pickers when the document is ready
-  document.addEventListener('DOMContentLoaded', initColorPickers);
-
-  // Reinitialize pickers after any htmx swap
-  document.addEventListener('htmx:afterSettle', initColorPickers);
 </script>
