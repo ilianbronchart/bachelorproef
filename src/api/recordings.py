@@ -13,7 +13,7 @@ router = APIRouter(prefix="/recordings")
 async def recordings(request: Request):
     context = dd()
     context.request = request
-    context.local_recordings = [rec.get_formatted() for rec in Recording.get_all()]
+    context.local_recordings = [rec.to_dict() for rec in Recording.get_all()]
 
     if is_hx_request(request):
         return templates.TemplateResponse(Template.RECORDINGS, context)
@@ -27,7 +27,7 @@ async def local_recordings(request: Request):
     """Retrieve metadata for all recordings in the local directory"""
     context = dd()
     context.request = request
-    context.local_recordings = [rec.get_formatted() for rec in Recording.get_all()]
+    context.local_recordings = [rec.to_dict() for rec in Recording.get_all()]
 
     if is_hx_request(request):
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context)
@@ -47,7 +47,7 @@ async def delete_local_recording(request: Request, recording_id: str):
             return Response(status_code=404, content="Error: Recording not found")
 
         recording.remove()
-        context.local_recordings = [rec.get_formatted() for rec in Recording.get_all()]
+        context.local_recordings = [rec.to_dict() for rec in Recording.get_all()]
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context)
     except Exception as e:
         print(e)
@@ -62,7 +62,7 @@ async def glasses_recordings(request: Request, response: Response):
     context.glasses_connected = await glasses.is_connected()
 
     if context.glasses_connected:
-        context.glasses_recordings = [rec.get_formatted() for rec in await glasses.get_recordings()]
+        context.glasses_recordings = [rec.to_dict() for rec in await glasses.get_recordings()]
     else:
         context.target_url = "/recordings/glasses"
         context.error_msg = "Could not connect to Tobii Glasses"
@@ -96,7 +96,7 @@ async def download_recording(request: Request, recording_uuid: str):
 
         await recording.download()
 
-        context.local_recordings = [rec.get_formatted() for rec in Recording.get_all()]
+        context.local_recordings = [rec.to_dict() for rec in Recording.get_all()]
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context, status_code=200)
     except KeyError:
         return Response(status_code=404, content="Error: Recording not found on the glasses")

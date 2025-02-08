@@ -1,61 +1,253 @@
-<div class="class-management">
-    {% if can_add_classes %}
-        <form class="mb-3"
-              {% if add_endpoint %} hx-post="{{ add_endpoint }}" hx-target="{{ add_target }}" hx-target-4xx="#error" hx-target-5xx="#error" hx-swap="{{ add_swap }}" {% endif %}
-              hx-on::before-request="clearError()">
-            <div class="mb-3">
-                <label for="class-name" class="form-label">New Object Name:</label>
-                <input type="text"
-                       class="form-control"
-                       id="class-name"
-                       name="class_name"
-                       placeholder="Enter class name"
-                       required>
-            </div>
-            <button type="submit" class="btn btn-success">Add Object</button>
-        </form>
-    {% endif %}
-    <ul class="list-group class-list">
-        {% if classes|length == 0 %}<li class="list-group-item text-muted text-center">No objects defined</li>{% endif %}
-        {% for class in classes %}
-            <li class="list-group-item d-flex justify-content-between align-items-center transition-bg {% if class.active %}active{% endif %}"
-                {% if onclick %}onclick="{{ onclick }}(this, '{{ class.label }}')"{% endif %}>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="color-swatch" style="background-color: {{ class.color }};"></div>
-                    <span class="class-label">{{ class.label }}</span>
-                </div>
-                {% if can_delete %}
-                    <button class="btn btn-sm btn-danger"
-                            {% if delete_endpoint %} hx-confirm="Are you sure? This will delete all annotations linked to this class." hx-delete="{{ delete_endpoint }}/{{ class.id }}" hx-target="{{ delete_target }}" hx-target-400="#error" hx-target-404="#error" hx-target-500="#error" hx-swap="{{ delete_swap }}" {% endif %}
-                            hx-on::before-request="clearError()">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
+<div id="class-management"
+     class="class-management"
+     {% if sim_room_id %}data-sim-room-id="{{ sim_room_id }}"{% endif %}>
+  {% if can_add_classes %}
+    <form class="mb-3"
+          {% if add_endpoint %} hx-post="{{ add_endpoint }}" hx-target="{{ add_target }}" hx-target-4xx="#error" hx-target-5xx="#error" hx-swap="{{ add_swap }}" {% endif %}
+          hx-on::before-request="clearError()">
+      <div class="mb-3">
+        <label for="class-name" class="form-label">New Object Name:</label>
+        <div class="d-flex gap-2 align-items-stretch">
+          <div class="class-color position-relative">
+            <input type="text"
+                   id="colorpicker-input"
+                   class="color-input"
+                   name="color"
+                   value="#198754"
+                   data-color="#198754">
+            <div id="colorpicker-preview"
+                 class="color-preview flex-shrink-0 form-color-preview"
+                 style="background-color: #198754"></div>
+          </div>
+          <input type="text"
+                 class="form-control"
+                 id="class-name"
+                 name="class_name"
+                 placeholder="Enter object name"
+                 required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-success">Add Object</button>
+    </form>
+  {% endif %}
+  <ul class="list-group class-list user-select-none">
+    {% if classes|length == 0 %}<li class="list-group-item text-muted text-center">No objects defined</li>{% endif %}
+    {% for class in classes %}
+      <li class="list-group-item d-flex justify-content-between align-items-center transition-bg {% if class.active %}active{% endif %}"
+          {% if onclick %}onclick="{{ onclick }}(this, '{{ class.label }}')"{% endif %}
+          data-class-id="{{ class.id }}">
+        <div class="d-flex align-items-center gap-2">
+          <div class="class-color position-relative">
+            <input type="text"
+                   class="color-input"
+                   value="{{ class.color }}"
+                   name="color"
+                   data-color="{{ class.color }}"
+                   onclick="event.stopPropagation()">
+            <div class="color-preview" style="background-color: {{ class.color }}"></div>
+          </div>
+          <span class="class-label">{{ class.label }}</span>
+        </div>
+        {% if can_delete %}
+          <button class="btn btn-sm btn-danger"
+                  {% if delete_endpoint %} hx-confirm="Are you sure? This will delete all annotations linked to this class." hx-delete="{{ delete_endpoint }}/{{ class.id }}" hx-target="{{ delete_target }}" hx-target-400="#error" hx-target-404="#error" hx-target-500="#error" hx-swap="{{ delete_swap }}" {% endif %}
+                  hx-on::before-request="clearError()">
+            <i class="bi bi-trash"></i>
+          </button>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
 </div>
 <style>
   .class-list .list-group-item {
     cursor: pointer;
     border-left: 3px solid transparent;
     transition: all 0.2s ease-in-out;
+    background-color: transparent;
   }
   .class-list .list-group-item:hover {
     background-color: rgba(0,0,0,.055);
     border-left-color: var(--bs-primary);
   }
   .class-list .list-group-item.active {
+    color: inherit;
     background-color: rgba(0,0,0,.075);
+    border-color: rgba(0,0,0,.125);
+    border-left-color: var(--bs-primary);
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  }
+  .class-list .list-group-item.active:hover {
+    background-color: rgba(0,0,0,.1);
     border-left-color: var(--bs-primary);
   }
   .class-list .list-group-item .class-label {
     flex-grow: 1;
   }
-  .color-swatch {
-    width: 16px;
-    height: 16px;
+  .color-preview {
+    width: 38px;
+    height: 38px;
     border-radius: 4px;
-    border: 1px solid rgba(0,0,0,.1);
+    border: 1px solid rgba(0,0,0,.2);
+    cursor: pointer;
+  }
+  .list-group-item .color-preview {
+    width: 24px;
+    height: 24px;
+  }
+  /* Instead of hiding the input by zero width and visibility, we position it off-screen */
+  .color-input {
+    position: absolute;
+    left: -9999px;
+  }
+  .class-color {
+    display: flex;
+    align-items: center;
+  }
+  .form-color-preview {
+    height: calc(1.5em + 0.75rem + 2px); /* Match Bootstrap form-control height */
+  }
+  /* Bootstrap Colorpicker customizations */
+  .colorpicker-bs-popover {
+    z-index: 1060;
   }
 </style>
+<!-- Pickr color picker dependencies -->
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.es5.min.js"></script>
+<script>
+  function initColorPickers() {
+    // Common Pickr config
+    const pickrConfig = {
+      theme: 'classic',
+      useAsButton: true,
+      comparison: false,
+      components: {
+        preview: true,
+        opacity: false,
+        hue: true,
+        interaction: {
+          input: true,
+          save: true
+        }
+      }
+    };
+
+    // Destroy existing pickers
+    document.querySelectorAll('.pickr').forEach(el => {
+      if (el._pickr) {
+        el._pickr.destroyAndRemove();
+      }
+    });
+
+    // Initialize new class form color picker
+    const newClassPreview = document.getElementById('colorpicker-preview');
+    const newClassInput = document.getElementById('colorpicker-input');
+    if (newClassPreview && newClassInput) {
+      const newClassPickr = Pickr.create({
+        el: newClassPreview,
+        ...pickrConfig,
+        default: newClassInput.value
+      });
+
+      newClassPickr.on('save', (color) => {
+        const newColor = color.toHEXA().toString();
+        newClassInput.value = newColor;
+        newClassPreview.style.backgroundColor = newColor;
+        newClassPickr.hide();
+      });
+    }
+
+    // Initialize existing class color pickers
+    document.querySelectorAll('.color-preview').forEach(preview => {
+      const input = preview.parentElement.querySelector('.color-input');
+      if (!input || preview.id === 'colorpicker-preview') return;
+
+      const pickr = Pickr.create({
+        el: preview,
+        ...pickrConfig,
+        default: input.value
+      });
+
+      pickr.on('save', (color) => {
+        const newColor = color.toHEXA().toString();
+        if (newColor === input.value) {
+          pickr.hide();
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('color', newColor);
+
+        const li = preview.closest('li');
+        const classManagement = document.querySelector('.class-management');
+        const simRoomId = classManagement.dataset.simRoomId;
+        if (!simRoomId) {
+          console.error('No sim_room_id found');
+          const errorEl = document.getElementById('error');
+          errorEl.innerHTML = 'Configuration error: No simulation room ID found';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        const classId = li.dataset.classId;
+        const endpoint = `/simrooms/${simRoomId}/classes/${classId}/color`;
+
+        fetch(endpoint, {
+          method: 'PUT',
+          body: formData,
+        }).then(response => {
+          if (!response.ok) {
+            preview.style.backgroundColor = input.value;
+            return response.text().then(text => {
+              const errorEl = document.getElementById('error');
+              errorEl.innerHTML = text;
+              errorEl.style.display = 'block';
+              setTimeout(() => {
+                errorEl.innerHTML = '';
+                errorEl.style.display = 'none';
+              }, 5000);
+            });
+          }
+          input.value = newColor;
+          preview.style.backgroundColor = newColor;
+          return response.json();
+        }).catch(error => {
+          console.error('Error:', error);
+          preview.style.backgroundColor = input.value;
+          const errorEl = document.getElementById('error');
+          errorEl.innerHTML = 'Failed to update color';
+          errorEl.style.display = 'block';
+        });
+        pickr.hide();
+      });
+
+      // Close other pickers when one is shown
+      pickr.on('show', () => {
+        document.querySelectorAll('.pickr').forEach(el => {
+          if (el._pickr && el._pickr !== pickr) {
+            el._pickr.hide();
+          }
+        });
+      });
+    });
+
+    // Close all pickers when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.pickr') && !e.target.closest('.color-preview')) {
+        document.querySelectorAll('.pickr').forEach(el => {
+          if (el._pickr) {
+            el._pickr.hide();
+          }
+        });
+      }
+    });
+  }
+
+  // Initialize pickers when the document is ready
+  document.addEventListener('DOMContentLoaded', initColorPickers);
+
+  // Reinitialize pickers after any htmx swap
+  document.addEventListener('htmx:afterSettle', initColorPickers);
+</script>

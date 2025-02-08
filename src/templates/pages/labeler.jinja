@@ -1,10 +1,11 @@
 <div id="recording-labeler" class="container-fluid px-4">
+  <div id="error" class="alert alert-danger mb-4"></div>
   <div class="row">
     <!-- Left Column: Class List -->
     <div class="col-md-3">
       {% with
         can_add_classes=True,
-        can_delete=False,
+        can_delete=True,
         classes=classes,
         onclick="window.labeler.setActiveClass"
         %}

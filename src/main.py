@@ -7,13 +7,15 @@ from fastapi.responses import HTMLResponse
 import src.logic.glasses as glasses
 from src.api import labeling, recordings, simrooms
 from src.config import App, BaseContext, Template, templates
-from src.db.db import Base, engine
+from src.db.db import init_database
+from src.db.models.recording import Recording
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ARG001
-    # Create all database tables if they do not exist yet
-    Base.metadata.create_all(bind=engine)
+    # Drop and recreate all database tables to ensure schema is up to date
+    init_database()
+    Recording.clean_recordings()
     yield
 
 
@@ -21,7 +23,6 @@ app = App(lifespan=lifespan)
 app.include_router(recordings.router)
 app.include_router(labeling.router)
 app.include_router(simrooms.router)
-
 
 
 @dataclass

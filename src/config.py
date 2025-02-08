@@ -7,8 +7,6 @@ from fastapi import Request as FastAPIRequest
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-import src.logic.glasses as glasses
-
 DATA_PATH = Path("data/")
 RECORDINGS_PATH = DATA_PATH / "recordings"
 CHECKPOINTS_PATH = Path("checkpoints")
@@ -27,9 +25,6 @@ class App(FastAPI):
 
         self.mount("/static", StaticFiles(directory="src/static", html=True), name="static")
         self.mount(str("/" / RECORDINGS_PATH), StaticFiles(directory=RECORDINGS_PATH), name="recordings")
-
-    def prepare(self):
-        glasses.clean_local_recordings()
 
 
 class Request(FastAPIRequest):

@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 
 from g3pylib.recordings.recording import Recording as GlassesRecording
 from sqlalchemy import Column, String
@@ -34,8 +34,8 @@ class Recording(Base):
             "uuid": self.uuid,
             "visible_name": self.visible_name,
             "participant": self.participant,
-            "created": self.created,
-            "duration": self.duration,
+            "created": datetime.fromisoformat(self.created).strftime("%d/%m/%y at %I:%M %p"),
+            "duration": self._format_duration(self.duration),
             "folder_name": self.folder_name,
             "scene_video_url": self.scene_video_url,
             "gaze_data_url": self.gaze_data_url,
@@ -67,7 +67,7 @@ class Recording(Base):
             return session.query(Recording).filter(Recording.uuid == uuid).first()
 
     @staticmethod
-    def get_all() -> List["Recording"]:
+    def get_all() -> list["Recording"]:
         with Session(engine) as session:
             return session.query(Recording).all()
 
@@ -75,15 +75,16 @@ class Recording(Base):
     def clean_recordings(recordings_path: Path = RECORDINGS_PATH):
         with Session(engine) as session:
             recordings = session.query(Recording).all()
+
         for recording in recordings:
             if not recording.is_complete(recordings_path):
                 recording.remove(recordings_path)
 
-    def get_formatted(self):
-        formatted_dict = self.to_dict()
-        formatted_dict["duration"] = self._format_duration(self.duration)
-        formatted_dict["created"] = datetime.fromisoformat(self.created).strftime("%d/%m/%y at %I:%M %p")
-        return formatted_dict
+        # Delete files whose stem is not a valid recording uuid
+        valid_uuids = {recording.uuid for recording in recordings}
+        for file in recordings_path.iterdir():
+            if file.is_file() and file.stem not in valid_uuids:
+                file.unlink()
 
     def _format_duration(self, duration: str) -> str:
         hours, minutes, seconds = map(float, duration.split(":"))

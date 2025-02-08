@@ -70,19 +70,11 @@
     <div class="col-md-4 d-flex flex-column">
       <h2>Sim Room Objects</h2>
       {% if selected_sim_room %}
-        {% set formatted_classes = [] %}
-        {% for cls in sim_room_classes %}
-          {% set _ = formatted_classes.append({
-                      "label": cls.class_name,
-                      "id": cls.id,
-                      "color": "#00ff00",
-                      "active": False
-                    }) %}
-        {% endfor %}
         {% with
           can_add_classes=True,
           can_delete=True,
-          classes=formatted_classes,
+          classes=classes,
+          sim_room_id=selected_sim_room.id,
           add_endpoint="/simrooms/" + selected_sim_room.id|string + "/classes/add",
           add_target="#simrooms",
           add_swap="outerHTML",
@@ -208,16 +200,6 @@
   .list-group + p {
     margin-top: 1rem;
   }
-  #error {
-    display: none;
-    padding: 10px;
-  }
-  #error:empty {
-    display: none !important;
-  }
-  #error:not(:empty) {
-    display: block !important;
-  }
   .alert-info {
     border-left: 4px solid var(--bs-info);
     background-color: rgba(var(--bs-info-rgb), 0.1);
@@ -249,9 +231,38 @@
   document.addEventListener('htmx:afterSettle', function() {
     const list = document.getElementById('sim-rooms-list');
     if (!list) return;
-    const selectedLi = list.querySelector('li.selected');
+
+    // First try to find already selected item
+    let selectedLi = list.querySelector('li.selected');
+    
+    // If no item is selected but we have a sim room ID in the URL, select that one
+    if (!selectedLi) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const simRoomId = urlParams.get('sim_room_id');
+      if (simRoomId) {
+        selectedLi = list.querySelector(`li[hx-get*="sim_room_id=${simRoomId}"]`);
+      }
+    }
+
     if (selectedLi) {
       updateSimRoomSelection(selectedLi);
+    }
+  });
+
+  // Update URL when sim room is selected
+  document.body.addEventListener('htmx:afterSettle', function(evt) {
+    if (evt.detail.target.id === 'simrooms') {
+      const selectedLi = document.querySelector('#sim-rooms-list li.selected');
+      if (selectedLi) {
+        const href = selectedLi.getAttribute('hx-get');
+        const url = new URL(href, window.location.origin);
+        const simRoomId = url.searchParams.get('sim_room_id');
+        if (simRoomId) {
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.set('sim_room_id', simRoomId);
+          window.history.replaceState({}, '', newUrl);
+        }
+      }
     }
   });
 

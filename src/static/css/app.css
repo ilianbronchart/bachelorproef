@@ -26,3 +26,16 @@ select[aria-controls="glasses-recordings-table"] {
 select[aria-controls="local-recordings-table"] {
   margin-right: 8px;
 }
+
+#error {
+  display: none;
+  padding: 10px;
+}
+
+#error:empty {
+  display: none !important;
+}
+
+#error:not(:empty) {
+  display: block !important;
+}
