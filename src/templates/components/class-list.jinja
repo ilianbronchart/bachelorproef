@@ -1,14 +1,14 @@
 <div id="class-list"
-     class="class-management"
-     {% if selected_sim_room.id %}data-sim-room-id="{{ selected_sim_room.id }}"{% endif %}>
-  <form hx-post="/simrooms/{{ selected_sim_room.id }}/classes/add"
+     class="class-management d-flex flex-column"
+     {% if sim_room.id %}data-sim-room-id="{{ sim_room.id }}"{% endif %}>
+  <form hx-post="/simrooms/{{ sim_room.id }}/classes/add"
         hx-target="#class-list"
         hx-target-4xx="#error-message"
         hx-target-5xx="#error-message"
         hx-on:click="clearError()"
         autocomplete="off">
     <div class="mb-3">
-      <label for="class-name" class="form-label">New Object Name:</label>
+      <label for="class-name" class="form-label user-select-none">New Object Name:</label>
       <input type="text"
              class="form-control"
              id="class-name"
@@ -22,15 +22,15 @@
     {% if classes|length == 0 %}<li class="list-group-item text-muted text-center">No objects defined</li>{% endif %}
     {% for class in classes %}
       <li class="list-group-item d-flex justify-content-between align-items-center transition-bg {% if class.active %}active{% endif %}"
-          onclick="window.classManager.setActiveClass(this, '{{ class.label }}')"
+          onclick="window.classManager.setActiveClass(this, '{{ class.id }}')"
           data-class-id="{{ class.id }}">
         <div class="d-flex align-items-center gap-2">
           <div class="color-preview" style="background-color: {{ class.color }}"></div>
-          <span class="class-label">{{ class.class_name }}</span>
+          <span class="class-name">{{ class.class_name }}</span>
         </div>
         <button class="btn btn-sm btn-danger"
                 hx-confirm="Are you sure? This will delete all annotations linked to this class."
-                hx-delete="/simrooms/{{ selected_sim_room.id }}/classes/{{ class.id }}"
+                hx-delete="/simrooms/{{ sim_room.id }}/classes/{{ class.id }}"
                 hx-target="#class-list"
                 hx-target-400="#error-message"
                 hx-target-404="#error-message"
@@ -51,11 +51,12 @@ window.classManager = {
     // Initialize with a list of classes
     initialize(classes) {
         this.classes = classes;
+        console.log("classes", classes);
         this.activeClass = null;
     },
 
     // Set the active class when a class is selected
-    setActiveClass(element, label) {
+    setActiveClass(element, class_id) {
         // Remove active class from all elements
         document.querySelectorAll('.class-list .list-group-item').forEach(item => {
             item.classList.remove('active');
@@ -66,8 +67,9 @@ window.classManager = {
             element.classList.add('active');
         }
 
-        // Update active class
-        this.activeClass = this.classes.find(c => c.label === label) || null;
+        this.activeClass = this.classes.find(
+          c => parseInt(c.id) === parseInt(class_id)
+        ) || null;
     },
 
     // Update a class's properties
@@ -85,6 +87,9 @@ window.classManager = {
 window.classManager.initialize({{ classes|tojson }});
 </script>
 <style>
+  .list-group {
+    margin-top: 1.5rem;
+  }
   .class-list .list-group-item {
     cursor: pointer;
     border-left: 3px solid transparent;
@@ -106,7 +111,7 @@ window.classManager.initialize({{ classes|tojson }});
     background-color: rgba(0,0,0,.1);
     border-left-color: var(--bs-primary);
   }
-  .class-list .list-group-item .class-label {
+  .class-list .list-group-item .class-name {
     flex-grow: 1;
   }
   .color-preview {

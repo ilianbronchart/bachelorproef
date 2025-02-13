@@ -1,10 +1,11 @@
+import cv2
 import src.logic.glasses as glasses
 from fastapi import APIRouter, Response
 from fastapi.responses import HTMLResponse
 from src.api.models import RecordingsContext, Request
-from src.config import Template, templates
+from src.config import RECORDINGS_PATH, Template, templates
 from src.db import Recording
-from src.utils import is_hx_request
+from src.utils import cv2_get_frame, is_hx_request
 
 router = APIRouter(prefix="/recordings")
 
@@ -82,5 +83,28 @@ async def download_recording(request: Request, recording_uuid: str):
         return Response(status_code=404, content="Error: Recording not found on the glasses")
     except RuntimeError:
         return Response(status_code=500, content="Error: Failed to download recording")
+    except Exception:
+        return Response(status_code=500, content="Error: Something went wrong, please try again later")
+
+
+@router.get("/{recording_uuid}/frames/{frame_idx}", response_class=Response)
+async def get_frame(request: Request, recording_uuid: str, frame_idx: int):
+    """Retrieve a frame from a recording"""
+    recording = Recording.get(recording_uuid)
+    if recording is None:
+        return Response(status_code=404, content="Error: Recording not found")
+
+    try:
+        video_path = RECORDINGS_PATH / (recording_uuid + ".mp4")
+        frame = cv2_get_frame(video_path, frame_idx)
+        ret, encoded_png = cv2.imencode(".png", frame)
+
+        if not ret:
+            return Response(status_code=500, content="Error: Failed to encode frame")
+        return Response(content=encoded_png.tobytes(), media_type="image/png")
+    except IndexError:
+        return Response(status_code=404, content="Error: Frame not found")
+    except ValueError:
+        return Response(status_code=400, content="Error: Invalid frame index")
     except Exception:
         return Response(status_code=500, content="Error: Something went wrong, please try again later")

@@ -1,7 +1,9 @@
 from pathlib import Path
+from typing import cast
 
 import cv2
 import numpy as np
+import numpy.typing as npt
 import torch
 from src.logic.glasses.domain import GazeData, GazePoint
 from src.logic.glasses.gaze import get_gaze_points, match_frames_to_gaze
@@ -224,19 +226,17 @@ def crop_box(orig_img: np.ndarray, box: Boxes, mask: Masks | None = None) -> np.
     return orig_img[y1:y2, x1:x2]
 
 
-def get_mask(
-    image: np.ndarray,
+def segment(
+    image: npt.NDArray[np.uint8],
     model: FastSAM,
     points: list[tuple[int, int]],
     point_labels: list[int],
-    conf: float,
-    iou: float,
-) -> torch.Tensor:
+) -> tuple[npt.NDArray[np.uint8] | None, tuple[int, int, int, int] | None]:
     """
     Perform inference on image using points
 
     Args:
-        image: Image to perform inference on. (RGB)
+        image: Image to perform inference on. (BGR)
         model: FastSAM model
         points: List of points to use for inference
         point_labels: List of labels for each point (1 for positive 0 for negative)
@@ -246,16 +246,69 @@ def get_mask(
     Returns:
         torch.Tensor: Merged mask
     """
-    results: Results = model(
-        source=image, points=points, labels=point_labels, device="cuda", verbose=False, conf=conf, iou=iou
-    )[0]
+    # Crop the frame around the gaze point
+    cx, cy = np.mean(points, axis=0)
+    crop_size = 512
+    half_crop = crop_size // 2
+    resolution = image.shape[:2]
 
-    if len(results.masks) == 0:
-        # TODO: Handle no masks
-        pass
+    left = int(max(cx - half_crop, 0))
+    right = int(min(cx + half_crop, resolution[1]))
+    top = int(max(cy - half_crop, 0))
+    bottom = int(min(cy + half_crop, resolution[0]))
 
-    merged_mask = torch.zeros_like(results.masks[0].data)
+    cropped_frame = image[top:bottom, left:right]
+    points = [(x - left, y - top) for x, y in points]
+
+    # Pad the bottom right corner to make the frame square
+    pad_x = crop_size - cropped_frame.shape[1]
+    pad_y = crop_size - cropped_frame.shape[0]
+    padded_frame = cv2.copyMakeBorder(cropped_frame, 0, pad_y, 0, pad_x, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+    padded_frame = cv2.cvtColor(padded_frame, cv2.COLOR_BGR2RGB)
+
+    # save the padded frame for debugging
+    _, encoded_img = cv2.imencode(".png", padded_frame)
+    with open("debug_padded_frame.png", "wb") as f:
+        f.write(encoded_img.tobytes())
+
+    results: Results = cast(
+        Results,
+        model(
+            source=padded_frame,
+            points=points,
+            labels=point_labels,
+            device="cuda",
+            verbose=False,
+            imgsz=crop_size,
+        )[0],
+    )
+
+    if results.masks is None or len(results.masks) == 0:
+        return (None, None)
+
+    merged_mask = torch.zeros_like(cast(torch.Tensor, results.masks[0].data))
     for mask in results.masks:
-        merged_mask = torch.logical_or(merged_mask, mask.data)
+        merged_mask = torch.logical_or(merged_mask, cast(torch.Tensor, mask.data))
 
-    return merged_mask
+    print(merged_mask.shape)
+    x1, y1, x2, y2 = masks_to_boxes(merged_mask)[0].cpu().numpy().astype(np.int32)
+    print(x1, y1, x2, y2)
+    merged_mask = merged_mask.cpu().numpy().astype(np.uint8)
+
+    debug_mask = merged_mask.repeat(3, axis=0).transpose(1, 2, 0) * 255
+    _, encoded_img = cv2.imencode(".png", debug_mask)
+    with open("debug_mask.png", "wb") as f:
+        f.write(encoded_img.tobytes())
+
+    # If the coordinates are swapped, correct them:
+    x1, x2 = min(x1, x2), max(x1, x2)
+    y1, y2 = min(y1, y2), max(y1, y2)
+    final_mask = merged_mask[:, y1:y2, x1:x2]
+
+    # Adjust the bounding box to the original image coordinates:
+    x1 += left
+    y1 += top
+    x2 += left
+    y2 += top
+
+    return final_mask, (int(x1), int(y1), int(x2), int(y2))

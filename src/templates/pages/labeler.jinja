@@ -1,21 +1,13 @@
 <div id="recording-labeler" class="container-fluid px-4">
   <div id="error-message" class="alert alert-danger mb-4"></div>
   <div class="row">
-    <!-- Left Column: Canvas and Controls -->
     <div class="col-md-9">
-      <!-- The canvas where video, masks, and annotations are drawn -->
+      <!-- Using mousedown to capture right-clicks -->
       <canvas id="canvas"
               class="mb-3"
-              hx-on:click="window.labeler.canvasClick(event)"
+              hx-on:mousedown="window.labeler.canvasClick(event)"
               hx-on:mousemove="window.labeler.canvasMouseMove(event)"></canvas>
-      <!-- Control Bar: Play, Select, Delete, Seek -->
       <div id="controls" class="d-flex align-items-center gap-2 mb-3">
-        <button id="play-pause-btn"
-                class="btn btn-primary"
-                type="button"
-                hx-on:click="window.labeler.togglePlayPause()">
-          <i class="bi bi-play-fill"></i>
-        </button>
         <button id="select-mode-btn"
                 class="btn btn-secondary"
                 type="button"
@@ -28,7 +20,6 @@
                 hx-on:click="window.labeler.setMode('delete')">
           <i class="bi bi-trash-fill"></i>
         </button>
-        <!-- Replaced draggable range input with a clickable progress bar -->
         <div id="seek-slider"
              class="seek-bar flex-grow-1"
              hx-on:click="window.labeler.sliderClick(event)">
@@ -36,352 +27,425 @@
         </div>
       </div>
     </div>
-    <!-- Right Column: Class List -->
     <div class="col-md-3">
       {% with sim_room_id=calibration_recording.sim_room_id, classes=classes %}
         {% include "components/class-list.jinja" %}
       {% endwith %}
     </div>
   </div>
-  <!-- Hidden Video (offscreen) -->
-  <video id="video"
-         class="offscreen-video"
-         preload="auto"
-         hx-on:loadedmetadata="window.labeler.videoLoadedMetadata(event)"
-         hx-on:timeupdate="window.labeler.videoTimeUpdate(event)">
-    <source src="{{ url_for('recordings', path=recording_uuid + '.mp4') }}"
-            type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
 </div>
 <script>
-  (function() {
-    // Cache DOM elements
-    const video          = document.getElementById('video');
-    const canvas         = document.getElementById('canvas');
-    const slider         = document.getElementById('seek-slider'); // Now a div seek bar.
-    const ctx            = canvas.getContext('2d');
-    const playPauseBtn   = document.getElementById('play-pause-btn');
-    const selectModeBtn  = document.getElementById('select-mode-btn');
-    const deleteModeBtn  = document.getElementById('delete-mode-btn');
+  // Global labeler object to manage frame fetching, point labeling, and segmentation.
+  window.labeler = {
+    canvas: null,
+    ctx: null,
+    mode: "select",                // "select" or "delete"
+    currentFrameIndex: 0,           // Current frame number
+    currentFrameImage: null,        // The image object for the current frame
+    annotations: {},                // { frameIndex: { classId: [ {x, y, label}, ... ] } }
+    segmentations: {},              // { frameIndex: { classId: { mask, bounding_box, img } } }
+    recordingUUID: null,            // Set during initialization from server-side context
+    calibration_id: null,           // Calibration recording ID (needed for segmentation)
+    frameCount: 0,                  // Total number of frames (set during initialization)
+    resolution: [1920, 1080],
+    hoveredPoint: null,             // Holds a nearby point (if any) during delete mode
 
-    // Global labeler object to be used by hx-on event handlers
-    window.labeler = {
-      video: video,
-      canvas: canvas,
-      slider: slider,
-      ctx: ctx,
-      playPauseBtn: playPauseBtn,
-      selectModeBtn: selectModeBtn,
-      deleteModeBtn: deleteModeBtn,
+    // Initialize the labeler with recording UUID, total frame count, internal resolution, and calibration ID.
+    init: function(recordingUUID, frameCount, resolution, calibration_id) {
+      this.recordingUUID = recordingUUID;
+      this.frameCount = parseInt(frameCount);
+      this.resolution = resolution;
+      this.calibration_id = calibration_id;
 
-      // Global state
-      annotations: [], // Array of annotations with frame_time already included
-      masksByTime: {},  // { frameTime: [ { class: "myClass", mask: <base64> }, ... ] }
-      mode: "select",   // "select" or "delete"
-      hoveredPoint: null, // Used in delete mode to highlight a point
+      this.canvas = document.getElementById("canvas");
+      if (!this.canvas) {
+        console.error("Canvas element not found");
+        return;
+      }
+      this.ctx = this.canvas.getContext("2d");
 
-      // Get current frame time
-      getFrameTime: function() {
-        return this.video.currentTime;
-      },
+      // Prevent the context menu from appearing on right-click.
+      this.canvas.addEventListener("contextmenu", e => e.preventDefault());
 
-      // Get annotations for current frame time
-      getCurrentAnnotations: function() {
-        const currentTime = this.getFrameTime();
-        return this.annotations.filter(a => Math.abs(a.frame_time - currentTime) < 0.001);
-      },
+      // Load the first frame, set select mode, and start the render loop.
+      this.fetchFrame(0);
+      this.setMode("select");
+      this.renderLoop();
+    },
 
-      // Resize canvas to fill container width and maintain video aspect ratio.
-      resizeCanvas: function() {
-        const containerWidth = this.canvas.parentElement.offsetWidth;
-        if (this.video.videoWidth) {
-          this.canvas.width  = containerWidth;
-          this.canvas.height = containerWidth * (this.video.videoHeight / this.video.videoWidth);
-        } else {
-          this.canvas.width  = containerWidth;
-          this.canvas.height = containerWidth * (360 / 640);
-        }
-        // Redraw frame immediately after resize
-        if (this.video.readyState >= 2) { // Check if video data is loaded
-          this.drawFrame();
-        }
-      },
+    // Fetch a frame image from the backend and update the canvas.
+    fetchFrame: function(frameIndex) {
+      const url = `/recordings/${this.recordingUUID}/frames/${frameIndex}`;
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to fetch frame");
+          return response.blob();
+        })
+        .then(blob => {
+          const img = new Image();
+          img.onload = () => {
+            // Adjust the canvas dimensions to the image dimensions.
+            this.canvas.width = img.width;
+            this.canvas.height = img.height;
+            this.ctx.drawImage(img, 0, 0);
+            this.currentFrameImage = img;
+            // Re-draw any annotations and segmentation overlays.
+            this.drawAnnotations();
+          };
+          img.src = URL.createObjectURL(blob);
+        })
+        .catch(error => {
+          console.error("Error fetching frame:", error);
+        });
+    },
 
-      // Draw the video frame, segmentation masks, and annotation points.
-      drawFrame: function() {
-        this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-        const frameTime = this.getFrameTime();
+    // Handler for clicks on the seek bar.
+    sliderClick: function(event) {
+      const slider = event.currentTarget;
+      const rect = slider.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const percent = clickX / slider.offsetWidth;
+      const frameIndex = Math.floor(percent * this.frameCount);
+      this.currentFrameIndex = frameIndex;
+      this.updateSeekBar();
+      this.fetchFrame(frameIndex);
+    },
 
-        // Draw segmentation masks for the current frame.
-        if (this.masksByTime[frameTime]) {
-          this.masksByTime[frameTime].forEach(maskData => {
-            const clsObj = window.classManager.classes.find(c => c.label === maskData.class);
-            const maskColor = clsObj ? clsObj.color : "#000000";
-            const img = new Image();
-            img.src = "data:image/png;base64," + maskData.mask;
-            img.onload = () => {
-              this.ctx.save();
-              this.ctx.globalAlpha = 0.5;
-              this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
-              this.ctx.globalAlpha = 1.0;
-              this.ctx.strokeStyle = maskColor;
-              this.ctx.lineWidth = 2;
-              this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
-              this.ctx.restore();
-            }
-          });
-        }
+    // Handler for mousedown events on the canvas.
+    // In select mode, adds a point (left-click for positive, right-click for negative)
+    // but only if the point falls within an allowed region (if points already exist).
+    // In delete mode, if a nearby point is highlighted it is removed.
+    canvasClick: function(event) {
+      const rect = this.canvas.getBoundingClientRect();
+      // Get displayed canvas coordinates.
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+      // Map displayed coordinates to internal resolution.
+      const scaleX = this.resolution[0] / rect.width;
+      const scaleY = this.resolution[1] / rect.height;
+      const internalX = clickX * scaleX;
+      const internalY = clickY * scaleY;
 
-        // Draw annotation points for current frame
-        const currentAnnotations = this.getCurrentAnnotations();
-        for (const annotation of currentAnnotations) {
-          for (let i = 0; i < annotation.points.length; i++) {
-            const pt = annotation.points[i];
-            this.ctx.beginPath();
-            this.ctx.arc(pt[0], pt[1], 5, 0, 2 * Math.PI);
-            // Left click (1) is green; right click (0) is red.
-            this.ctx.fillStyle = (annotation.point_labels[i] === 1) ? "green" : "red";
-            this.ctx.fill();
-            // If in delete mode and this point is hovered, draw a yellow outline.
-            if (this.mode === "delete" && this.hoveredPoint && 
-                this.hoveredPoint.label === annotation.label && 
-                this.hoveredPoint.index === i) {
-              this.ctx.lineWidth = 3;
-              this.ctx.strokeStyle = "yellow";
-              this.ctx.stroke();
-            }
-          }
-        }
-      },
-
-      // Called by the video frame callback to update the canvas.
-      updateCanvas: function(now, metadata) {
-        this.drawFrame();
-        this.video.requestVideoFrameCallback((now, metadata) => { this.updateCanvas(now, metadata); });
-      },
-
-      // Toggle video play/pause state.
-      togglePlayPause: function() {
-        if (this.video.paused) {
-          this.video.play();
-          this.playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-        } else {
-          this.video.pause();
-          this.playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-        }
-      },
-
-      // Set labeling mode to "select" or "delete" and update button styling.
-      setMode: function(newMode) {
-        this.mode = newMode;
-        if (newMode === "select") {
-          this.selectModeBtn.classList.add('active');
-          this.deleteModeBtn.classList.remove('active');
-        } else if (newMode === "delete") {
-          this.deleteModeBtn.classList.add('active');
-          this.selectModeBtn.classList.remove('active');
-        }
-      },
-
-      // Handle click events on the canvas.
-      canvasClick: function(event) {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = parseInt(event.clientX - rect.left);
-        const y = parseInt(event.clientY - rect.top);
-        const frameTime = this.getFrameTime();
-
-        if (this.mode === "select") {
-          const activeClass = window.classManager.activeClass;
-          if (!activeClass) {
-            alert("Please add/select a class first.");
-            return;
-          }
-
-          // Find or create annotation for current class and frame
-          let annotation = this.getCurrentAnnotations().find(a => a.label === activeClass.label);
-          if (!annotation) {
-            annotation = {
-              label: activeClass.label,
-              points: [],
-              point_labels: [],
-              frame_time: frameTime
-            };
-            this.annotations.push(annotation);
-          }
-
-          // Add new point
-          const pointLabel = (event.button === 0) ? 1 : 0;
-          annotation.points.push([x, y]);
-          annotation.point_labels.push(pointLabel);
-          this.sendSegmentationRequest();
-        } else if (this.mode === "delete") {
-          let found = false;
-          const currentAnnotations = this.getCurrentAnnotations();
-          for (const annotation of currentAnnotations) {
-            for (let i = 0; i < annotation.points.length; i++) {
-              const pt = annotation.points[i];
-              const dx = pt[0] - x;
-              const dy = pt[1] - y;
-              if (Math.sqrt(dx * dx + dy * dy) < 10) {
-                annotation.points.splice(i, 1);
-                annotation.point_labels.splice(i, 1);
-                found = true;
-                break;
-              }
-            }
-            if (found) break;
-          }
-          if (found) {
-            this.sendSegmentationRequest();
-          }
-        }
-      },
-
-      // In delete mode, track the mouse movement to highlight points for deletion.
-      canvasMouseMove: function(event) {
-        if (this.mode !== "delete") {
-          this.hoveredPoint = null;
+      if (this.mode === "select") {
+        event.preventDefault();
+        const activeClass = window.classManager.activeClass;
+        if (!activeClass) {
+          alert("Please select a class first.");
           return;
         }
-        const rect = this.canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const frameTime = this.getFrameTime();
-        const currentAnnotations = this.getCurrentAnnotations();
-        this.hoveredPoint = null;
-        for (const annotation of currentAnnotations) {
-          for (let i = 0; i < annotation.points.length; i++) {
-            const pt = annotation.points[i];
-            const dx = pt[0] - x;
-            const dy = pt[1] - y;
-            if (Math.sqrt(dx * dx + dy * dy) < 10) {
-              this.hoveredPoint = { label: annotation.label, index: i };
-              break;
+        const frame = this.currentFrameIndex;
+        // If points already exist for this class, enforce a valid boundary.
+        if (this.annotations[frame] &&
+            this.annotations[frame][activeClass.id] &&
+            this.annotations[frame][activeClass.id].length > 0) {
+          const pts = this.annotations[frame][activeClass.id];
+          const minX = Math.min(...pts.map(pt => pt.x));
+          const maxX = Math.max(...pts.map(pt => pt.x));
+          const minY = Math.min(...pts.map(pt => pt.y));
+          const maxY = Math.max(...pts.map(pt => pt.y));
+          // Define a valid region in internal coordinates.
+          const validX1 = maxX - 512;
+          const validX2 = minX + 512;
+          const validY1 = maxY - 512;
+          const validY2 = minY + 512;
+          if (internalX < validX1 || internalX > validX2 ||
+              internalY < validY1 || internalY > validY2) {
+            alert("Point is outside the allowed region.");
+            return;
+          }
+        }
+        // Left-click (button 0) is positive; right-click (button 2) is negative.
+        const labelValue = (event.button === 0) ? true : false;
+        this.addPoint(activeClass.id, internalX, internalY, labelValue);
+      } else if (this.mode === "delete") {
+        if (this.hoveredPoint) {
+          // Remove the point and update segmentation for that class.
+          const classId = this.hoveredPoint.classId;
+          this.deletePoint(this.hoveredPoint.x, this.hoveredPoint.y, classId);
+          this.hoveredPoint = null;
+          this.drawAnnotations();
+        }
+      }
+    },
+
+    // Handler for mouse movements on the canvas.
+    // In delete mode, highlights a nearby point if found.
+    canvasMouseMove: function(event) {
+      if (this.mode !== "delete") return;
+
+      const rect = this.canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      const scaleX = this.resolution[0] / rect.width;
+      const scaleY = this.resolution[1] / rect.height;
+      const internalX = mouseX * scaleX;
+      const internalY = mouseY * scaleY;
+
+      let closest = null;
+      let minDist = Infinity;
+      const threshold = 20; // in internal resolution units
+      const frame = this.currentFrameIndex;
+      if (this.annotations[frame]) {
+        for (const classId in this.annotations[frame]) {
+          const points = this.annotations[frame][classId];
+          for (let i = 0; i < points.length; i++) {
+            const pt = points[i];
+            const dist = Math.hypot(pt.x - internalX, pt.y - internalY);
+            if (dist < threshold && dist < minDist) {
+              closest = { classId: classId, index: i, x: pt.x, y: pt.y, label: pt.label };
+              minDist = dist;
             }
           }
-          if (this.hoveredPoint) break;
         }
-      },
-
-      // NEW: Handle click events on the seek bar.
-      sliderClick: function(event) {
-        const rect = this.slider.getBoundingClientRect();
-        const clickX = event.clientX - rect.left;
-        const clickFraction = clickX / rect.width;
-        const newTime = clickFraction * this.video.duration;
-        this.video.currentTime = newTime;
-        // Immediately redraw the frame after seeking.
-        this.drawFrame();
-      },
-
-      // Called when the video metadata is loaded.
-      videoLoadedMetadata: function(event) {
-        this.resizeCanvas();
-        // Render first frame.
-        this.video.currentTime = 0;
-        if ("requestVideoFrameCallback" in HTMLVideoElement.prototype) {
-          this.video.requestVideoFrameCallback((now, metadata) => { this.updateCanvas(now, metadata); });
-        } else {
-          console.error("Your browser does not support requestVideoFrameCallback().");
-        }
-      },
-
-      // Update the seek progress bar as the video plays.
-      videoTimeUpdate: function(event) {
-        const progress = (this.video.currentTime / this.video.duration) * 100;
-        const progressBar = this.slider.querySelector('.seek-progress');
-        progressBar.style.width = progress + '%';
-      },
-
-      // Send segmentation request with the current frame and annotations.
-      sendSegmentationRequest: function() {
-        const frameTime = this.getFrameTime();
-        const currentAnnotations = this.getCurrentAnnotations();
-        const annotationsPayload = currentAnnotations.map(a => ({
-          label: a.label,
-          points: a.points,
-          point_labels: a.point_labels
-        }));
-
-        // Capture full-resolution video frame
-        const offscreen = document.createElement('canvas');
-        offscreen.width = this.video.videoWidth;
-        offscreen.height = this.video.videoHeight;
-        const offCtx = offscreen.getContext('2d');
-        offCtx.drawImage(this.video, 0, 0, offscreen.width, offscreen.height);
-        const dataURL = offscreen.toDataURL('image/png');
-        const frameData = dataURL.split(',')[1];
-
-        // Send segmentation request
-        fetch('/labeling/segmentation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            annotations: annotationsPayload,
-            frame: frameData
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          this.masksByTime[frameTime] = data;
-          // Save annotations to database after successful segmentation
-          this.saveAnnotations(frameTime, annotationsPayload);
-        })
-        .catch(err => console.error(err));
-      },
-
-      saveAnnotations: function(frameTime, annotations) {
-        fetch('/calibration_recordings/{{ calibration_recording.id }}/annotations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            frame_time: frameTime,
-            annotations: annotations
-          })
-        }).catch(err => console.error('Failed to save annotations:', err));
-      },
-
-      // Initialize with annotations from the server
-      initializeAnnotations() {
-        fetch('/calibration_recordings/{{ calibration_recording.id }}/annotations')
-          .then(response => response.json())
-          .then(annotations => {
-            this.annotations = annotations;
-            this.renderAnnotations();
-          })
-          .catch(err => console.error('Failed to load annotations:', err));
       }
-    };
+      this.hoveredPoint = closest;
+      this.drawAnnotations();
+    },
 
-    // Initialize annotations when the video is loaded
-    video.addEventListener('loadedmetadata', () => {
-      window.labeler.initializeAnnotations();
-      window.labeler.setMode('select'); // Set default mode to select
-    });
+    // Set the current labeling mode and update button styles.
+    setMode: function(mode) {
+      this.mode = mode;
+      const selectBtn = document.getElementById("select-mode-btn");
+      const deleteBtn = document.getElementById("delete-mode-btn");
+      if (mode === "select") {
+        selectBtn.classList.add("active");
+        deleteBtn.classList.remove("active");
+        this.hoveredPoint = null;
+        this.drawAnnotations();
+      } else if (mode === "delete") {
+        deleteBtn.classList.add("active");
+        selectBtn.classList.remove("active");
+      }
+    },
 
-    // Add event listeners for video state changes
-    video.addEventListener('pause', () => {
-      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-    });
+    // Add a point to the annotation for the current frame and active class,
+    // then trigger an update to get the segmentation result.
+    addPoint: function(classId, x, y, label) {
+      const frame = this.currentFrameIndex;
+      if (!this.annotations[frame]) {
+        this.annotations[frame] = {};
+      }
+      if (!this.annotations[frame][classId]) {
+        this.annotations[frame][classId] = [];
+      }
+      this.annotations[frame][classId].push({ x, y, label });
+      this.drawAnnotations();
+      this.updateSegmentation(classId);
+    },
 
-    // Add debounced resize handler to avoid too many redraws
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        window.labeler.resizeCanvas();
-      }, 100); // Wait 100ms after last resize event
-    });
+    // Delete a point (if found) near the provided internal coordinates for a given class,
+    // then update segmentation.
+    deletePoint: function(x, y, classId) {
+      const frame = this.currentFrameIndex;
+      const threshold = 20; // internal resolution threshold
+      if (this.annotations[frame] && this.annotations[frame][classId]) {
+        const points = this.annotations[frame][classId];
+        for (let i = 0; i < points.length; i++) {
+          const pt = points[i];
+          const dist = Math.hypot(pt.x - x, pt.y - y);
+          if (dist < threshold) {
+            points.splice(i, 1);
+            this.drawAnnotations();
+            this.updateSegmentation(classId);
+            return;
+          }
+        }
+      }
+    },
 
-    video.addEventListener('ended', () => {
-      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-    });
+    // Send a segmentation request to the backend for the current frame and given class.
+    // The request body includes calibration_id, frame_idx, and the list of points and their labels.
+    updateSegmentation: function(classId) {
+      const frame = this.currentFrameIndex;
+      if (!this.annotations[frame] ||
+          !this.annotations[frame][classId] ||
+          this.annotations[frame][classId].length === 0) {
+        if (this.segmentations[frame]) {
+          delete this.segmentations[frame][classId];
+        }
+        return;
+      }
+      const pts = this.annotations[frame][classId].map(pt => [Math.round(pt.x), Math.round(pt.y)]);
+      const labels = this.annotations[frame][classId].map(pt => pt.label ? 1 : 0);
+      fetch('/labeling/segmentation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          calibration_id: parseInt(this.calibration_id),
+          frame_idx: this.currentFrameIndex,
+          points: pts,
+          labels: labels
+        })
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Segmentation request failed");
+        return response.json();
+      })
+      .then(data => {
+        // If the segmentation returns no mask, clear the segmentation overlay.
+        if (!data.mask) {
+          if (this.segmentations[frame]) {
+            delete this.segmentations[frame][classId];
+          }
+          this.drawAnnotations();
+          return;
+        }
+        if (!this.segmentations[frame]) this.segmentations[frame] = {};
+        this.segmentations[frame][classId] = {
+          mask: data.mask,
+          bounding_box: data.bounding_box
+        };
+        // Pre-load the mask image.
+        const img = new Image();
+        img.src = "data:image/png;base64," + data.mask;
+        img.onload = () => {
+          this.segmentations[frame][classId].img = img;
+          this.drawAnnotations();
+        };
+      })
+      .catch(error => {
+        console.error("Segmentation error:", error);
+        // Clear the segmentation overlay if the request fails.
+        if (this.segmentations[frame]) {
+          delete this.segmentations[frame][classId];
+        }
+        this.drawAnnotations();
+      });
+    },
 
-    video.addEventListener('play', () => {
-      playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-    });
-  })();
+    // Clear and re-draw the current frame along with point labels, valid boundaries,
+    // and any segmentation overlays (mask, box, and class label).
+    drawAnnotations: function() {
+      if (!this.currentFrameImage) return;
+      // Clear and draw the frame.
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(this.currentFrameImage, 0, 0);
+
+      // Calculate scale factors from internal resolution to canvas coordinates.
+      const scaleX_draw = this.canvas.width / this.resolution[0];
+      const scaleY_draw = this.canvas.height / this.resolution[1];
+      const frame = this.currentFrameIndex;
+      const activeClass = window.classManager.activeClass;
+
+      // If the active class has annotations, render the valid boundary.
+      if (activeClass && this.annotations[frame] &&
+          this.annotations[frame][activeClass.id] &&
+          this.annotations[frame][activeClass.id].length > 0) {
+        const pts = this.annotations[frame][activeClass.id];
+        const minX = Math.min(...pts.map(pt => pt.x));
+        const maxX = Math.max(...pts.map(pt => pt.x));
+        const minY = Math.min(...pts.map(pt => pt.y));
+        const maxY = Math.max(...pts.map(pt => pt.y));
+        const validX1 = maxX - 512;
+        const validX2 = minX + 512;
+        const validY1 = maxY - 512;
+        const validY2 = minY + 512;
+        const canvasValidX1 = validX1 * scaleX_draw;
+        const canvasValidX2 = validX2 * scaleX_draw;
+        const canvasValidY1 = validY1 * scaleY_draw;
+        const canvasValidY2 = validY2 * scaleY_draw;
+        this.ctx.fillStyle = "rgba(0,0,0,0.4)";
+        // Top overlay.
+        this.ctx.fillRect(0, 0, this.canvas.width, canvasValidY1);
+        // Bottom overlay.
+        this.ctx.fillRect(0, canvasValidY2, this.canvas.width, this.canvas.height - canvasValidY2);
+        // Left overlay.
+        this.ctx.fillRect(0, canvasValidY1, canvasValidX1, canvasValidY2 - canvasValidY1);
+        // Right overlay.
+        this.ctx.fillRect(canvasValidX2, canvasValidY1, this.canvas.width - canvasValidX2, canvasValidY2 - canvasValidY1);
+        this.ctx.strokeStyle = "rgba(255,255,255,0.8)";
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(canvasValidX1, canvasValidY1, canvasValidX2 - canvasValidX1, canvasValidY2 - canvasValidY1);
+      }
+
+      // Draw points for the active class.
+      if (activeClass && this.annotations[frame] && this.annotations[frame][activeClass.id]) {
+        const points = this.annotations[frame][activeClass.id];
+        points.forEach(pt => {
+          this.ctx.beginPath();
+          const x_render = pt.x * scaleX_draw;
+          const y_render = pt.y * scaleY_draw;
+          this.ctx.arc(x_render, y_render, 6, 0, 2 * Math.PI);
+          // Positive: light green; Negative: pink.
+          this.ctx.fillStyle = pt.label ? "#81f542" : "#ff1f79";
+          this.ctx.fill();
+        });
+      }
+
+      // Draw segmentation overlays for all annotations in the current frame.
+      if (this.segmentations[frame]) {
+        for (const classId in this.segmentations[frame]) {
+          const seg = this.segmentations[frame][classId];
+          if (seg && seg.img && seg.bounding_box) {
+            // bounding_box: [x1, y1, x2, y2] in internal coordinates.
+            const [x1, y1, x2, y2] = seg.bounding_box;
+            const canvasX1 = x1 * scaleX_draw;
+            const canvasY1 = y1 * scaleY_draw;
+            const canvasX2 = x2 * scaleX_draw;
+            const canvasY2 = y2 * scaleY_draw;
+            const width = canvasX2 - canvasX1;
+            const height = canvasY2 - canvasY1;
+            // Look up the class color and label.
+            const cls = window.classManager.classes.find(c => c.id == classId);
+            const color = cls ? cls.color : "#0d6efd";
+            // Draw the segmentation mask with 50% opacity.
+            this.ctx.globalAlpha = 0.5;
+            this.ctx.drawImage(seg.img, canvasX1, canvasY1, width, height);
+            this.ctx.globalAlpha = 1.0;
+            // Draw the bounding box.
+            this.ctx.strokeStyle = color;
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeRect(canvasX1, canvasY1, width, height);
+            // Render the class label at the top of the box.
+            const text = cls ? cls.class_name : "Class " + classId;
+            this.ctx.font = "bold 16px sans-serif";
+            const textMetrics = this.ctx.measureText(text);
+            const textWidth = textMetrics.width;
+            const textHeight = 16;
+            this.ctx.fillStyle = color;
+            this.ctx.fillRect(canvasX1, canvasY1 - textHeight - 4, textWidth + 4, textHeight + 4);
+            this.ctx.fillStyle = "#fff";
+            this.ctx.fillText(text, canvasX1 + 2, canvasY1 - 4);
+          }
+        }
+      }
+
+      // If in delete mode, highlight the hovered point.
+      if (this.hoveredPoint && activeClass && this.hoveredPoint.classId == activeClass.id) {
+        const x_render = this.hoveredPoint.x * scaleX_draw;
+        const y_render = this.hoveredPoint.y * scaleY_draw;
+        this.ctx.beginPath();
+        this.ctx.arc(x_render, y_render, 12, 0, 2 * Math.PI);
+        this.ctx.strokeStyle = "#ffeba1";
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+      }
+    },
+
+    // Update the progress bar in the seek slider.
+    updateSeekBar: function() {
+      const slider = document.getElementById("seek-slider");
+      const progress = slider.querySelector(".seek-progress");
+      const percent = (this.currentFrameIndex / this.frameCount) * 100;
+      progress.style.width = percent + "%";
+    },
+
+    // A continuous rendering loop.
+    renderLoop: function() {
+      this.drawAnnotations();
+      requestAnimationFrame(this.renderLoop.bind(this));
+    }
+  };
+
+  // Initialize the labeler.
+  // Make sure the template provides the following variables:
+  //   calibration_recording.recording_uuid, frame_count, resolution, and calibration_recording.id.
+  window.labeler.init(
+    "{{ calibration_recording.recording_uuid }}", 
+    "{{ frame_count }}",
+    {{ resolution|tojson }},
+    "{{ calibration_recording.id }}"
+  );
 </script>
 <style>
   .offscreen-video {
@@ -440,7 +504,7 @@
     left: 0;
     height: 100%;
     width: 0;
-    background-color: #0d6efd; /* Bootstrap primary color */
+    background-color: #0d6efd;
     border-radius: 6px;
   }
 </style>

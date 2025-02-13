@@ -3,10 +3,12 @@ import json
 import random
 from collections.abc import Generator
 from pathlib import Path
+from typing import cast
 
 import aiohttp
 import cv2
 import numpy as np
+import numpy.typing as npt
 from fastapi import Request
 
 
@@ -63,12 +65,13 @@ def cv2_loadvideo(video_path: str) -> Generator[tuple[int, cv2.typing.MatLike], 
     cap.release()
 
 
-def cv2_video_resolution(video_path: Path) -> tuple[int, int]:
+def cv2_video_resolution(video_path: Path, flip: bool = False) -> tuple[int, int]:
     """
     Get the resolution of a video file using OpenCV.
 
     Args:
         video_path (str): Path to the video file.
+        flip: Whether to flip the resolution (width, height) instead of (height, width).
 
     Returns:
         tuple[int, int]: The resolution of the video (height, width).
@@ -79,6 +82,9 @@ def cv2_video_resolution(video_path: Path) -> tuple[int, int]:
 
     resolution = (int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)))
     cap.release()
+
+    if flip:
+        resolution = (resolution[1], resolution[0])
     return resolution
 
 
@@ -118,6 +124,26 @@ def cv2_video_frame_count(video_path: Path) -> int:
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cap.release()
     return frame_count
+
+
+def cv2_get_frame(video_path: Path, frame_idx: int) -> npt.NDArray[np.uint8]:
+    cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        raise ValueError(f"Video file not found: {video_path}")
+
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if frame_idx < 0 or frame_idx >= frame_count:
+        cap.release()
+        raise IndexError(f"Frame index {frame_idx} is out of range, total frames: {frame_count}")
+
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+    ret, frame = cap.read()
+    if not ret:
+        cap.release()
+        raise ValueError(f"Could not read frame at index {frame_idx}")
+
+    cap.release()
+    return cast(npt.NDArray[np.uint8], frame)
 
 
 def clamp(x: float, lower: float, upper: float) -> float:

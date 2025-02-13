@@ -5,10 +5,9 @@ from fastapi.templating import Jinja2Templates
 
 DATA_PATH = Path("data/")
 RECORDINGS_PATH = DATA_PATH / "recordings"
-FRAMES_PATH = DATA_PATH / "frames"
 CHECKPOINTS_PATH = Path("checkpoints")
 DEFAULT_GLASSES_HOSTNAME = "192.168.75.51"
-FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / "FastSAM-x.engine"
+FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / "FastSAM-x.pt"
 
 templates = Jinja2Templates(directory="src/templates")
 

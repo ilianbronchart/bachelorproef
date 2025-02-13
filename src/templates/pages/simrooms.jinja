@@ -46,7 +46,7 @@
         {% endif %}
         {% for sim_room in sim_rooms %}
           {% set li_classes = "list-group-item d-flex justify-content-between align-items-center transition-bg" %}
-          {% if selected_sim_room and selected_sim_room.id == sim_room.id %}
+          {% if sim_room and sim_room.id == sim_room.id %}
             {% set li_classes = li_classes + " selected" %}
           {% endif %}
           <li class="{{ li_classes }}"
@@ -68,8 +68,8 @@
     <!-- Column 2: Manage Classes for a Selected Sim Room -->
     <div class="col-md-4 d-flex flex-column">
       <h2>Sim Room Objects</h2>
-      {% if selected_sim_room %}
-        {% with sim_room_id=selected_sim_room.id, classes=classes %}
+      {% if sim_room %}
+        {% with sim_room_id=sim_room.id, classes=classes %}
           {% include "components/class-list.jinja" %}
         {% endwith %}
       {% else %}
@@ -79,8 +79,8 @@
     <!-- Column 3: Add Calibration Recordings -->
     <div class="col-md-4 d-flex flex-column">
       <h2>Calibration Recordings</h2>
-      {% if selected_sim_room %}
-        <form hx-post="/simrooms/{{ selected_sim_room.id }}/calibration_recordings"
+      {% if sim_room %}
+        <form hx-post="/simrooms/{{ sim_room.id }}/calibration_recordings"
               hx-target="#main-content"
               hx-target-4xx="#error-message"
               hx-target-5xx="#error-message"
@@ -102,7 +102,7 @@
         </form>
       {% endif %}
       <ul id="calibration-recordings-list" class="list-group">
-        {% if not selected_sim_room %}
+        {% if not sim_room %}
           <li class="list-group-item text-muted text-center">
             Please select a Sim Room from the left to manage its Calibration Recordings
           </li>
@@ -118,18 +118,21 @@
               </div>
               <div class="d-flex gap-2">
                 <button class="btn btn-sm btn-primary d-flex align-items-center gap-2"
-                        hx-get="/labeling?calibration_id={{ cal_rec.id }}"
+                        hx-post="/labeling?calibration_id={{ cal_rec.id }}"
                         hx-target="#main-content"
                         hx-target-4xx="#error-message"
                         hx-target-5xx="#error-message"
                         hx-push-url="true"
+                        hx-disabled-elt="this"
+                        hx-indicator="find .spinner, find .bi"
                         hx-on:click="clearError()">
-                  <i class="bi bi-pencil-square"></i>
+                  <i class="bi bi-pencil-square htmx-request-hide"></i>
+                  <div class="spinner spinner-border spinner-border-sm" role="status"></div>
                   Start Labeling
                 </button>
                 <button class="btn btn-sm btn-danger d-flex align-items-center"
                         hx-confirm="Are you sure you want to delete this calibration recording? All calibration annotations will be lost."
-                        hx-delete="/simrooms/{{ selected_sim_room.id }}/calibration_recordings/{{ cal_rec.id }}"
+                        hx-delete="/simrooms/{{ sim_room.id }}/calibration_recordings/{{ cal_rec.id }}"
                         hx-target="#main-content"
                         hx-target-4xx="#error-message"
                         hx-target-5xx="#error-message"
