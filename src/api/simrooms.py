@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Form, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from src.api.models import Request, SimRoomsContext
 from src.api.models.context import ClassListContext
@@ -159,3 +159,7 @@ async def delete_calibration_recording(request: Request, sim_room_id: int, calib
         return Response(status_code=500, content=f"Error: {e!s}")
 
     return Response(status_code=200)
+
+@router.get("/{sim_room_id}/calibration_recordings/{calibration_id}/annotations", response_class=JSONResponse)
+async def get_calibration_annotations(request: Request, sim_room_id: int, calibration_id: int):
+    return Response(status_code=200, content="Not implemented yet")
