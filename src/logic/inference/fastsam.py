@@ -3,9 +3,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-from src.core.utils import cv2_loadvideo
 from src.logic.glasses.domain import GazeData, GazePoint
 from src.logic.glasses.gaze import get_gaze_points, match_frames_to_gaze
+from src.utils import cv2_loadvideo
 from torchvision.ops import masks_to_boxes
 from ultralytics import FastSAM
 from ultralytics.engine.results import Boxes, Masks, Results

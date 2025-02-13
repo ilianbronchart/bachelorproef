@@ -1,5 +1,7 @@
+<script src="{{ url_for('static', path='/scripts/recordings-table.js') }}"></script>
 <div id="local-recordings">
-  {% if local_recordings|length > 0 %}
+  <span id="local-recordings-error" class="text-danger"></span>
+  {% if recordings|length > 0 %}
     <table class="table w-100" id="local-recordings-table">
       <thead>
         <tr>
@@ -10,20 +12,20 @@
         </tr>
       </thead>
       <tbody>
-        {% for recording in local_recordings %}
+        {% for recording in recordings %}
           <tr>
             <td>{{ recording.participant }}</td>
-            <td>{{ recording.created }}</td>
-            <td>{{ recording.duration }}</td>
+            <td>{{ recording.formatted_created }}</td>
+            <td>{{ recording.formatted_duration }}</td>
             <td class="text-center">
               <button class="btn btn-danger pt-1 px-2"
                       hx-trigger="click"
                       hx-delete="/recordings/local/{{ recording.uuid }}"
                       hx-indicator="find .spinner, find .bi"
                       hx-target="#local-recordings"
-                      hx-target-500="#local-recordings-error-message"
+                      hx-target-500="#error-message"
                       hx-disabled-elt="this"
-                      hx-on::before-request="document.getElementById('local-recordings-error-message').innerHTML = ''">
+                      hx-on:click="clearError('#local-recordings-error')">
                 <i class="bi bi-trash-fill htmx-request-hide"></i>
                 <div class="spinner spinner-border spinner-border-sm" role="status"></div>
               </button>
@@ -33,11 +35,14 @@
       </tbody>
     </table>
   {% else %}
-    <p>
-      There are currently no local recordings.
-      <br>
-      Import recordings from Tobii Glasses using the table below to view them here.
-    </p>
+    <div class="alert alert-info mb-4">
+      <h4 class="alert-heading fs-5 fw-bold mb-3">No Local Recordings</h4>
+      <p>
+        There are currently no local recordings.
+        <br>
+        Import recordings from Tobii Glasses using the table below to view them here.
+      </p>
+    </div>
   {% endif %}
   <script>
   $(document).ready(function() {

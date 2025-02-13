@@ -42,6 +42,7 @@ tensorflow = "^2.18.0"
 numpy = "<2.0.0"
 faiss-gpu = "^1.7.2"
 sqlalchemy = "^2.0.37"
+alembic = "^1.14.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -117,8 +118,7 @@ lint.select = [
     "NPY",
 ]
 lint.ignore = [
-    # DoNotAssignLambda
-    "E731",
+    "E731", # DoNotAssignLambda
     "TRY003",  # Because it is tedious
     "ISC001", # May cause conflicts
 ]

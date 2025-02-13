@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 
 import numpy as np
-from src.core.utils import clamp
 from src.logic.glasses.domain import GazeData, GazeDataType, GazePoint
+from src.utils import clamp
 
 
 def parse_gazedata_file(file_path: Path) -> list[GazeData]:

@@ -1,12 +1,12 @@
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 import src.logic.glasses as glasses
-from src.api import labeling, recordings, simrooms
-from src.config import App, BaseContext, Template, templates
+from src.api import calibration_recording, labeling, recordings, simrooms
+from src.api.models import App, GlassesConnectionContext, Request
+from src.config import Template, templates
 from src.db.db import init_database
 from src.db.models.recording import Recording
 
@@ -21,14 +21,9 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
 
 app = App(lifespan=lifespan)
 app.include_router(recordings.router)
-app.include_router(labeling.router)
-app.include_router(simrooms.router)
-
-
-@dataclass
-class GlassesConnectionContext(BaseContext):
-    glasses_connected: bool
-    battery_level: int
+# app.include_router(labeling.router)
+# app.include_router(simrooms.router)
+# app.include_router(calibration_recording.router)
 
 
 @app.get("/", response_class=HTMLResponse)

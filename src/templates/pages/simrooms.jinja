@@ -18,7 +18,7 @@
       <i class="bi bi-info-circle-fill me-1"></i> Note: You can also add objects while labeling a calibration recording.
     </p>
   </div>
-  <div id="error" class="alert alert-danger mb-4"></div>
+  <div id="error-message" class="alert alert-danger mb-4"></div>
   <div class="row g-4 user-select-none">
     <!-- Column 1: Manage Sim Rooms -->
     <div class="col-md-4 d-flex flex-column">
@@ -26,7 +26,7 @@
       <form hx-post="/simrooms/add"
             hx-target="#simrooms"
             hx-swap="outerHTML"
-            hx-on::before-request="clearError()">
+            hx-on:click="clearError()">
         <div class="mb-3">
           <label for="sim-room-name" class="form-label">New Sim Room Name</label>
           <input type="text"
@@ -55,11 +55,11 @@
             <button class="btn btn-sm btn-danger"
                     hx-delete="/simrooms/{{ sim_room.id }}"
                     hx-target="#simrooms"
-                    hx-target-400="#error"
-                    hx-target-404="#error"
-                    hx-target-500="#error"
+                    hx-target-400="#error-message"
+                    hx-target-404="#error-message"
+                    hx-target-500="#error-message"
                     hx-swap="outerHTML"
-                    hx-on::before-request="clearError()">
+                    hx-on:click="clearError()">
               <i class="bi bi-trash"></i>
             </button>
           </li>
@@ -81,10 +81,10 @@
     <div class="col-md-4 d-flex flex-column">
       <h2>Calibration Recordings</h2>
       {% if selected_sim_room %}
-        <form hx-post="/simrooms/{{ selected_sim_room.id }}/calibration_recordings"
+        <form hx-post="/calibration_recordings/{{ selected_sim_room.id }}"
               hx-target="#simrooms"
               hx-swap="outerHTML"
-              hx-on::before-request="clearError()">
+              hx-on:click="clearError()">
           <div class="mb-3">
             <label for="recording-select" class="form-label">Select Recording</label>
             <select class="form-select"
@@ -92,7 +92,7 @@
                     id="recording-select"
                     required>
               <option value="">Select a recording...</option>
-              {% for recording in local_recordings %}
+              {% for recording in recordings %}
                 <option value="{{ recording.uuid }}">{{ recording.participant }} - {{ recording.created }}</option>
               {% endfor %}
             </select>
@@ -119,21 +119,21 @@
                 <button class="btn btn-sm btn-primary d-flex align-items-center gap-2"
                         hx-get="/labeling?calibration_id={{ cal_rec.id }}"
                         hx-target="#main-content"
-                        hx-target-4xx="#error"
-                        hx-target-5xx="#error"
+                        hx-target-4xx="#error-message"
+                        hx-target-5xx="#error-message"
                         hx-push-url="true"
-                        hx-on::before-request="clearError()">
+                        hx-on:click="clearError()">
                   <i class="bi bi-pencil-square"></i>
                   Start Labeling
                 </button>
                 <button class="btn btn-sm btn-danger d-flex align-items-center"
                         hx-confirm="Are you sure you want to delete this calibration recording? All calibration annotations will be lost."
-                        hx-delete="/simrooms/{{ selected_sim_room.id }}/calibration_recordings/{{ cal_rec.id }}"
+                        hx-delete="/calibration_recordings/{{ cal_rec.id }}"
                         hx-target="#simrooms"
-                        hx-target-4xx="#error"
-                        hx-target-5xx="#error"
+                        hx-target-4xx="#error-message"
+                        hx-target-5xx="#error-message"
                         hx-swap="outerHTML"
-                        hx-on::before-request="clearError()">
+                        hx-on:click="clearError()">
                   <i class="bi bi-trash"></i>
                 </button>
               </div>
@@ -172,7 +172,6 @@
     margin-top: 1.5rem;
   }
 </style>
-
 <script>
   // Add click event delegation for sim room list items
   document.getElementById('sim-rooms-list').addEventListener('click', function(e) {

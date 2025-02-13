@@ -86,11 +86,10 @@
   </div>
 </body>
 <script>
-   function clearError() {
-    const errorEl = document.getElementById('error');
+   function clearError(selector="error-message") {
+    const errorEl = document.getElementById(selector);
     if (errorEl) {
       errorEl.innerHTML = '';
-      errorEl.style.display = 'none';
     }
   }
 

@@ -1,13 +1,7 @@
 <div id="recording-labeler" class="container-fluid px-4">
   <div id="error" class="alert alert-danger mb-4"></div>
   <div class="row">
-    <!-- Left Column: Class List -->
-    <div class="col-md-3">
-      {% with sim_room_id=calibration_recording.sim_room_id, classes=classes %}
-        {% include "components/class-list.jinja" %}
-      {% endwith %}
-    </div>
-    <!-- Right Column: Canvas and Controls -->
+    <!-- Left Column: Canvas and Controls -->
     <div class="col-md-9">
       <!-- The canvas where video, masks, and annotations are drawn -->
       <canvas id="canvas"
@@ -17,7 +11,7 @@
       <!-- Control Bar: Play, Select, Delete, Seek -->
       <div id="controls" class="d-flex align-items-center gap-2 mb-3">
         <button id="play-pause-btn"
-                class="btn btn-secondary"
+                class="btn btn-primary"
                 type="button"
                 hx-on:click="window.labeler.togglePlayPause()">
           <i class="bi bi-play-fill"></i>
@@ -26,29 +20,33 @@
                 class="btn btn-secondary"
                 type="button"
                 hx-on:click="window.labeler.setMode('select')">
-          <i class="bi bi-cursor"></i>
+          <i class="bi bi-cursor-fill"></i>
         </button>
         <button id="delete-mode-btn"
                 class="btn btn-secondary"
                 type="button"
                 hx-on:click="window.labeler.setMode('delete')">
-          <i class="bi bi-trash"></i>
+          <i class="bi bi-trash-fill"></i>
         </button>
-        <input type="range"
-               id="seek-slider"
-               min="0"
-               value="0"
-               step="any"
-               class="form-range flex-grow-1">
+        <!-- Replaced draggable range input with a clickable progress bar -->
+        <div id="seek-slider"
+             class="seek-bar flex-grow-1"
+             hx-on:click="window.labeler.sliderClick(event)">
+          <div class="seek-progress"></div>
+        </div>
       </div>
+    </div>
+    <!-- Right Column: Class List -->
+    <div class="col-md-3">
+      {% with sim_room_id=calibration_recording.sim_room_id, classes=classes %}
+        {% include "components/class-list.jinja" %}
+      {% endwith %}
     </div>
   </div>
   <!-- Hidden Video (offscreen) -->
   <video id="video"
-         width="640"
-         height="360"
-         controls
          class="offscreen-video"
+         preload="auto"
          hx-on:loadedmetadata="window.labeler.videoLoadedMetadata(event)"
          hx-on:timeupdate="window.labeler.videoTimeUpdate(event)">
     <source src="{{ url_for('recordings', path=recording_uuid + '.mp4') }}"
@@ -61,11 +59,11 @@
     // Cache DOM elements
     const video          = document.getElementById('video');
     const canvas         = document.getElementById('canvas');
-    const slider        = document.getElementById('seek-slider');
-    const ctx           = canvas.getContext('2d');
-    const playPauseBtn  = document.getElementById('play-pause-btn');
-    const selectModeBtn = document.getElementById('select-mode-btn');
-    const deleteModeBtn = document.getElementById('delete-mode-btn');
+    const slider         = document.getElementById('seek-slider'); // Now a div seek bar.
+    const ctx            = canvas.getContext('2d');
+    const playPauseBtn   = document.getElementById('play-pause-btn');
+    const selectModeBtn  = document.getElementById('select-mode-btn');
+    const deleteModeBtn  = document.getElementById('delete-mode-btn');
 
     // Global labeler object to be used by hx-on event handlers
     window.labeler = {
@@ -78,19 +76,25 @@
       deleteModeBtn: deleteModeBtn,
 
       // Global state
-      annotationsByFrame: {}, // { frameId: { "classLabel": { points: [[x,y], ...], pointLabels: [1,0,...] }, ... } }
-      masksByFrame: {},       // { frameId: [ { class: "myClass", mask: <base64> }, ... ] }
-      mode: "select",         // "select" or "delete"
-      hoveredPoint: null,     // Used in delete mode to highlight a point
+      annotations: [], // Array of annotations with frame_time already included
+      masksByTime: {},  // { frameTime: [ { class: "myClass", mask: <base64> }, ... ] }
+      mode: "select",   // "select" or "delete"
+      hoveredPoint: null, // Used in delete mode to highlight a point
 
-      // Utility: use current video time (in ms) as a proxy frame identifier.
-      getFrameId: function() {
-        return Math.floor(this.video.currentTime * 1000);
+      // Get current frame time
+      getFrameTime: function() {
+        return this.video.currentTime;
+      },
+
+      // Get annotations for current frame time
+      getCurrentAnnotations: function() {
+        const currentTime = this.getFrameTime();
+        return this.annotations.filter(a => Math.abs(a.frame_time - currentTime) < 0.001);
       },
 
       // Resize canvas to fill container width and maintain video aspect ratio.
       resizeCanvas: function() {
-        const containerWidth = document.getElementById('recording-labeler').offsetWidth;
+        const containerWidth = this.canvas.parentElement.offsetWidth;
         if (this.video.videoWidth) {
           this.canvas.width  = containerWidth;
           this.canvas.height = containerWidth * (this.video.videoHeight / this.video.videoWidth);
@@ -98,16 +102,20 @@
           this.canvas.width  = containerWidth;
           this.canvas.height = containerWidth * (360 / 640);
         }
+        // Redraw frame immediately after resize
+        if (this.video.readyState >= 2) { // Check if video data is loaded
+          this.drawFrame();
+        }
       },
 
       // Draw the video frame, segmentation masks, and annotation points.
       drawFrame: function() {
         this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-        const frameId = this.getFrameId();
+        const frameTime = this.getFrameTime();
 
         // Draw segmentation masks for the current frame.
-        if (this.masksByFrame[frameId]) {
-          this.masksByFrame[frameId].forEach(maskData => {
+        if (this.masksByTime[frameTime]) {
+          this.masksByTime[frameTime].forEach(maskData => {
             const clsObj = window.classManager.classes.find(c => c.label === maskData.class);
             const maskColor = clsObj ? clsObj.color : "#000000";
             const img = new Image();
@@ -125,20 +133,20 @@
           });
         }
 
-        // Draw annotation points.
-        const frameAnnotations = this.annotationsByFrame[frameId] || {};
-        for (let cls in frameAnnotations) {
-          const pts         = frameAnnotations[cls].points;
-          const pointLabels = frameAnnotations[cls].pointLabels;
-          for (let i = 0; i < pts.length; i++) {
-            const pt = pts[i];
+        // Draw annotation points for current frame
+        const currentAnnotations = this.getCurrentAnnotations();
+        for (const annotation of currentAnnotations) {
+          for (let i = 0; i < annotation.points.length; i++) {
+            const pt = annotation.points[i];
             this.ctx.beginPath();
             this.ctx.arc(pt[0], pt[1], 5, 0, 2 * Math.PI);
             // Left click (1) is green; right click (0) is red.
-            this.ctx.fillStyle = (pointLabels[i] === 1) ? "green" : "red";
+            this.ctx.fillStyle = (annotation.point_labels[i] === 1) ? "green" : "red";
             this.ctx.fill();
             // If in delete mode and this point is hovered, draw a yellow outline.
-            if (this.mode === "delete" && this.hoveredPoint && this.hoveredPoint.cls === cls && this.hoveredPoint.index === i) {
+            if (this.mode === "delete" && this.hoveredPoint && 
+                this.hoveredPoint.label === annotation.label && 
+                this.hoveredPoint.index === i) {
               this.ctx.lineWidth = 3;
               this.ctx.strokeStyle = "yellow";
               this.ctx.stroke();
@@ -160,7 +168,7 @@
           this.playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
         } else {
           this.video.pause();
-          this.playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+          this.playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
         }
       },
 
@@ -181,12 +189,7 @@
         const rect = this.canvas.getBoundingClientRect();
         const x = parseInt(event.clientX - rect.left);
         const y = parseInt(event.clientY - rect.top);
-        const frameId = this.getFrameId();
-
-        if (!this.annotationsByFrame[frameId]) {
-          this.annotationsByFrame[frameId] = {};
-        }
-        let frameAnnotations = this.annotationsByFrame[frameId];
+        const frameTime = this.getFrameTime();
 
         if (this.mode === "select") {
           const activeClass = window.classManager.activeClass;
@@ -194,25 +197,35 @@
             alert("Please add/select a class first.");
             return;
           }
-          if (!frameAnnotations[activeClass.label]) {
-            frameAnnotations[activeClass.label] = { points: [], pointLabels: [] };
+
+          // Find or create annotation for current class and frame
+          let annotation = this.getCurrentAnnotations().find(a => a.label === activeClass.label);
+          if (!annotation) {
+            annotation = {
+              label: activeClass.label,
+              points: [],
+              point_labels: [],
+              frame_time: frameTime
+            };
+            this.annotations.push(annotation);
           }
-          // Left click (button 0) is positive (1), right click is negative (0).
+
+          // Add new point
           const pointLabel = (event.button === 0) ? 1 : 0;
-          frameAnnotations[activeClass.label].points.push([x, y]);
-          frameAnnotations[activeClass.label].pointLabels.push(pointLabel);
+          annotation.points.push([x, y]);
+          annotation.point_labels.push(pointLabel);
           this.sendSegmentationRequest();
         } else if (this.mode === "delete") {
           let found = false;
-          for (let cls in frameAnnotations) {
-            const pts = frameAnnotations[cls].points;
-            for (let i = 0; i < pts.length; i++) {
-              const pt = pts[i];
+          const currentAnnotations = this.getCurrentAnnotations();
+          for (const annotation of currentAnnotations) {
+            for (let i = 0; i < annotation.points.length; i++) {
+              const pt = annotation.points[i];
               const dx = pt[0] - x;
               const dy = pt[1] - y;
-              if (Math.sqrt(dx * dx + dy * dy) < 10) { // 10px tolerance
-                frameAnnotations[cls].points.splice(i, 1);
-                frameAnnotations[cls].pointLabels.splice(i, 1);
+              if (Math.sqrt(dx * dx + dy * dy) < 10) {
+                annotation.points.splice(i, 1);
+                annotation.point_labels.splice(i, 1);
                 found = true;
                 break;
               }
@@ -234,17 +247,16 @@
         const rect = this.canvas.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
-        const frameId = this.getFrameId();
-        const frameAnnotations = this.annotationsByFrame[frameId] || {};
+        const frameTime = this.getFrameTime();
+        const currentAnnotations = this.getCurrentAnnotations();
         this.hoveredPoint = null;
-        for (let cls in frameAnnotations) {
-          const pts = frameAnnotations[cls].points;
-          for (let i = 0; i < pts.length; i++) {
-            const pt = pts[i];
+        for (const annotation of currentAnnotations) {
+          for (let i = 0; i < annotation.points.length; i++) {
+            const pt = annotation.points[i];
             const dx = pt[0] - x;
             const dy = pt[1] - y;
             if (Math.sqrt(dx * dx + dy * dy) < 10) {
-              this.hoveredPoint = { cls: cls, index: i };
+              this.hoveredPoint = { label: annotation.label, index: i };
               break;
             }
           }
@@ -252,17 +264,22 @@
         }
       },
 
-      // Handle seek slider input.
-      sliderInput: function(event) {
-        this.video.currentTime = parseFloat(event.target.value);
+      // NEW: Handle click events on the seek bar.
+      sliderClick: function(event) {
+        const rect = this.slider.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickFraction = clickX / rect.width;
+        const newTime = clickFraction * this.video.duration;
+        this.video.currentTime = newTime;
+        // Immediately redraw the frame after seeking.
         this.drawFrame();
       },
 
       // Called when the video metadata is loaded.
       videoLoadedMetadata: function(event) {
         this.resizeCanvas();
-        this.slider.max = this.video.duration;
-        this.video.currentTime = 0; // Render first frame.
+        // Render first frame.
+        this.video.currentTime = 0;
         if ("requestVideoFrameCallback" in HTMLVideoElement.prototype) {
           this.video.requestVideoFrameCallback((now, metadata) => { this.updateCanvas(now, metadata); });
         } else {
@@ -270,27 +287,26 @@
         }
       },
 
-      // Update the seek slider as the video plays.
+      // Update the seek progress bar as the video plays.
       videoTimeUpdate: function(event) {
-        this.slider.value = this.video.currentTime;
+        const progress = (this.video.currentTime / this.video.duration) * 100;
+        const progressBar = this.slider.querySelector('.seek-progress');
+        progressBar.style.width = progress + '%';
       },
 
       // Send segmentation request with the current frame and annotations.
       sendSegmentationRequest: function() {
-        const frameId = this.getFrameId();
-        const frameAnnotations = this.annotationsByFrame[frameId] || {};
-        const annotationsPayload = [];
-        for (let cls in frameAnnotations) {
-          annotationsPayload.push({
-            label: cls,
-            points: frameAnnotations[cls].points,
-            point_labels: frameAnnotations[cls].pointLabels
-          });
-        }
+        const frameTime = this.getFrameTime();
+        const currentAnnotations = this.getCurrentAnnotations();
+        const annotationsPayload = currentAnnotations.map(a => ({
+          label: a.label,
+          points: a.points,
+          point_labels: a.point_labels
+        }));
 
-        // Capture full-resolution video frame.
+        // Capture full-resolution video frame
         const offscreen = document.createElement('canvas');
-        offscreen.width  = this.video.videoWidth;
+        offscreen.width = this.video.videoWidth;
         offscreen.height = this.video.videoHeight;
         const offCtx = offscreen.getContext('2d');
         offCtx.drawImage(this.video, 0, 0, offscreen.width, offscreen.height);
@@ -306,61 +322,65 @@
             frame: frameData
           })
         })
-          .then(response => response.json())
-          .then(data => {
-            this.masksByFrame[frameId] = data;
-            // Save annotations to database after successful segmentation
-            this.saveAnnotations(frameId, annotationsPayload);
-          })
-          .catch(err => console.error(err));
+        .then(response => response.json())
+        .then(data => {
+          this.masksByTime[frameTime] = data;
+          // Save annotations to database after successful segmentation
+          this.saveAnnotations(frameTime, annotationsPayload);
+        })
+        .catch(err => console.error(err));
       },
 
-      // Save annotations to the database
-      saveAnnotations: function(frameId, annotations) {
-        fetch('/labeling/{{ calibration_recording.id if calibration_recording else "" }}/annotations', {
+      saveAnnotations: function(frameTime, annotations) {
+        fetch('/calibration_recordings/{{ calibration_recording.id }}/annotations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            frame_id: frameId,
+            frame_time: frameTime,
             annotations: annotations
           })
         }).catch(err => console.error('Failed to save annotations:', err));
       },
 
-      // Load initial data
+      // Initialize with annotations from the server
       initializeAnnotations() {
-        // Convert initial annotations to our frame-based format
-        const frameId = 0;
-        this.annotationsByFrame[frameId] = {};
-        
-        this.initialAnnotations.forEach(annotation => {
-          this.annotationsByFrame[frameId][annotation.label] = {
-            points: annotation.points,
-            pointLabels: annotation.point_labels
-          };
-        });
-
-        // Select first class if none is selected
-        if (!window.classManager.activeClass && window.classManager.classes.length > 0) {
-          const firstClassLi = document.querySelector('.class-list li[data-class-id]');
-          if (firstClassLi) {
-            window.classManager.setActiveClass(firstClassLi, window.classManager.classes[0].label);
-          }
-        }
-
-        if (Object.keys(this.annotationsByFrame[frameId] || {}).length > 0) {
-          this.sendSegmentationRequest();
-        }
+        fetch('/calibration_recordings/{{ calibration_recording.id }}/annotations')
+          .then(response => response.json())
+          .then(annotations => {
+            this.annotations = annotations;
+            this.renderAnnotations();
+          })
+          .catch(err => console.error('Failed to load annotations:', err));
       }
     };
 
     // Initialize annotations when the video is loaded
     video.addEventListener('loadedmetadata', () => {
       window.labeler.initializeAnnotations();
+      window.labeler.setMode('select'); // Set default mode to select
     });
 
-    // Update canvas size when the window is resized
-    window.addEventListener('resize', () => { window.labeler.resizeCanvas(); });
+    // Add event listeners for video state changes
+    video.addEventListener('pause', () => {
+      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+    });
+
+    // Add debounced resize handler to avoid too many redraws
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        window.labeler.resizeCanvas();
+      }, 100); // Wait 100ms after last resize event
+    });
+
+    video.addEventListener('ended', () => {
+      playPauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+    });
+
+    video.addEventListener('play', () => {
+      playPauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+    });
   })();
 </script>
 <style>
@@ -373,14 +393,12 @@
     border: 1px solid #ddd;
     border-radius: 0.375rem;
   }
-  /* Control styling */
-  #controls {
-    background: rgba(0,0,0,.03);
-    padding: 1rem;
-    border-radius: 0.375rem;
+  #controls .control-btn i {
+    font-size: 1.2rem;
   }
-  #controls button.active {
-    background-color: #666;
+  .btn.active {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
     color: white;
   }
   /* Add vertical spacing between components */
@@ -407,5 +425,22 @@
   .class-list {
     flex-grow: 1;
     overflow-y: auto;
+  }
+  .seek-bar {
+    position: relative;
+    width: 100%;
+    height: 16px; /* Increased height for easier clicking */
+    background-color: #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .seek-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+    background-color: #0d6efd; /* Bootstrap primary color */
+    border-radius: 6px;
   }
 </style>

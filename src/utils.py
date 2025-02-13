@@ -1,7 +1,6 @@
 import base64
 import json
-import os
-import tempfile
+import random
 from collections.abc import Generator
 from pathlib import Path
 
@@ -46,26 +45,7 @@ def is_hx_request(request: Request) -> bool:
     return request.headers.get("hx-request") == "true"
 
 
-def extract_frames_to_tmpdir(video_path):
-    if not os.path.isfile(video_path):
-        raise FileNotFoundError(f"The file {video_path} does not exist.")
-
-    temp_dir = tempfile.mkdtemp()
-    video_capture = cv2.VideoCapture(video_path)
-    frame_count = 0
-    success, frame = video_capture.read()
-
-    while success:
-        frame_filename = os.path.join(temp_dir, f"{frame_count:04d}.jpg")
-        cv2.imwrite(frame_filename, frame)
-        success, frame = video_capture.read()
-        frame_count += 1
-
-    video_capture.release()
-    return temp_dir
-
-
-def cv2_loadvideo(video_path: str) -> Generator[tuple[int, np.ndarray], None, None]:
+def cv2_loadvideo(video_path: str) -> Generator[tuple[int, cv2.typing.MatLike], None, None]:
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise ValueError(f"Video file not found: {video_path}")
@@ -93,7 +73,7 @@ def cv2_video_resolution(video_path: Path) -> tuple[int, int]:
     Returns:
         tuple[int, int]: The resolution of the video (height, width).
     """
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         raise ValueError(f"Video file not found: {video_path}")
 
@@ -112,7 +92,7 @@ def cv2_video_fps(video_path: Path) -> float:
     Returns:
         float: The FPS of the video.
     """
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         raise ValueError(f"Video file not found: {video_path}")
 
@@ -131,7 +111,7 @@ def cv2_video_frame_count(video_path: Path) -> int:
     Returns:
         int: The number of frames in the video.
     """
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         raise ValueError(f"Video file not found: {video_path}")
 
@@ -140,7 +120,7 @@ def cv2_video_frame_count(video_path: Path) -> int:
     return frame_count
 
 
-def clamp(x, lower, upper):
+def clamp(x: float, lower: float, upper: float) -> float:
     return max(lower, min(x, upper))
 
 
@@ -149,3 +129,34 @@ def base64_to_numpy(img: str):
     nparr = np.frombuffer(imgdata, np.uint8)
     img_bgr = cv2.imdecode(nparr, flags=cv2.IMREAD_COLOR)
     return cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+
+
+def generate_pleasant_color() -> str:
+    """Generate a random color with moderate saturation and brightness."""
+    hue = random.random()  # Random hue (0-1)
+    saturation = random.uniform(0.4, 0.6)  # Moderate saturation
+    brightness = random.uniform(0.6, 0.8)  # Moderate to high brightness
+
+    # Convert HSV to RGB
+    h = hue * 6
+    i = int(h)
+    f = h - i
+    p = brightness * (1 - saturation)
+    q = brightness * (1 - saturation * f)
+    t = brightness * (1 - saturation * (1 - f))
+
+    if i % 6 == 0:
+        r, g, b = brightness, t, p
+    elif i % 6 == 1:
+        r, g, b = q, brightness, p
+    elif i % 6 == 2:
+        r, g, b = p, brightness, t
+    elif i % 6 == 3:
+        r, g, b = p, q, brightness
+    elif i % 6 == 4:
+        r, g, b = t, p, brightness
+    else:
+        r, g, b = brightness, p, q
+
+    # Convert to hex
+    return f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"

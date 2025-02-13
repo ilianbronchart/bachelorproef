@@ -1,6 +1,24 @@
+<script src="{{ url_for('static', path='/scripts/recordings-table.js') }}"></script>
 <div id="glasses-recordings" class="table-responsive">
-  <span id="error-message" class="text-danger"></span>
-  {% if not glasses_connected %}
+  {% if not failed_connection %}<span id="glasses-recordings-error" class="text-danger"></span>{% endif %}
+  {% if failed_connection %}
+    <div id="failed-connection-error" class="text-danger">Error: Failed to connect to Tobii Glasses</div>
+    <br>
+    <button class="btn btn-primary align-self-start"
+            hx-get="/recordings/glasses"
+            hx-trigger="click"
+            hx-target="#glasses-recordings"
+            hx-target-503="#glasses-recordings"
+            hx-swap="outerHTML"
+            hx-indicator="#retry-spinner"
+            hx-disabled-elt="this"
+            hx-on:click="clearError('failed-connection-error')">
+      <div id="retry-spinner"
+           class="spinner spinner-border spinner-border-sm"
+           role="status"></div>
+      Retry Connection
+    </button>
+  {% elif not glasses_connected %}
     <div id="connecting-to-glasses"
          hx-get="/recordings/glasses"
          hx-trigger="load"
@@ -14,7 +32,7 @@
       <span class="ms-2">Connecting to Tobii Glasses...</span>
     </div>
   {% else %}
-    {% if glasses_recordings|length == 0 %}
+    {% if recordings|length == 0 %}
       <p class="htmx-request-hide" id="no-glasses-recordings">There are currently no recordings on Tobii Glasses.</p>
       <button class="btn btn-primary"
               hx-get="/recordings/glasses"
@@ -39,22 +57,22 @@
           </tr>
         </thead>
         <tbody>
-          {% for recording in glasses_recordings %}
+          {% for recording in recordings %}
             <tr>
               <td>{{ recording.participant }}</td>
-              <td>{{ recording.created }}</td>
-              <td>{{ recording.duration }}</td>
+              <td>{{ recording.formatted_created }}</td>
+              <td>{{ recording.formatted_duration }}</td>
               <td class="text-center">
                 <button class="btn btn-primary pt-1 px-2"
                         hx-trigger="click"
                         hx-get="/recordings/glasses/{{ recording.uuid }}/download"
                         hx-indicator="find .spinner, find .bi"
                         hx-target="#local-recordings"
-                        hx-target-4xx="#error-message"
-                        hx-target-500="#error-message"
+                        hx-target-4xx="#glasses-recordings-error"
+                        hx-target-500="#glasses-recordings-error"
                         hx-target-503="#glasses-recordings"
                         hx-disabled-elt="this"
-                        hx-on::before-request="document.getElementById('error-message').innerHTML = ''">
+                        hx-on:click="clearError('glasses-recordings-error')">
                   <i class="bi bi-download htmx-request-hide"></i>
                   <div class="spinner spinner-border spinner-border-sm" role="status"></div>
                 </button>

@@ -3,56 +3,48 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
 from g3pylib.recordings.recording import Recording as GlassesRecording
-from sqlalchemy import Column, String
-from sqlalchemy.orm import Session, relationship
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, Session, relationship
 
 from src.config import RECORDINGS_PATH
-from src.core.utils import download_file
 from src.db.db import Base, engine
+from src.utils import download_file
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .calibration import CalibrationRecording
 
 
 class Recording(Base):
     __tablename__ = "recordings"
 
-    uuid = Column(String, primary_key=True)
-    visible_name = Column(String)
-    participant = Column(String)
-    created = Column(String)
-    duration = Column(String)
-    folder_name = Column(String)
-    scene_video_url = Column(String)
-    gaze_data_url = Column(String)
+    uuid: Mapped[str] = mapped_column(String, primary_key=True)
+    visible_name: Mapped[str] = mapped_column(String)
+    participant: Mapped[str] = mapped_column(String)
+    created: Mapped[str] = mapped_column(String)
+    duration: Mapped[str] = mapped_column(String)
+    folder_name: Mapped[str] = mapped_column(String)
+    scene_video_url: Mapped[str] = mapped_column(String)
+    gaze_data_url: Mapped[str] = mapped_column(String)
 
-    # One recording can be linked to multiple calibration recordings
-    calibration_recordings = relationship("CalibrationRecording", back_populates="recording")
+    calibration_recordings: Mapped[List["CalibrationRecording"]] = relationship(
+        "CalibrationRecording", back_populates="recording"
+    )
 
-    def to_dict(self) -> dict[str, str]:
-        return {
-            "uuid": self.uuid,
-            "visible_name": self.visible_name,
-            "participant": self.participant,
-            "created": datetime.fromisoformat(self.created).strftime("%d/%m/%y at %I:%M %p"),
-            "duration": self._format_duration(self.duration),
-            "folder_name": self.folder_name,
-            "scene_video_url": self.scene_video_url,
-            "gaze_data_url": self.gaze_data_url,
-        }
+    @property
+    def formatted_created(self) -> str:
+        return datetime.fromisoformat(str(self.created)).strftime("%d/%m/%y at %I:%M %p")
 
-    @staticmethod
-    async def from_glasses(glasses_recording: GlassesRecording) -> "Recording":
-        return Recording(
-            uuid=glasses_recording.uuid,
-            visible_name=await glasses_recording.get_visible_name(),
-            participant=await Recording.parse_participant(glasses_recording),
-            created=(await glasses_recording.get_created()).isoformat(),
-            duration=str(await glasses_recording.get_duration()),
-            folder_name=await glasses_recording.get_folder(),
-            scene_video_url=await glasses_recording.get_scenevideo_url(),
-            gaze_data_url=await glasses_recording.get_gazedata_url(),
-        )
+    @property
+    def formatted_duration(self) -> str:
+        parts = self.duration.split(":")
+        hours = int(parts[0])
+        minutes = int(parts[1])
+        seconds = int(float(parts[2]))
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     @staticmethod
     async def parse_participant(recording: GlassesRecording) -> str:
@@ -67,12 +59,12 @@ class Recording(Base):
             return session.query(Recording).filter(Recording.uuid == uuid).first()
 
     @staticmethod
-    def get_all() -> list["Recording"]:
+    def get_all() -> List["Recording"]:
         with Session(engine) as session:
             return session.query(Recording).all()
 
     @staticmethod
-    def clean_recordings(recordings_path: Path = RECORDINGS_PATH):
+    def clean_recordings(recordings_path: Path = RECORDINGS_PATH) -> None:
         with Session(engine) as session:
             recordings = session.query(Recording).all()
 
@@ -81,21 +73,13 @@ class Recording(Base):
                 recording.remove(recordings_path)
 
         # Delete files whose stem is not a valid recording uuid
-        valid_uuids = {recording.uuid for recording in recordings}
+        valid_uuids = {str(recording.uuid) for recording in recordings}
         for file in recordings_path.iterdir():
             if file.is_file() and file.stem not in valid_uuids:
                 file.unlink()
 
-    def _format_duration(self, duration: str) -> str:
-        hours, minutes, seconds = map(float, duration.split(":"))
-        total_seconds = int(hours * 3600 + minutes * 60 + seconds)
-        hours = total_seconds // 3600
-        minutes = (total_seconds % 3600) // 60
-        remaining_seconds = total_seconds % 60
-        return f"{hours:02d}:{minutes:02d}:{remaining_seconds:02d}"
-
-    def remove(self, recordings_path: Path = RECORDINGS_PATH):
-        recordings = [file for file in os.listdir(recordings_path) if self.uuid in file]
+    def remove(self, recordings_path: Path = RECORDINGS_PATH) -> None:
+        recordings = [file for file in os.listdir(recordings_path) if str(self.uuid) in file]
         for file in recordings:
             (recordings_path / file).unlink()
 
@@ -103,7 +87,7 @@ class Recording(Base):
             session.delete(self)
             session.commit()
 
-    async def download(self, recordings_path: Path = RECORDINGS_PATH):
+    async def download(self, recordings_path: Path = RECORDINGS_PATH) -> None:
         if self.is_complete(recordings_path):
             raise ValueError(f"Recording {self.uuid} already exists in {recordings_path}")
 
@@ -111,8 +95,8 @@ class Recording(Base):
             raise FileNotFoundError(f"Recordings path {recordings_path} does not exist")
 
         try:
-            await download_file(self.scene_video_url, recordings_path / f"{self.uuid}.mp4")
-            await download_file(self.gaze_data_url, recordings_path / f"{self.uuid}.tsv")
+            await download_file(str(self.scene_video_url), recordings_path / f"{self.uuid}.mp4")
+            await download_file(str(self.gaze_data_url), recordings_path / f"{self.uuid}.tsv")
 
             with Session(engine) as session:
                 session.add(self)
@@ -124,5 +108,7 @@ class Recording(Base):
 
     def is_complete(self, recordings_path: Path = RECORDINGS_PATH) -> bool:
         """Checks if all files of a recording exist in the output recordings path"""
-        is_in_db = self.get(self.uuid) is not None
-        return is_in_db and all((recordings_path / f"{self.uuid}.{ext}").exists() for ext in ["mp4", "tsv"])
+        is_in_db = self.get(str(self.uuid)) is not None
+        return is_in_db and all(
+            (recordings_path / f"{self.uuid}.{ext}").exists() for ext in ["mp4", "tsv"]
+        )
