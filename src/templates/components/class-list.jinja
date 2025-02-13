@@ -1,13 +1,12 @@
-<div id="class-management-{{ sim_room_id }}"
+<div id="class-list"
      class="class-management"
-     {% if sim_room_id %}data-sim-room-id="{{ sim_room_id }}"{% endif %}>
-  <form class="mb-3"
-        hx-post="/simrooms/{{ sim_room_id }}/classes/add"
-        hx-target="#class-management-{{ sim_room_id }}"
-        hx-target-4xx="#error"
-        hx-target-5xx="#error"
-        hx-swap="outerHTML"
-        hx-on:click="clearError()">
+     {% if selected_sim_room.id %}data-sim-room-id="{{ selected_sim_room.id }}"{% endif %}>
+  <form hx-post="/simrooms/{{ selected_sim_room.id }}/classes/add"
+        hx-target="#class-list"
+        hx-target-4xx="#error-message"
+        hx-target-5xx="#error-message"
+        hx-on:click="clearError()"
+        autocomplete="off">
     <div class="mb-3">
       <label for="class-name" class="form-label">New Object Name:</label>
       <input type="text"
@@ -27,16 +26,15 @@
           data-class-id="{{ class.id }}">
         <div class="d-flex align-items-center gap-2">
           <div class="color-preview" style="background-color: {{ class.color }}"></div>
-          <span class="class-label">{{ class.label }}</span>
+          <span class="class-label">{{ class.class_name }}</span>
         </div>
         <button class="btn btn-sm btn-danger"
                 hx-confirm="Are you sure? This will delete all annotations linked to this class."
-                hx-delete="/simrooms/{{ sim_room_id }}/classes/{{ class.id }}"
-                hx-target="#class-management-{{ sim_room_id }}"
-                hx-target-400="#error"
-                hx-target-404="#error"
-                hx-target-500="#error"
-                hx-swap="outerHTML"
+                hx-delete="/simrooms/{{ selected_sim_room.id }}/classes/{{ class.id }}"
+                hx-target="#class-list"
+                hx-target-400="#error-message"
+                hx-target-404="#error-message"
+                hx-target-500="#error-message"
                 hx-on:click="clearError()">
           <i class="bi bi-trash"></i>
         </button>

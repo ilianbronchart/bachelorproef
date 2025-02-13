@@ -2,10 +2,10 @@ from .app import App
 from .context import (
     BaseContext,
     GlassesConnectionContext,
+    LabelingContext,
     RecordingsContext,
     Request,
     SimRoomsContext,
-    LabelingContext,
 )
 
 __all__ = [

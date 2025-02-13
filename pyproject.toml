@@ -41,8 +41,9 @@ onnxruntime-gpu = "1.20.1"
 tensorflow = "^2.18.0"
 numpy = "<2.0.0"
 faiss-gpu = "^1.7.2"
-sqlalchemy = "^2.0.37"
+sqlalchemy = "2.0.29"
 alembic = "^1.14.1"
+sqlalchemy-serializer = "^1.4.22"
 
 [build-system]
 requires = ["poetry-core"]

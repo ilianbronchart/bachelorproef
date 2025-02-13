@@ -32,10 +32,10 @@ select[aria-controls="local-recordings-table"] {
   padding: 10px;
 }
 
-#error:empty {
+.alert-danger:empty {
   display: none !important;
 }
 
-#error:not(:empty) {
+.alert-danger:not(:empty) {
   display: block !important;
 }

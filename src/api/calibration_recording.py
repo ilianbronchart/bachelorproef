@@ -2,6 +2,7 @@ from fastapi import APIRouter, Form, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from src.api.models import Request
+from src.api.simrooms import simrooms
 from src.db import CalibrationRecording, Recording, SimRoom
 from src.db.db import engine
 
@@ -17,12 +18,14 @@ async def add_calibration_recording(request: Request, sim_room_id: int, recordin
             if not sim_room or not recording:
                 return Response(status_code=404, content="Sim Room or Recording not found")
 
-            session.add(CalibrationRecording(sim_room_id=sim_room.id, recording_uuid=recording.uuid))
+            session.add(CalibrationRecording(sim_room_id=sim_room_id, recording_uuid=recording_uuid))
             session.commit()
+
+            response = await simrooms(request, sim_room_id=sim_room_id)
+            response.headers["HX-Push-Url"] = f"/simrooms/?sim_room_id={sim_room_id}"
+            return response
     except Exception as e:
         return Response(status_code=500, content=str(e))
-
-    return Response(status_code=200)
 
 
 @router.delete("/{calibration_id}", response_class=HTMLResponse)

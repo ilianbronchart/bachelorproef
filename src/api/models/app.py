@@ -4,10 +4,11 @@ from src.config import RECORDINGS_PATH
 
 from .context import LabelingContext
 
+
 class App(FastAPI):
     labeling_context: LabelingContext | None = None
 
-    def __init__(self, *args, **kwargs): # type: ignore
+    def __init__(self, *args, **kwargs):  # type: ignore
         super().__init__(*args, **kwargs)
 
         self.mount("/static", StaticFiles(directory="src/static", html=True), name="static")

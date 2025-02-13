@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 import src.logic.glasses as glasses
-from src.api import calibration_recording, labeling, recordings, simrooms
+from src.api import recordings, simrooms
 from src.api.models import App, GlassesConnectionContext, Request
 from src.config import Template, templates
 from src.db.db import init_database
@@ -22,8 +22,7 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
 app = App(lifespan=lifespan)
 app.include_router(recordings.router)
 # app.include_router(labeling.router)
-# app.include_router(simrooms.router)
-# app.include_router(calibration_recording.router)
+app.include_router(simrooms.router)
 
 
 @app.get("/", response_class=HTMLResponse)

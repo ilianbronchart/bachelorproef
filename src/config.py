@@ -25,4 +25,4 @@ class Template:
     CONNECTION_STATUS: str = "components/connection-status.jinja"
     LOCAL_RECORDINGS: str = "components/local-recordings.jinja"
     GLASSES_RECORDINGS: str = "components/glasses-recordings.jinja"
-    FAILED_CONNECTION: str = "components/failed-connection.jinja"
+    CLASS_LIST: str = "components/class-list.jinja"

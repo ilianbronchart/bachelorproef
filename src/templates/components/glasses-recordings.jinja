@@ -1,8 +1,8 @@
 <script src="{{ url_for('static', path='/scripts/recordings-table.js') }}"></script>
 <div id="glasses-recordings" class="table-responsive">
-  {% if not failed_connection %}<span id="glasses-recordings-error" class="text-danger"></span>{% endif %}
+  {% if not failed_connection %}<span id="glasses-recordings-error" class="alert alert-danger mb-4"></span>{% endif %}
   {% if failed_connection %}
-    <div id="failed-connection-error" class="text-danger">Error: Failed to connect to Tobii Glasses</div>
+    <div id="failed-connection-error" class="alert alert-danger mb-4">Error: Failed to connect to Tobii Glasses</div>
     <br>
     <button class="btn btn-primary align-self-start"
             hx-get="/recordings/glasses"

@@ -3,17 +3,16 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Union, List
+from typing import TYPE_CHECKING, Union
 
 from g3pylib.recordings.recording import Recording as GlassesRecording
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column, Session, relationship
+from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from src.config import RECORDINGS_PATH
 from src.db.db import Base, engine
 from src.utils import download_file
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .calibration import CalibrationRecording
 
@@ -30,7 +29,7 @@ class Recording(Base):
     scene_video_url: Mapped[str] = mapped_column(String)
     gaze_data_url: Mapped[str] = mapped_column(String)
 
-    calibration_recordings: Mapped[List["CalibrationRecording"]] = relationship(
+    calibration_recordings: Mapped[list["CalibrationRecording"]] = relationship(
         "CalibrationRecording", back_populates="recording"
     )
 
@@ -59,7 +58,7 @@ class Recording(Base):
             return session.query(Recording).filter(Recording.uuid == uuid).first()
 
     @staticmethod
-    def get_all() -> List["Recording"]:
+    def get_all() -> list["Recording"]:
         with Session(engine) as session:
             return session.query(Recording).all()
 
@@ -109,6 +108,4 @@ class Recording(Base):
     def is_complete(self, recordings_path: Path = RECORDINGS_PATH) -> bool:
         """Checks if all files of a recording exist in the output recordings path"""
         is_in_db = self.get(str(self.uuid)) is not None
-        return is_in_db and all(
-            (recordings_path / f"{self.uuid}.{ext}").exists() for ext in ["mp4", "tsv"]
-        )
+        return is_in_db and all((recordings_path / f"{self.uuid}.{ext}").exists() for ext in ["mp4", "tsv"])

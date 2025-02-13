@@ -1,18 +1,18 @@
+import os
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
-import os
+from typing import TYPE_CHECKING, Any, no_type_check
 
 import cv2
 from fastapi import Request as FastAPIRequest
-from ultralytics import FastSAM
 from src.config import FRAMES_PATH, RECORDINGS_PATH, Template
 from src.db import Recording
-from src.db.models.calibration import Annotation, SimRoom, CalibrationRecording, SimRoomClass
-
-from typing import TYPE_CHECKING
+from src.db.models.calibration import Annotation, CalibrationRecording, SimRoom, SimRoomClass
+from ultralytics import FastSAM
 
 if TYPE_CHECKING:
     from .app import App
+
 
 class Request(FastAPIRequest):
     _app: "App"
@@ -26,8 +26,8 @@ class Request(FastAPIRequest):
 class BaseContext:
     request: Request
 
-    def to_dict(self):
-        dict_ = {k: v for k, v in self.__dict__.items() if k != "request"}
+    def to_dict(self, ignore: list[str] = ["request"]) -> dict[str, Any]:
+        dict_ = {k: v for k, v in self.__dict__.items() if k not in ignore}
         dict_["request"] = self.request
         return dict_
 
@@ -45,6 +45,7 @@ class RecordingsContext(BaseContext):
     failed_connection: bool = False
     content: str = Template.RECORDINGS
 
+
 @dataclass
 class SimRoomsContext(BaseContext):
     recordings: list[Recording] = field(default_factory=list)
@@ -52,7 +53,26 @@ class SimRoomsContext(BaseContext):
     selected_sim_room: SimRoom | None = None
     calibration_recordings: list[CalibrationRecording] = field(default_factory=list)
     classes: list[SimRoomClass] = field(default_factory=list)
-    content = Template.SIMROOMS
+    content: str = Template.SIMROOMS
+
+    @no_type_check
+    def to_dict(self) -> dict[str, Any]:
+        dict_ = super().to_dict(ignore=["classes"])
+        dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
+        return dict_
+
+
+@dataclass
+class ClassListContext(BaseContext):
+    selected_sim_room: SimRoom
+    classes: list[SimRoomClass]
+
+    @no_type_check
+    def to_dict(self) -> dict[str, Any]:
+        dict_ = super().to_dict(ignore=["classes"])
+        dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
+        return dict_
+
 
 @dataclass
 class LabelingContext(BaseContext):

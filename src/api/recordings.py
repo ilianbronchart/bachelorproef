@@ -34,7 +34,7 @@ async def delete_local_recording(request: Request, recording_id: str):
 
     try:
         recording = Recording.get(recording_id)
-        
+
         if recording is None:
             return Response(status_code=404, content="Error: Recording not found")
 
@@ -48,15 +48,12 @@ async def delete_local_recording(request: Request, recording_id: str):
 @router.get("/glasses", response_class=HTMLResponse)
 async def glasses_recordings(request: Request):
     """Retrieve metadata for all recordings on the glasses"""
-    context = RecordingsContext(
-        request=request, 
-        glasses_connected=await glasses.is_connected()
-    )
-    
+    context = RecordingsContext(request=request, glasses_connected=await glasses.is_connected())
+
     if not context.glasses_connected:
         context.failed_connection = True
         return templates.TemplateResponse(Template.GLASSES_RECORDINGS, context.to_dict(), status_code=503)
-        
+
     context.recordings = await glasses.get_recordings()
 
     if is_hx_request(request):
@@ -67,14 +64,11 @@ async def glasses_recordings(request: Request):
 @router.get("/glasses/{recording_uuid}/download", response_class=HTMLResponse)
 async def download_recording(request: Request, recording_uuid: str):
     """Download a recording from the glasses"""
-    context = RecordingsContext(
-        request=request,
-        glasses_connected=await glasses.is_connected()
-    )
+    context = RecordingsContext(request=request, glasses_connected=await glasses.is_connected())
 
     if not context.glasses_connected:
         context.failed_connection = True
-        return templates.TemplateResponse(Template.FAILED_CONNECTION, context.to_dict(), status_code=503)
+        return templates.TemplateResponse(Template.GLASSES_RECORDINGS, context.to_dict(), status_code=503)
 
     try:
         recording = await glasses.get_recording(recording_uuid)

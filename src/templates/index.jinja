@@ -79,7 +79,9 @@
     <hr>
     {% include "components/connection-status.jinja" %}
   </div>
-  <div id="main-content" class="flex-grow-1 p-3 mt-5">
+  <div id="main-content"
+       class="flex-grow-1 p-3 mt-5"
+       hx-ext="response-targets">
     {% if content %}
       {% include content %}
     {% endif %}

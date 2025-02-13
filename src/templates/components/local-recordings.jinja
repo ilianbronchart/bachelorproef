@@ -1,6 +1,6 @@
 <script src="{{ url_for('static', path='/scripts/recordings-table.js') }}"></script>
 <div id="local-recordings">
-  <span id="local-recordings-error" class="text-danger"></span>
+  <span id="local-recordings-error" class="alert alert-danger mb-4"></span>
   {% if recordings|length > 0 %}
     <table class="table w-100" id="local-recordings-table">
       <thead>
@@ -23,7 +23,7 @@
                       hx-delete="/recordings/local/{{ recording.uuid }}"
                       hx-indicator="find .spinner, find .bi"
                       hx-target="#local-recordings"
-                      hx-target-500="#error-message"
+                      hx-target-500="#local-recordings-error"
                       hx-disabled-elt="this"
                       hx-on:click="clearError('#local-recordings-error')">
                 <i class="bi bi-trash-fill htmx-request-hide"></i>

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.api.models import LabelingContext, Request
 from src.config import FAST_SAM_CHECKPOINT, Template, templates
 from src.db import CalibrationRecording, engine
-from src.utils import base64_to_numpy, is_hx_request
+from src.utils import is_hx_request
 from ultralytics import FastSAM
 
 router = APIRouter(prefix="/labeling")
