@@ -111,8 +111,4 @@ async def segmentation(request: Request, body: SegmentationRequestBody):
     mask = mask.repeat(3, axis=0).transpose(1, 2, 0) * 255
     _, encoded_img = cv2.imencode(".png", mask)
 
-    # save the mask locally for debugging
-    with open("mask.png", "wb") as f:
-        f.write(encoded_img.tobytes())
-
     return JSONResponse({"mask": base64.b64encode(encoded_img.tobytes()).decode("utf-8"), "bounding_box": bounding_box})

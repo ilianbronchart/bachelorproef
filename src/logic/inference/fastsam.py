@@ -266,11 +266,6 @@ def segment(
     padded_frame = cv2.copyMakeBorder(cropped_frame, 0, pad_y, 0, pad_x, cv2.BORDER_CONSTANT, value=(0, 0, 0))
     padded_frame = cv2.cvtColor(padded_frame, cv2.COLOR_BGR2RGB)
 
-    # save the padded frame for debugging
-    _, encoded_img = cv2.imencode(".png", padded_frame)
-    with open("debug_padded_frame.png", "wb") as f:
-        f.write(encoded_img.tobytes())
-
     results: Results = cast(
         Results,
         model(
@@ -290,15 +285,8 @@ def segment(
     for mask in results.masks:
         merged_mask = torch.logical_or(merged_mask, cast(torch.Tensor, mask.data))
 
-    print(merged_mask.shape)
     x1, y1, x2, y2 = masks_to_boxes(merged_mask)[0].cpu().numpy().astype(np.int32)
-    print(x1, y1, x2, y2)
     merged_mask = merged_mask.cpu().numpy().astype(np.uint8)
-
-    debug_mask = merged_mask.repeat(3, axis=0).transpose(1, 2, 0) * 255
-    _, encoded_img = cv2.imencode(".png", debug_mask)
-    with open("debug_mask.png", "wb") as f:
-        f.write(encoded_img.tobytes())
 
     # If the coordinates are swapped, correct them:
     x1, x2 = min(x1, x2), max(x1, x2)
