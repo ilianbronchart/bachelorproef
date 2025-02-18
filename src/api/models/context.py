@@ -2,10 +2,10 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, no_type_check
 
 from fastapi import Request as FastAPIRequest
+from sam2.sam2_image_predictor import SAM2ImagePredictor
 from src.config import Template
 from src.db import Recording
-from src.db.models.calibration import Annotation, CalibrationRecording, SimRoom, SimRoomClass
-from ultralytics import FastSAM
+from src.db.models import Annotation, CalibrationRecording, SimRoom, SimRoomClass
 
 if TYPE_CHECKING:
     from .app import App
@@ -70,13 +70,12 @@ class ClassListContext(BaseContext):
         dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
         return dict_
 
-
 @dataclass
 class LabelingContext(BaseContext):
     calibration_recording: CalibrationRecording
     sim_room: SimRoom
     recording: Recording
-    model: FastSAM
+    predictor: SAM2ImagePredictor
     classes: list[SimRoomClass]
     annotations: list[Annotation]
     frame_count: int
@@ -85,6 +84,7 @@ class LabelingContext(BaseContext):
 
     @no_type_check
     def to_dict(self) -> dict[str, Any]:
-        dict_ = super().to_dict(ignore=["classes"])
+        dict_ = super().to_dict(ignore=["classes", "annotations"])
         dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
+        dict_["annotations"] = [ann.to_dict() for ann in self.annotations]
         return dict_

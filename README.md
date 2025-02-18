@@ -24,7 +24,6 @@ install tensorrt (see nvidia)
 mkdir libs 
 git clone https://github.com/tobiipro/g3pylib.git libs/g3pylib
 git clone https://github.com/facebookresearch/sam2.git  libs/sam2
-git clone https://github.com/IDEA-Research/GroundingDINO.git libs/groundingdino
 git clone https://github.com/mit-han-lab/efficientvit.git libs/efficientvit
 git clone https://github.com/facebookresearch/dinov2.git libs/dinov2
 poetry install

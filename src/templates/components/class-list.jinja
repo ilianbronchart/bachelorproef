@@ -49,10 +49,10 @@ window.classManager = {
     activeClass: null,
 
     // Initialize with a list of classes
-    initialize(classes) {
+    initialize(classes, onClick) {
         this.classes = classes;
-        console.log("classes", classes);
         this.activeClass = null;
+        this.onClick = onClick
     },
 
     // Set the active class when a class is selected
@@ -70,6 +70,8 @@ window.classManager = {
         this.activeClass = this.classes.find(
           c => parseInt(c.id) === parseInt(class_id)
         ) || null;
+
+        this.onClick();
     },
 
     // Update a class's properties
@@ -81,10 +83,9 @@ window.classManager = {
                 this.activeClass = updatedClass;
             }
         }
-    }
-};
+    },
 
-window.classManager.initialize({{ classes|tojson }});
+};
 </script>
 <style>
   .list-group {

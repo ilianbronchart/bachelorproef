@@ -8,10 +8,3 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-
-
-def init_database(drop: bool = False):
-    """Drop all tables and recreate them. Use only in development."""
-    # if drop:
-    #     Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)

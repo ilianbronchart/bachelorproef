@@ -246,7 +246,6 @@ def segment(
     Returns:
         torch.Tensor: Merged mask
     """
-    # Crop the frame around the gaze point
     cx, cy = np.mean(points, axis=0)
     crop_size = 512
     half_crop = crop_size // 2

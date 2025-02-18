@@ -7,7 +7,24 @@ DATA_PATH = Path("data/")
 RECORDINGS_PATH = DATA_PATH / "recordings"
 CHECKPOINTS_PATH = Path("checkpoints")
 DEFAULT_GLASSES_HOSTNAME = "192.168.75.51"
+
 FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / "FastSAM-x.pt"
+
+
+@dataclass(frozen=True)
+class Sam2Checkpoints:
+    BASE_PLUS: Path = CHECKPOINTS_PATH / "sam2.1_hiera_base_plus.pt"
+    LARGE: Path = CHECKPOINTS_PATH / "sam2.1_hiera_large.pt"
+    SMALL: Path = CHECKPOINTS_PATH / "sam2.1_hiera_small.pt"
+    TINY: Path = CHECKPOINTS_PATH / "sam2.1_hiera_tiny.pt"
+
+
+SAM_2_MODEL_CONFIGS = {
+    Sam2Checkpoints.BASE_PLUS: "sam2.1_hiera_b+.yaml",
+    Sam2Checkpoints.LARGE: "sam2.1_hiera_l.yaml",
+    Sam2Checkpoints.SMALL: "sam2.1_hiera_s.yaml",
+    Sam2Checkpoints.TINY: "sam2.1_hiera_t.yaml",
+}
 
 templates = Jinja2Templates(directory="src/templates")
 

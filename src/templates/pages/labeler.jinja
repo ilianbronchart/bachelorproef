@@ -35,27 +35,32 @@
   </div>
 </div>
 <script>
-  // Global labeler object to manage frame fetching, point labeling, and segmentation.
+  // Global labeler object to manage frame fetching, point labeling, segmentation, and annotations.
   window.labeler = {
     canvas: null,
     ctx: null,
-    mode: "select",                // "select" or "delete"
-    currentFrameIndex: 0,           // Current frame number
-    currentFrameImage: null,        // The image object for the current frame
-    annotations: {},                // { frameIndex: { classId: [ {x, y, label}, ... ] } }
-    segmentations: {},              // { frameIndex: { classId: { mask, bounding_box, img } } }
-    recordingUUID: null,            // Set during initialization from server-side context
-    calibration_id: null,           // Calibration recording ID (needed for segmentation)
-    frameCount: 0,                  // Total number of frames (set during initialization)
+    mode: "select", // "select" or "delete"
+    currentFrameIndex: 0,
+    currentFrameImage: null,
+    // annotations is a flat list of annotation objects.
+    // Each annotation contains: id, calibration_recording_id, sim_room_class_id, frame_idx,
+    // annotation_mask (base64 PNG string), bounding_box (list of 4 ints), and point_labels: [ {x, y, label}, ... ]
+    annotations: [],
+    recordingUUID: null,
+    calibration_id: null,
+    frameCount: 0,
     resolution: [1920, 1080],
-    hoveredPoint: null,             // Holds a nearby point (if any) during delete mode
+    hoveredPoint: null,
+    sim_room_id: "{{ calibration_recording.sim_room_id }}",
+    lastRenderTime: 0,
 
-    // Initialize the labeler with recording UUID, total frame count, internal resolution, and calibration ID.
-    init: function(recordingUUID, frameCount, resolution, calibration_id) {
+    init: function(recordingUUID, frameCount, resolution, calibration_id, annotations) {
       this.recordingUUID = recordingUUID;
       this.frameCount = parseInt(frameCount);
       this.resolution = resolution;
       this.calibration_id = calibration_id;
+      this.annotations = annotations; // passed in as a list
+      console.log(annotations);
 
       this.canvas = document.getElementById("canvas");
       if (!this.canvas) {
@@ -64,33 +69,40 @@
       }
       this.ctx = this.canvas.getContext("2d");
 
-      // Prevent the context menu from appearing on right-click.
+      // Prevent context menu on right-click.
       this.canvas.addEventListener("contextmenu", e => e.preventDefault());
 
       // Load the first frame, set select mode, and start the render loop.
       this.fetchFrame(0);
       this.setMode("select");
       this.renderLoop();
+
+      window.classManager.initialize({{ classes|tojson }}, () => {
+        this.setMode("select");
+      });
     },
 
-    // Fetch a frame image from the backend and update the canvas.
     fetchFrame: function(frameIndex) {
-      const url = `/recordings/${this.recordingUUID}/frames/${frameIndex}`;
+      const url = `/labeling/frames/${frameIndex}`;
       fetch(url)
         .then(response => {
-          if (!response.ok) throw new Error("Failed to fetch frame");
-          return response.blob();
+          if (!response.ok) {
+            return response.text().then(text => {
+              document.getElementById("error-message").innerHTML = text;
+              throw new Error(text);
+            });
+          } else {
+            clearError();
+            return response.blob();
+          }
         })
         .then(blob => {
           const img = new Image();
           img.onload = () => {
-            // Adjust the canvas dimensions to the image dimensions.
             this.canvas.width = img.width;
             this.canvas.height = img.height;
             this.ctx.drawImage(img, 0, 0);
             this.currentFrameImage = img;
-            // Re-draw any annotations and segmentation overlays.
-            this.drawAnnotations();
           };
           img.src = URL.createObjectURL(blob);
         })
@@ -99,7 +111,6 @@
         });
     },
 
-    // Handler for clicks on the seek bar.
     sliderClick: function(event) {
       const slider = event.currentTarget;
       const rect = slider.getBoundingClientRect();
@@ -111,13 +122,13 @@
       this.fetchFrame(frameIndex);
     },
 
-    // Handler for mousedown events on the canvas.
-    // In select mode, adds a point (left-click for positive, right-click for negative)
-    // but only if the point falls within an allowed region (if points already exist).
-    // In delete mode, if a nearby point is highlighted it is removed.
+    // Given a frame and classId, return the corresponding annotation (if any)
+    getAnnotationForFrameAndClass: function(frame, classId) {
+      return this.annotations.find(ann => ann.frame_idx == frame && ann.sim_room_class_id == classId);
+    },
+
     canvasClick: function(event) {
       const rect = this.canvas.getBoundingClientRect();
-      // Get displayed canvas coordinates.
       const clickX = event.clientX - rect.left;
       const clickY = event.clientY - rect.top;
       // Map displayed coordinates to internal resolution.
@@ -129,50 +140,25 @@
       if (this.mode === "select") {
         event.preventDefault();
         const activeClass = window.classManager.activeClass;
+        console.log(activeClass);
         if (!activeClass) {
           alert("Please select a class first.");
           return;
         }
-        const frame = this.currentFrameIndex;
-        // If points already exist for this class, enforce a valid boundary.
-        if (this.annotations[frame] &&
-            this.annotations[frame][activeClass.id] &&
-            this.annotations[frame][activeClass.id].length > 0) {
-          const pts = this.annotations[frame][activeClass.id];
-          const minX = Math.min(...pts.map(pt => pt.x));
-          const maxX = Math.max(...pts.map(pt => pt.x));
-          const minY = Math.min(...pts.map(pt => pt.y));
-          const maxY = Math.max(...pts.map(pt => pt.y));
-          // Define a valid region in internal coordinates.
-          const validX1 = maxX - 512;
-          const validX2 = minX + 512;
-          const validY1 = maxY - 512;
-          const validY2 = minY + 512;
-          if (internalX < validX1 || internalX > validX2 ||
-              internalY < validY1 || internalY > validY2) {
-            alert("Point is outside the allowed region.");
-            return;
-          }
-        }
         // Left-click (button 0) is positive; right-click (button 2) is negative.
-        const labelValue = (event.button === 0) ? true : false;
+        const labelValue = (event.button === 0) ? 1 : 0;
         this.addPoint(activeClass.id, internalX, internalY, labelValue);
       } else if (this.mode === "delete") {
         if (this.hoveredPoint) {
-          // Remove the point and update segmentation for that class.
-          const classId = this.hoveredPoint.classId;
-          this.deletePoint(this.hoveredPoint.x, this.hoveredPoint.y, classId);
+          this.deletePoint(this.hoveredPoint.x, this.hoveredPoint.y, this.hoveredPoint.classId);
           this.hoveredPoint = null;
-          this.drawAnnotations();
         }
       }
     },
 
-    // Handler for mouse movements on the canvas.
-    // In delete mode, highlights a nearby point if found.
+    // --- Updated canvasMouseMove for delete mode ---
     canvasMouseMove: function(event) {
       if (this.mode !== "delete") return;
-
       const rect = this.canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
@@ -183,26 +169,22 @@
 
       let closest = null;
       let minDist = Infinity;
-      const threshold = 20; // in internal resolution units
+      const threshold = 20;
       const frame = this.currentFrameIndex;
-      if (this.annotations[frame]) {
-        for (const classId in this.annotations[frame]) {
-          const points = this.annotations[frame][classId];
-          for (let i = 0; i < points.length; i++) {
-            const pt = points[i];
-            const dist = Math.hypot(pt.x - internalX, pt.y - internalY);
-            if (dist < threshold && dist < minDist) {
-              closest = { classId: classId, index: i, x: pt.x, y: pt.y, label: pt.label };
-              minDist = dist;
-            }
+      // Iterate over all annotations on the current frame.
+      this.annotations.filter(ann => ann.frame_idx == frame).forEach(ann => {
+        ann.point_labels.forEach((pt, index) => {
+          const dist = Math.hypot(pt.x - internalX, pt.y - internalY);
+          if (dist < threshold && dist < minDist) {
+            closest = { classId: ann.sim_room_class_id, index: index, x: pt.x, y: pt.y, label: pt.label };
+            minDist = dist;
           }
-        }
-      }
+        });
+      });
       this.hoveredPoint = closest;
-      this.drawAnnotations();
     },
+    // --- End updated canvasMouseMove ---
 
-    // Set the current labeling mode and update button styles.
     setMode: function(mode) {
       this.mode = mode;
       const selectBtn = document.getElementById("select-mode-btn");
@@ -211,207 +193,228 @@
         selectBtn.classList.add("active");
         deleteBtn.classList.remove("active");
         this.hoveredPoint = null;
-        this.drawAnnotations();
       } else if (mode === "delete") {
         deleteBtn.classList.add("active");
         selectBtn.classList.remove("active");
       }
     },
 
-    // Add a point to the annotation for the current frame and active class,
-    // then trigger an update to get the segmentation result.
     addPoint: function(classId, x, y, label) {
       const frame = this.currentFrameIndex;
-      if (!this.annotations[frame]) {
-        this.annotations[frame] = {};
+      let ann = this.getAnnotationForFrameAndClass(frame, classId);
+      if (!ann) {
+        // Create a new annotation object. The mask and bounding box are initially empty;
+        // the segmentation endpoint will compute them based on point_labels.
+        ann = {
+          calibration_recording_id: parseInt(this.calibration_id),
+          frame_idx: frame,
+          sim_room_class_id: classId,
+          annotation_mask: "",
+          bounding_box: [],
+          point_labels: []
+        };
+        this.annotations.push(ann);
       }
-      if (!this.annotations[frame][classId]) {
-        this.annotations[frame][classId] = [];
-      }
-      this.annotations[frame][classId].push({ x, y, label });
-      this.drawAnnotations();
-      this.updateSegmentation(classId);
+      ann.point_labels.push({ x, y, label });
+      this.updateSegmentation(ann);
     },
 
-    // Delete a point (if found) near the provided internal coordinates for a given class,
-    // then update segmentation.
     deletePoint: function(x, y, classId) {
       const frame = this.currentFrameIndex;
-      const threshold = 20; // internal resolution threshold
-      if (this.annotations[frame] && this.annotations[frame][classId]) {
-        const points = this.annotations[frame][classId];
-        for (let i = 0; i < points.length; i++) {
-          const pt = points[i];
-          const dist = Math.hypot(pt.x - x, pt.y - y);
-          if (dist < threshold) {
-            points.splice(i, 1);
-            this.drawAnnotations();
-            this.updateSegmentation(classId);
-            return;
-          }
+      const ann = this.getAnnotationForFrameAndClass(frame, classId);
+      if (!ann || !ann.point_labels) return;
+      const threshold = 20;
+      for (let i = 0; i < ann.point_labels.length; i++) {
+        const pt = ann.point_labels[i];
+        if (Math.hypot(pt.x - x, pt.y - y) < threshold) {
+          ann.point_labels.splice(i, 1);
+          this.updateSegmentation(ann);
+          return;
         }
       }
     },
 
-    // Send a segmentation request to the backend for the current frame and given class.
-    // The request body includes calibration_id, frame_idx, and the list of points and their labels.
-    updateSegmentation: function(classId) {
-      const frame = this.currentFrameIndex;
-      if (!this.annotations[frame] ||
-          !this.annotations[frame][classId] ||
-          this.annotations[frame][classId].length === 0) {
-        if (this.segmentations[frame]) {
-          delete this.segmentations[frame][classId];
-        }
+    // Send a segmentation request. When a response is received (with new mask and bounding_box),
+    // update the annotation and then send the annotation update.
+    updateSegmentation: function(annotation) {
+      // If no point labels remain, clear the segmentation data.
+      if (annotation.point_labels.length === 0) {
+        annotation.annotation_mask = "";
+        annotation.bounding_box = [];
+        this.sendAnnotation(annotation);
         return;
       }
-      const pts = this.annotations[frame][classId].map(pt => [Math.round(pt.x), Math.round(pt.y)]);
-      const labels = this.annotations[frame][classId].map(pt => pt.label ? 1 : 0);
+      const points = annotation.point_labels.map(pt => [Math.round(pt.x), Math.round(pt.y)]);
+      const labels = annotation.point_labels.map(pt => pt.label);
       fetch('/labeling/segmentation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           calibration_id: parseInt(this.calibration_id),
-          frame_idx: this.currentFrameIndex,
-          points: pts,
+          frame_idx: annotation.frame_idx,
+          points: points,
           labels: labels
         })
       })
       .then(response => {
-        if (!response.ok) throw new Error("Segmentation request failed");
-        return response.json();
+        if (!response.ok) {
+          return response.text().then(text => {
+            document.getElementById("error-message").innerHTML = text;
+            throw new Error(text);
+          });
+        } else {
+          clearError();
+          return response.json();
+        }
       })
       .then(data => {
-        // If the segmentation returns no mask, clear the segmentation overlay.
         if (!data.mask) {
-          if (this.segmentations[frame]) {
-            delete this.segmentations[frame][classId];
-          }
-          this.drawAnnotations();
+          annotation.annotation_mask = "";
+          annotation.bounding_box = [];
+          this.sendAnnotation(annotation);
           return;
         }
-        if (!this.segmentations[frame]) this.segmentations[frame] = {};
-        this.segmentations[frame][classId] = {
-          mask: data.mask,
-          bounding_box: data.bounding_box
-        };
-        // Pre-load the mask image.
-        const img = new Image();
-        img.src = "data:image/png;base64," + data.mask;
-        img.onload = () => {
-          this.segmentations[frame][classId].img = img;
-          this.drawAnnotations();
+        // Update annotation with the new segmentation mask and bounding_box.
+        annotation.annotation_mask = data.mask;
+        if (data.bounding_box) {
+          annotation.bounding_box = data.bounding_box;
+        }
+        if (!annotation.img) {
+          annotation.img = new Image();
+        }
+        annotation.img.src = "data:image/png;base64," + data.mask;
+        annotation.img.onload = () => {
+          this.sendAnnotation(annotation);
         };
       })
       .catch(error => {
         console.error("Segmentation error:", error);
-        // Clear the segmentation overlay if the request fails.
-        if (this.segmentations[frame]) {
-          delete this.segmentations[frame][classId];
-        }
-        this.drawAnnotations();
       });
     },
 
-    // Clear and re-draw the current frame along with point labels, valid boundaries,
-    // and any segmentation overlays (mask, box, and class label).
+    // POST the updated (or new) annotation. The payload includes bounding_box.
+    sendAnnotation: function(annotation) {
+      const points = annotation.point_labels.map(pt => [Math.round(pt.x), Math.round(pt.y)]);
+      const labels = annotation.point_labels.map(pt => pt.label);
+      const payload = {
+        calibration_id: parseInt(this.calibration_id),
+        frame_idx: annotation.frame_idx,
+        sim_room_class_id: annotation.sim_room_class_id,
+        points: points,
+        labels: labels,
+        mask: annotation.annotation_mask,
+        bounding_box: annotation.bounding_box
+      };
+      const url = `/simrooms/${this.sim_room_id}/calibration_recordings/${this.calibration_id}/annotations`;
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        if (!response.ok) {
+          console.error("Annotation error:", response.status);
+          return;
+        }
+        return response.json();
+      })
+      .then(updatedAnnotation => {
+        if (updatedAnnotation) {
+          const idx = this.annotations.findIndex(ann =>
+            ann.frame_idx == updatedAnnotation.frame_idx &&
+            ann.sim_room_class_id == updatedAnnotation.sim_room_class_id
+          );
+          if (idx !== -1) {
+            this.annotations[idx] = updatedAnnotation;
+          } else {
+            this.annotations.push(updatedAnnotation);
+          }
+        }
+      })
+      .catch(error => {
+        console.error("Annotation request failed:", error);
+      });
+    },
+
+    // Clear and redraw the current frame along with segmentation overlays and point labels.
     drawAnnotations: function() {
       if (!this.currentFrameImage) return;
-      // Clear and draw the frame.
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.drawImage(this.currentFrameImage, 0, 0);
 
-      // Calculate scale factors from internal resolution to canvas coordinates.
       const scaleX_draw = this.canvas.width / this.resolution[0];
       const scaleY_draw = this.canvas.height / this.resolution[1];
       const frame = this.currentFrameIndex;
       const activeClass = window.classManager.activeClass;
 
-      // If the active class has annotations, render the valid boundary.
-      if (activeClass && this.annotations[frame] &&
-          this.annotations[frame][activeClass.id] &&
-          this.annotations[frame][activeClass.id].length > 0) {
-        const pts = this.annotations[frame][activeClass.id];
-        const minX = Math.min(...pts.map(pt => pt.x));
-        const maxX = Math.max(...pts.map(pt => pt.x));
-        const minY = Math.min(...pts.map(pt => pt.y));
-        const maxY = Math.max(...pts.map(pt => pt.y));
-        const validX1 = maxX - 512;
-        const validX2 = minX + 512;
-        const validY1 = maxY - 512;
-        const validY2 = minY + 512;
-        const canvasValidX1 = validX1 * scaleX_draw;
-        const canvasValidX2 = validX2 * scaleX_draw;
-        const canvasValidY1 = validY1 * scaleY_draw;
-        const canvasValidY2 = validY2 * scaleY_draw;
-        this.ctx.fillStyle = "rgba(0,0,0,0.4)";
-        // Top overlay.
-        this.ctx.fillRect(0, 0, this.canvas.width, canvasValidY1);
-        // Bottom overlay.
-        this.ctx.fillRect(0, canvasValidY2, this.canvas.width, this.canvas.height - canvasValidY2);
-        // Left overlay.
-        this.ctx.fillRect(0, canvasValidY1, canvasValidX1, canvasValidY2 - canvasValidY1);
-        // Right overlay.
-        this.ctx.fillRect(canvasValidX2, canvasValidY1, this.canvas.width - canvasValidX2, canvasValidY2 - canvasValidY1);
-        this.ctx.strokeStyle = "rgba(255,255,255,0.8)";
-        this.ctx.lineWidth = 3;
-        this.ctx.strokeRect(canvasValidX1, canvasValidY1, canvasValidX2 - canvasValidX1, canvasValidY2 - canvasValidY1);
-      }
+      // Iterate over all annotations on the current frame.
+      this.annotations.forEach(ann => {
+        if (ann.frame_idx == frame) {
+          // Get class details from the class manager.
+          const cls = window.classManager.classes.find(
+            c => parseInt(c.id) === parseInt(ann.sim_room_class_id)
+          );
+          const classColor = cls ? cls.color : "#0d6efd";
 
-      // Draw points for the active class.
-      if (activeClass && this.annotations[frame] && this.annotations[frame][activeClass.id]) {
-        const points = this.annotations[frame][activeClass.id];
-        points.forEach(pt => {
-          this.ctx.beginPath();
-          const x_render = pt.x * scaleX_draw;
-          const y_render = pt.y * scaleY_draw;
-          this.ctx.arc(x_render, y_render, 6, 0, 2 * Math.PI);
-          // Positive: light green; Negative: pink.
-          this.ctx.fillStyle = pt.label ? "#81f542" : "#ff1f79";
-          this.ctx.fill();
-        });
-      }
-
-      // Draw segmentation overlays for all annotations in the current frame.
-      if (this.segmentations[frame]) {
-        for (const classId in this.segmentations[frame]) {
-          const seg = this.segmentations[frame][classId];
-          if (seg && seg.img && seg.bounding_box) {
-            // bounding_box: [x1, y1, x2, y2] in internal coordinates.
-            const [x1, y1, x2, y2] = seg.bounding_box;
-            const canvasX1 = x1 * scaleX_draw;
-            const canvasY1 = y1 * scaleY_draw;
-            const canvasX2 = x2 * scaleX_draw;
-            const canvasY2 = y2 * scaleY_draw;
-            const width = canvasX2 - canvasX1;
-            const height = canvasY2 - canvasY1;
-            // Look up the class color and label.
-            const cls = window.classManager.classes.find(c => c.id == classId);
-            const color = cls ? cls.color : "#0d6efd";
-            // Draw the segmentation mask with 50% opacity.
-            this.ctx.globalAlpha = 0.5;
-            this.ctx.drawImage(seg.img, canvasX1, canvasY1, width, height);
-            this.ctx.globalAlpha = 1.0;
-            // Draw the bounding box.
-            this.ctx.strokeStyle = color;
-            this.ctx.lineWidth = 3;
-            this.ctx.strokeRect(canvasX1, canvasY1, width, height);
-            // Render the class label at the top of the box.
-            const text = cls ? cls.class_name : "Class " + classId;
-            this.ctx.font = "bold 16px sans-serif";
-            const textMetrics = this.ctx.measureText(text);
-            const textWidth = textMetrics.width;
-            const textHeight = 16;
-            this.ctx.fillStyle = color;
-            this.ctx.fillRect(canvasX1, canvasY1 - textHeight - 4, textWidth + 4, textHeight + 4);
-            this.ctx.fillStyle = "#fff";
-            this.ctx.fillText(text, canvasX1 + 2, canvasY1 - 4);
+          // Draw segmentation overlay and bounding box (if available) for every annotation.
+          if (ann.annotation_mask) {
+            if (!ann.img) {
+              ann.img = new Image();
+              ann.img.src = "data:image/png;base64," + ann.annotation_mask;
+            }
+            if (ann.bounding_box && ann.bounding_box.length === 4) {
+              const [x1, y1, x2, y2] = ann.bounding_box;
+              const canvasX1 = x1 * scaleX_draw;
+              const canvasY1 = y1 * scaleY_draw;
+              const canvasX2 = x2 * scaleX_draw;
+              const canvasY2 = y2 * scaleY_draw;
+              const width = canvasX2 - canvasX1;
+              const height = canvasY2 - canvasY1;
+              this.ctx.globalAlpha = 0.3;
+              this.ctx.drawImage(ann.img, canvasX1, canvasY1, width, height);
+              this.ctx.globalAlpha = 1.0;
+              // Draw bounding box stroke.
+              this.ctx.strokeStyle = classColor;
+              this.ctx.lineWidth = 3;
+              this.ctx.strokeRect(canvasX1, canvasY1, width, height);
+              // Draw class label at the top of the bounding box.
+              this.ctx.font = "bold 16px sans-serif";
+              const text = cls ? cls.class_name : "Class " + ann.sim_room_class_id;
+              const textMetrics = this.ctx.measureText(text);
+              const textWidth = textMetrics.width;
+              const textHeight = 16;
+              this.ctx.fillStyle = classColor;
+              this.ctx.fillRect(canvasX1, canvasY1 - textHeight - 4, textWidth + 4, textHeight + 4);
+              this.ctx.fillStyle = "#fff";
+              this.ctx.fillText(text, canvasX1 + 2, canvasY1 - 4);
+            } else {
+              // Fallback: draw the mask over the entire canvas.
+              this.ctx.globalAlpha = 0.3;
+              this.ctx.drawImage(ann.img, 0, 0, this.canvas.width, this.canvas.height);
+              this.ctx.globalAlpha = 1.0;
+            }
           }
+        }
+      });
+
+      // Draw points only for the annotation of the active class.
+      if (activeClass) {
+        const ann = this.getAnnotationForFrameAndClass(frame, activeClass.id);
+        if (ann && ann.point_labels) {
+          ann.point_labels.forEach(pt => {
+            this.ctx.beginPath();
+            const x_render = pt.x * scaleX_draw;
+            const y_render = pt.y * scaleY_draw;
+            this.ctx.arc(x_render, y_render, 6, 0, 2 * Math.PI);
+            // Green for positive (1), red for negative (0).
+            this.ctx.fillStyle = (pt.label == 1) ? "#81f542" : "#ff0000";
+            this.ctx.fill();
+          });
         }
       }
 
-      // If in delete mode, highlight the hovered point.
-      if (this.hoveredPoint && activeClass && this.hoveredPoint.classId == activeClass.id) {
+      // If in delete mode and a point is hovered, highlight it.
+      if (this.mode === "delete" && this.hoveredPoint) {
         const x_render = this.hoveredPoint.x * scaleX_draw;
         const y_render = this.hoveredPoint.y * scaleY_draw;
         this.ctx.beginPath();
@@ -422,7 +425,6 @@
       }
     },
 
-    // Update the progress bar in the seek slider.
     updateSeekBar: function() {
       const slider = document.getElementById("seek-slider");
       const progress = slider.querySelector(".seek-progress");
@@ -430,21 +432,27 @@
       progress.style.width = percent + "%";
     },
 
-    // A continuous rendering loop.
-    renderLoop: function() {
-      this.drawAnnotations();
+    // Render loop at ~20fps.
+    renderLoop: function(timestamp) {
+      if (!this.lastRenderTime) {
+        this.lastRenderTime = timestamp;
+      }
+      const elapsed = timestamp - this.lastRenderTime;
+      if (elapsed >= 50) {
+        this.drawAnnotations();
+        this.lastRenderTime = timestamp;
+      }
       requestAnimationFrame(this.renderLoop.bind(this));
     }
   };
 
   // Initialize the labeler.
-  // Make sure the template provides the following variables:
-  //   calibration_recording.recording_uuid, frame_count, resolution, and calibration_recording.id.
   window.labeler.init(
     "{{ calibration_recording.recording_uuid }}", 
     "{{ frame_count }}",
     {{ resolution|tojson }},
-    "{{ calibration_recording.id }}"
+    "{{ calibration_recording.id }}",
+    {{ annotations|tojson }}
   );
 </script>
 <style>
@@ -464,21 +472,6 @@
     background-color: var(--bs-primary);
     border-color: var(--bs-primary);
     color: white;
-  }
-  /* Add vertical spacing between components */
-  #recording-labeler {
-    min-height: calc(100vh - 56px);  /* Subtract navbar height */
-  }
-  #recording-labeler .row {
-    min-height: inherit;
-  }
-  #recording-labeler .col-md-3 {
-    background: rgba(0,0,0,.01);
-    padding: 1.5rem;
-    border-right: 1px solid rgba(0,0,0,.1);
-  }
-  #recording-labeler .col-md-9 {
-    padding: 1.5rem;
   }
   /* Make list take full height */
   .class-management {
