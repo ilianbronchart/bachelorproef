@@ -60,7 +60,6 @@
       this.resolution = resolution;
       this.calibration_id = calibration_id;
       this.annotations = annotations; // passed in as a list
-      console.log(annotations);
 
       this.canvas = document.getElementById("canvas");
       if (!this.canvas) {
@@ -77,7 +76,13 @@
       this.setMode("select");
       this.renderLoop();
 
-      window.classManager.initialize({{ classes|tojson }}, () => {
+      let storedActiveClass = window.localStorage.getItem("activeClass");
+      if (storedActiveClass) {
+        storedActiveClass = JSON.parse(storedActiveClass);
+      }
+
+      window.classManager.initialize({{ classes|tojson }}, storedActiveClass, (activeClass) => {
+        window.localStorage.setItem("activeClass", JSON.stringify(activeClass));
         this.setMode("select");
       });
     },
