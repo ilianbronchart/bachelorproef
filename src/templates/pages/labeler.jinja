@@ -149,16 +149,13 @@
         // Create a container for the thumbnail and set its data attribute.
         const thumbContainer = document.createElement("div");
         thumbContainer.classList.add("annotation-thumb");
-        thumbContainer.style.display = "inline-block";
         thumbContainer.setAttribute("data-frame", ann.frame_idx);
-        // Ensure relative positioning for the cross.
-        thumbContainer.style.position = "relative";
         thumbContainer.appendChild(thumbImg);
         
         // Create the delete button instead of a span.
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "btn btn-sm btn-danger annotation-delete";
-        deleteBtn.innerHTML = '<i class="bi bi-x-circle align-middle"></i>';
+        deleteBtn.innerHTML = '<i class="bi bi-x-circle-fill text-center"></i>';
         // The button click deletes the annotation.
         deleteBtn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -336,11 +333,13 @@
       .then(data => {
         if (!data.mask) {
           annotation.annotation_mask = "";
+          annotation.frame_crop = "";
           annotation.bounding_box = [];
           this.sendAnnotation(annotation);
           return;
         }
         annotation.annotation_mask = data.mask;
+        annotation.frame_crop = data.frame_crop;
         if (data.bounding_box) {
           annotation.bounding_box = data.bounding_box;
         }
@@ -612,24 +611,26 @@
 }
 
 .annotation-thumb {
+  display: flex;
   border-radius: 5px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: box-shadow 0.2s ease;
   margin: 2px;
   position: relative;
+  align-items: center;
 }
 
 .annotation-thumb img {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.2s ease;
   border-radius: 5px;
 }
 
-.annotation-thumb:hover {
+.annotation-thumb img:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
-.annotation-thumb.selected {
-  outline: 2px solid #0d6efd;
+.annotation-thumb.selected img {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  outline: 2px solid #0d6efd;
 }
 
 /* Delete cross styling: hidden by default, visible when hovering the parent */
@@ -639,8 +640,15 @@
   right: 5px;
   cursor: pointer;
   color: white;
+  padding: 4px;
   display: none;
-  vertical-align: baseline;
+}
+
+.annotation-delete i {
+  display: block;
+  line-height: 8px;
+  font-size: 16px;
+  box-sizing: content-box;
 }
 
 .annotation-thumb:hover .annotation-delete {
