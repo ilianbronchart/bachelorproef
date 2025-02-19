@@ -26,12 +26,9 @@
           <div class="seek-progress"></div>
         </div>
       </div>
+      <div id="annotation-list" class="d-flex flex-wrap gap-2 mb-3"></div>
     </div>
-    <div class="col-md-3">
-      {% with sim_room_id=calibration_recording.sim_room_id, classes=classes %}
-        {% include "components/class-list.jinja" %}
-      {% endwith %}
-    </div>
+    <div class="col-md-3">{% include "components/class-list.jinja" %}</div>
   </div>
 </div>
 <script>
@@ -76,15 +73,19 @@
       this.setMode("select");
       this.renderLoop();
 
-      let storedActiveClass = window.localStorage.getItem("activeClass");
-      if (storedActiveClass) {
-        storedActiveClass = JSON.parse(storedActiveClass);
-      }
-
-      window.classManager.initialize({{ classes|tojson }}, storedActiveClass, (activeClass) => {
-        window.localStorage.setItem("activeClass", JSON.stringify(activeClass));
+      window.eventBus.on('active-class-changed', () => {
+        if (!window.location.href.includes('labeling')) return;
         this.setMode("select");
+        this.updateAnnotationList();
       });
+
+      window.eventBus.on('class-deleted', (classId) => {
+        if (!window.location.href.includes('labeling')) return;
+        this.annotations = this.annotations.filter(ann => ann.sim_room_class_id !== classId);
+        this.updateAnnotationList();
+      });
+
+      this.updateAnnotationList();
     },
 
     fetchFrame: function(frameIndex) {
@@ -108,6 +109,7 @@
             this.canvas.height = img.height;
             this.ctx.drawImage(img, 0, 0);
             this.currentFrameImage = img;
+            this.currentFrameIndex = frameIndex;
           };
           img.src = URL.createObjectURL(blob);
         })
@@ -116,6 +118,67 @@
         });
     },
 
+    updateAnnotationList: function() {
+      const container = document.getElementById("annotation-list");
+      container.innerHTML = ""; // Clear previous thumbnails
+      const activeClass = window.classManager.activeClass;
+      if (!activeClass) return;
+      
+      // Filter annotations for the active class that have a valid frame_crop.
+      const annotationsForClass = this.annotations.filter(ann =>
+        ann.sim_room_class_id == activeClass.id && ann.frame_crop
+      );
+      
+      // Sort annotations by frame index.
+      annotationsForClass.sort((a, b) => a.frame_idx - b.frame_idx);
+      
+      const maxAnnotationSize = 200; // Maximum size for the longest side
+      
+      annotationsForClass.forEach(ann => {
+        // Create an image element for the thumbnail.
+        const thumbImg = document.createElement("img");
+        thumbImg.style.cursor = "pointer";
+        thumbImg.src = "data:image/png;base64," + ann.frame_crop;
+        
+        // Clicking the thumbnail jumps to that annotation’s frame.
+        thumbImg.addEventListener("click", () => {
+          this.updateSeekBar();
+          this.fetchFrame(ann.frame_idx);
+        });
+        
+        // Create a container for the thumbnail and set its data attribute.
+        const thumbContainer = document.createElement("div");
+        thumbContainer.classList.add("annotation-thumb");
+        thumbContainer.style.display = "inline-block";
+        thumbContainer.setAttribute("data-frame", ann.frame_idx);
+        // Ensure relative positioning for the cross.
+        thumbContainer.style.position = "relative";
+        thumbContainer.appendChild(thumbImg);
+        
+        // Create the delete button instead of a span.
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn btn-sm btn-danger annotation-delete";
+        deleteBtn.innerHTML = '<i class="bi bi-x-circle align-middle"></i>';
+        // The button click deletes the annotation.
+        deleteBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.deleteAnnotation(ann);
+        });
+        thumbContainer.appendChild(deleteBtn);
+        
+        // Resize the image based on its natural dimensions.
+        thumbImg.onload = function() {
+          const naturalWidth = thumbImg.naturalWidth;
+          const naturalHeight = thumbImg.naturalHeight;
+          const scale = maxAnnotationSize / Math.max(naturalWidth, naturalHeight);
+          thumbImg.width = naturalWidth * scale;
+          thumbImg.height = naturalHeight * scale;
+        };
+        
+        container.appendChild(thumbContainer);
+      });
+    },
+    
     sliderClick: function(event) {
       const slider = event.currentTarget;
       const rect = slider.getBoundingClientRect();
@@ -145,7 +208,6 @@
       if (this.mode === "select") {
         event.preventDefault();
         const activeClass = window.classManager.activeClass;
-        console.log(activeClass);
         if (!activeClass) {
           alert("Please select a class first.");
           return;
@@ -237,16 +299,15 @@
           return;
         }
       }
+      this.updateAnnotationList();
     },
 
     // Send a segmentation request. When a response is received (with new mask and bounding_box),
     // update the annotation and then send the annotation update.
     updateSegmentation: function(annotation) {
-      // If no point labels remain, clear the segmentation data.
+      // Changed: if no points remain, delete the annotation instead of sending an empty one.
       if (annotation.point_labels.length === 0) {
-        annotation.annotation_mask = "";
-        annotation.bounding_box = [];
-        this.sendAnnotation(annotation);
+        this.deleteAnnotation(annotation);
         return;
       }
       const points = annotation.point_labels.map(pt => [Math.round(pt.x), Math.round(pt.y)]);
@@ -279,7 +340,6 @@
           this.sendAnnotation(annotation);
           return;
         }
-        // Update annotation with the new segmentation mask and bounding_box.
         annotation.annotation_mask = data.mask;
         if (data.bounding_box) {
           annotation.bounding_box = data.bounding_box;
@@ -297,6 +357,34 @@
       });
     },
 
+    deleteAnnotation: function(annotation) {
+      // If the annotation is not yet saved (has no id), remove it locally.
+      if (!annotation.id) {
+        this.annotations = this.annotations.filter(ann =>
+          !(ann.frame_idx === annotation.frame_idx && ann.sim_room_class_id == annotation.sim_room_class_id)
+        );
+        this.updateAnnotationList();
+        return;
+      }
+      const url = `/simrooms/${this.sim_room_id}/calibration_recordings/${this.calibration_id}/annotations/${annotation.id}`;
+      fetch(url, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(response => {
+        if (!response.ok) {
+          console.error("Failed to delete annotation:", response.status);
+        } else {
+          // Remove the deleted annotation from the local list.
+          this.annotations = this.annotations.filter(ann => ann.id !== annotation.id);
+          this.updateAnnotationList();
+        }
+      })
+      .catch(error => {
+        console.error("Annotation delete request failed:", error);
+      });
+    },
+
     // POST the updated (or new) annotation. The payload includes bounding_box.
     sendAnnotation: function(annotation) {
       const points = annotation.point_labels.map(pt => [Math.round(pt.x), Math.round(pt.y)]);
@@ -308,6 +396,7 @@
         points: points,
         labels: labels,
         mask: annotation.annotation_mask,
+        frame_crop: annotation.frame_crop,
         bounding_box: annotation.bounding_box
       };
       const url = `/simrooms/${this.sim_room_id}/calibration_recordings/${this.calibration_id}/annotations`;
@@ -334,6 +423,7 @@
           } else {
             this.annotations.push(updatedAnnotation);
           }
+          this.updateAnnotationList();
         }
       })
       .catch(error => {
@@ -437,7 +527,21 @@
       progress.style.width = percent + "%";
     },
 
-    // Render loop at ~20fps.
+    updateAnnotationHighlight: function() {
+      // Iterate over all annotation thumbnails and update the "selected" class.
+      const container = document.getElementById("annotation-list");
+      const thumbnails = container.children;
+      for (let i = 0; i < thumbnails.length; i++) {
+        const thumb = thumbnails[i];
+        const frame = parseInt(thumb.getAttribute("data-frame"));
+        if (frame === this.currentFrameIndex) {
+          thumb.classList.add("selected");
+        } else {
+          thumb.classList.remove("selected");
+        }
+      }
+    },
+
     renderLoop: function(timestamp) {
       if (!this.lastRenderTime) {
         this.lastRenderTime = timestamp;
@@ -445,6 +549,7 @@
       const elapsed = timestamp - this.lastRenderTime;
       if (elapsed >= 50) {
         this.drawAnnotations();
+        this.updateAnnotationHighlight();
         this.lastRenderTime = timestamp;
       }
       requestAnimationFrame(this.renderLoop.bind(this));
@@ -461,48 +566,85 @@
   );
 </script>
 <style>
-  .offscreen-video {
-    position: absolute;
-    left: -9999px;
-  }
-  #canvas {
-    width: 100%;
-    border: 1px solid #ddd;
-    border-radius: 0.375rem;
-  }
-  #controls .control-btn i {
-    font-size: 1.2rem;
-  }
-  .btn.active {
-    background-color: var(--bs-primary);
-    border-color: var(--bs-primary);
-    color: white;
-  }
-  /* Make list take full height */
-  .class-management {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  .class-list {
-    flex-grow: 1;
-    overflow-y: auto;
-  }
-  .seek-bar {
-    position: relative;
-    width: 100%;
-    height: 16px; /* Increased height for easier clicking */
-    background-color: #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  .seek-progress {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 0;
-    background-color: #0d6efd;
-    border-radius: 6px;
-  }
+.offscreen-video {
+  position: absolute;
+  left: -9999px;
+}
+#canvas {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 0.375rem;
+}
+#controls .control-btn i {
+  font-size: 1.2rem;
+}
+.btn.active {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: white;
+}
+/* Make list take full height */
+.class-management {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.class-list {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+.seek-bar {
+  position: relative;
+  width: 100%;
+  height: 16px; /* Increased height for easier clicking */
+  background-color: #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.seek-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  background-color: #0d6efd;
+  border-radius: 6px;
+}
+
+.annotation-thumb {
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.2s ease;
+  margin: 2px;
+  position: relative;
+}
+
+.annotation-thumb img {
+  border-radius: 5px;
+}
+
+.annotation-thumb:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.annotation-thumb.selected {
+  outline: 2px solid #0d6efd;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+/* Delete cross styling: hidden by default, visible when hovering the parent */
+.annotation-delete {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  cursor: pointer;
+  color: white;
+  display: none;
+  vertical-align: baseline;
+}
+
+.annotation-thumb:hover .annotation-delete {
+  display: block;
+}
+
 </style>

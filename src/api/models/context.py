@@ -6,6 +6,8 @@ from sam2.sam2_image_predictor import SAM2ImagePredictor
 from src.config import Template
 from src.db import Recording
 from src.db.models import Annotation, CalibrationRecording, SimRoom, SimRoomClass
+import numpy.typing as npt
+import numpy as np
 
 if TYPE_CHECKING:
     from .app import App
@@ -47,7 +49,7 @@ class RecordingsContext(BaseContext):
 class SimRoomsContext(BaseContext):
     recordings: list[Recording] = field(default_factory=list)
     sim_rooms: list[SimRoom] = field(default_factory=list)
-    sim_room: SimRoom | None = None
+    selected_sim_room: SimRoom | None = None
     calibration_recordings: list[CalibrationRecording] = field(default_factory=list)
     classes: list[SimRoomClass] = field(default_factory=list)
     content: str = Template.SIMROOMS
@@ -61,7 +63,7 @@ class SimRoomsContext(BaseContext):
 
 @dataclass
 class ClassListContext(BaseContext):
-    sim_room: SimRoom
+    selected_sim_room: SimRoom
     classes: list[SimRoomClass]
 
     @no_type_check
@@ -73,12 +75,13 @@ class ClassListContext(BaseContext):
 @dataclass
 class LabelingContext(BaseContext):
     calibration_recording: CalibrationRecording
-    sim_room: SimRoom
+    selected_sim_room: SimRoom
     recording: Recording
     predictor: SAM2ImagePredictor
     classes: list[SimRoomClass]
     annotations: list[Annotation]
     frame_count: int
+    current_frame: npt.NDArray[np.uint8]
     resolution: tuple[int, int]
     content: str = Template.LABELER
 

@@ -12,8 +12,8 @@ from src.db.models import Recording, Annotation, PointLabel
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ARG001
-    Base.metadata.drop_all(bind=engine, tables=[PointLabel.__table__])
-    Base.metadata.drop_all(bind=engine, tables=[Annotation.__table__])
+    # Base.metadata.drop_all(bind=engine, tables=[PointLabel.__table__])
+    # Base.metadata.drop_all(bind=engine, tables=[Annotation.__table__])
     Base.metadata.create_all(bind=engine)
     Recording.clean_recordings()
     yield

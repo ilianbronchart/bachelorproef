@@ -85,17 +85,21 @@ class Annotation(Base, SerializerMixin):
     calibration_recording_id: Mapped[int] = mapped_column(Integer, ForeignKey("calibration_recordings.id"))
     sim_room_class_id: Mapped[int] = mapped_column(Integer, ForeignKey("classes.id"))
     frame_idx: Mapped[int] = mapped_column(Integer, nullable=False)
-    # base64 encoded mask of the annotation
-    annotation_mask: Mapped[str] = mapped_column(String, nullable=False)
 
-    # bounding box x1,y1,x2,y2
-    bounding_box: Mapped[str] = mapped_column(String, nullable=True)
+    annotation_mask: Mapped[str] = mapped_column(String, nullable=False)
+    """Base64 encoded mask of the annotation"""
+
+    frame_crop: Mapped[str] = mapped_column(String, nullable=False)
+    """Base64 encoded frame crop for the annotation"""
+    
+    bounding_box: Mapped[str] = mapped_column(String, nullable=False)
+    """Bounding box coordinates (x1, y1, x2, y2)"""
 
     calibration_recording: Mapped["CalibrationRecording"] = relationship(
         "CalibrationRecording", back_populates="annotations"
     )
     sim_room_class: Mapped["SimRoomClass"] = relationship("SimRoomClass", back_populates="annotations")
-    point_labels: Mapped[list["PointLabel"]] = relationship("PointLabel", back_populates="annotation")
+    point_labels: Mapped[list["PointLabel"]] = relationship("PointLabel", back_populates="annotation", cascade="all, delete-orphan")
 
     @no_type_check
     def to_dict(self) -> dict[str, Any]:
@@ -105,6 +109,7 @@ class Annotation(Base, SerializerMixin):
             "sim_room_class_id": self.sim_room_class_id,
             "frame_idx": self.frame_idx,
             "annotation_mask": self.annotation_mask,
+            "frame_crop": self.frame_crop,
             "point_labels": [label.to_dict() for label in self.point_labels],
             "bounding_box": self.bounding_box.split(","),
         }    

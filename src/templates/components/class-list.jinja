@@ -1,7 +1,7 @@
 <div id="class-list"
      class="class-management d-flex flex-column"
-     {% if sim_room.id %}data-sim-room-id="{{ sim_room.id }}"{% endif %}>
-  <form hx-post="/simrooms/{{ sim_room.id }}/classes/add"
+     {% if selected_sim_room.id %}data-sim-room-id="{{ selected_sim_room.id }}"{% endif %}>
+  <form hx-post="/simrooms/{{ selected_sim_room.id }}/classes/add"
         hx-target="#class-list"
         hx-target-4xx="#error-message"
         hx-target-5xx="#error-message"
@@ -21,7 +21,7 @@
   <ul class="list-group class-list user-select-none">
     {% if classes|length == 0 %}<li class="list-group-item text-muted text-center">No objects defined</li>{% endif %}
     {% for class in classes %}
-      <li class="list-group-item d-flex justify-content-between align-items-center transition-bg {% if class.active %}active{% endif %}"
+      <li class=" list-group-item d-flex justify-content-between align-items-center transition-bg {% if class.active %}active{% endif %}"
           onclick="window.classManager.setActiveClass(this, '{{ class.id }}')"
           data-class-id="{{ class.id }}">
         <div class="d-flex align-items-center gap-2">
@@ -30,13 +30,13 @@
         </div>
         <button class="btn btn-sm btn-danger"
                 hx-confirm="Are you sure? This will delete all annotations linked to this class."
-                hx-delete="/simrooms/{{ sim_room.id }}/classes/{{ class.id }}"
+                hx-delete="/simrooms/{{ selected_sim_room.id }}/classes/{{ class.id }}"
                 hx-target="#class-list"
                 hx-target-400="#error-message"
                 hx-target-404="#error-message"
                 hx-target-500="#error-message"
-                hx-on:click="clearError()">
-          <i class="bi bi-trash"></i>
+                hx-on::before-request="window.classManager.classDeleted(event, {{ class.id }})">
+          <i class="bi bi-trash-fill"></i>
         </button>
       </li>
     {% endfor %}
@@ -49,26 +49,32 @@ window.classManager = {
     activeClass: null,
 
     // Initialize with a list of classes
-    initialize(classes, activeClass, onClick) {
-        this.classes = classes;
-        this.onClick = onClick
-
-        if (activeClass) {
-            this.activeClass = this.classes.find(
-              c => parseInt(c.id) === parseInt(activeClass.id)
-            ) || null;
+    initialize() {
+        this.classes = {{ classes|tojson }};
+        
+        let storedActiveClass = window.localStorage.getItem("activeClass");
+        if (storedActiveClass) {
+          storedActiveClass = JSON.parse(storedActiveClass);
         }
 
-        if (this.activeClass) {
-          this.setActiveClass(
-            document.querySelector(`.class-list .list-group-item[data-class-id="${activeClass.id}"]`),
-            activeClass.id
-          );
+        if (storedActiveClass) {
+            activeClass = this.classes.find(
+              c => parseInt(c.id) === parseInt(storedActiveClass.id)
+            ) || null;
+
+            if (activeClass) {
+              this.setActiveClass(
+                document.querySelector(`.class-list .list-group-item[data-class-id="${activeClass.id}"]`),
+                activeClass.id
+              );
+            }
         }
     },
 
     // Set the active class when a class is selected
     setActiveClass(element, class_id) {
+        if (window.location.href.includes('simrooms')) return
+
         // Remove active class from all elements
         document.querySelectorAll('.class-list .list-group-item').forEach(item => {
             item.classList.remove('active');
@@ -83,20 +89,21 @@ window.classManager = {
           c => parseInt(c.id) === parseInt(class_id)
         ) || null;
 
-        this.onClick(this.activeClass);
+        window.eventBus.emit('active-class-changed', this.activeClass);
+
+        window.localStorage.setItem("activeClass", JSON.stringify(this.activeClass));
     },
 
-    // Update a class's properties
-    updateClass(id, updatedClass) {
-        const index = this.classes.findIndex(c => c.id === id);
-        if (index !== -1) {
-            this.classes[index] = updatedClass;
-            if (this.activeClass && this.activeClass.id === id) {
-                this.activeClass = updatedClass;
-            }
-        }
+    classDeleted(event, classId) {
+      event.detail.successful = true; // TODO: Currently after-request is broken so we use before-request
+      // See: https://github.com/bigskysoftware/htmx/issues/3177
+      if (event.detail.successful) {
+        window.eventBus.emit('class-deleted', classId);
+      }
     },
 };
+
+window.classManager.initialize();
 </script>
 <style>
   .list-group {
@@ -104,24 +111,25 @@ window.classManager = {
   }
   .class-list .list-group-item {
     cursor: pointer;
-    border-left: 3px solid transparent;
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
     background-color: transparent;
+    min-height: 3rem; /* Ensure consistent height */
+    font-weight: 400; /* Fix font weight for consistency */
   }
   .class-list .list-group-item:hover {
     background-color: rgba(0,0,0,.055);
-    border-left-color: var(--bs-primary);
+    border-left: 3px solid var(--bs-primary);
   }
   .class-list .list-group-item.active {
     color: inherit;
     background-color: rgba(0,0,0,.075);
     border-color: rgba(0,0,0,.125);
-    border-left-color: var(--bs-primary);
-    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    border-left: 3px solid var(--bs-primary);
+    font-weight: 400; /* Maintain consistent font weight */
   }
   .class-list .list-group-item.active:hover {
     background-color: rgba(0,0,0,.1);
-    border-left-color: var(--bs-primary);
+    border-left: 3px solid var(--bs-primary);
   }
   .class-list .list-group-item .class-name {
     flex-grow: 1;

@@ -10,6 +10,7 @@ from src.db.db import engine
 from src.db.models import CalibrationRecording
 from src.utils import is_hx_request
 from src.db.models.calibration import CalibrationRecording, Annotation, PointLabel  # added import
+from fastapi import Request
 
 router = APIRouter(prefix="/simrooms")
 
@@ -25,6 +26,9 @@ class AnnotationBody:
 
     mask: str
     """Base64 encoded mask image."""
+
+    frame_crop: str
+    """Base64 encoded frame crop image."""
 
     bounding_box: list[int]
     """Bounding box coordinates: x1, y1, x2, y2."""
@@ -46,14 +50,14 @@ async def simrooms(request: Request, sim_room_id: int | None = None):
         context.sim_rooms = session.query(SimRoom).all()
 
         if sim_room_id:
-            context.sim_room = session.query(SimRoom).get(sim_room_id)
+            context.selected_sim_room = session.query(SimRoom).get(sim_room_id)
 
-            if not context.sim_room:
+            if not context.selected_sim_room:
                 headers = {"HX-Push-Url": "/simrooms"}
                 return Response(status_code=404, content="Sim Room not found", headers=headers)
 
-            context.calibration_recordings = context.sim_room.calibration_recordings
-            context.classes = context.sim_room.classes
+            context.calibration_recordings = context.selected_sim_room.calibration_recordings
+            context.classes = context.selected_sim_room.classes
 
         headers = {"HX-Push-Url": f"/simrooms/?sim_room_id={sim_room_id}"}
         if is_hx_request(request):
@@ -110,7 +114,7 @@ async def add_sim_room_class(
 
             context = ClassListContext(
                 request=request,
-                sim_room=sim_room,
+                selected_sim_room=sim_room,
                 classes=sim_room.classes,
             )
             return templates.TemplateResponse(Template.CLASS_LIST, context.to_dict())
@@ -135,7 +139,7 @@ async def delete_sim_room_class(request: Request, sim_room_id: int, class_id: in
 
             context = ClassListContext(
                 request=request,
-                sim_room=sim_room,
+                selected_sim_room=sim_room,
                 classes=sim_room.classes,
             )
             return templates.TemplateResponse(Template.CLASS_LIST, context.to_dict())
@@ -214,6 +218,7 @@ async def add_calibration_annotation(request: Request, body: AnnotationBody):
             # Update the annotation mask and clear existing point labels
             annotation.annotation_mask = body.mask
             annotation.bounding_box = bounding_box
+            annotation.frame_crop = body.frame_crop
             for pl in annotation.point_labels:
                 session.delete(pl)
         else:
@@ -223,6 +228,7 @@ async def add_calibration_annotation(request: Request, body: AnnotationBody):
                 frame_idx=body.frame_idx,
                 annotation_mask=body.mask,
                 bounding_box=bounding_box,
+                frame_crop=body.frame_crop,
             )
             session.add(annotation)
         
@@ -231,5 +237,25 @@ async def add_calibration_annotation(request: Request, body: AnnotationBody):
             pl = PointLabel(annotation=annotation, x=x, y=y, label=bool(label))
             session.add(pl)
         
+        session.commit()
+        return JSONResponse({"status": "success"})
+
+
+@router.delete("/{sim_room_id}/calibration_recordings/{calibration_id}/annotations/{annotation_id}", response_class=JSONResponse)
+async def delete_calibration_annotation(sim_room_id: int, calibration_id: int, annotation_id: int):
+    with Session(engine) as session:
+        if not session.query(SimRoom).get(sim_room_id):
+            return Response(status_code=404, content="Sim Room not found")
+        
+        if not session.query(CalibrationRecording).get(calibration_id):
+            return Response(status_code=404, content="Calibration Recording not found")
+
+        annotation = session.query(Annotation).filter(
+            Annotation.id == annotation_id,
+            Annotation.calibration_recording_id == calibration_id
+        ).first()
+        if not annotation:
+            return Response(status_code=404, content="Annotation not found")
+        session.delete(annotation)
         session.commit()
         return JSONResponse({"status": "success"})

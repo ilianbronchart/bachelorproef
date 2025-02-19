@@ -25,16 +25,19 @@ async def start_labeling(request: Request, calibration_id: int):
 
         try:
             video_path = RECORDINGS_PATH / (cal_rec.recording_uuid + ".mp4")
+            frame = cv2_get_frame(video_path, 0)
+
             request.app.labeling_context = LabelingContext(
                 request=request,
                 calibration_recording=cal_rec,
-                sim_room=cal_rec.sim_room,
+                selected_sim_room=cal_rec.sim_room,
                 recording=cal_rec.recording,
                 predictor=load_sam2_predictor(Sam2Checkpoints.LARGE),
                 classes=cal_rec.sim_room.classes,
                 annotations=cal_rec.annotations,
                 frame_count=cv2_video_frame_count(video_path),
                 resolution=cv2_video_resolution(video_path, flip=True),
+                current_frame=frame,
             )
         except Exception as e:
             return Response(status_code=500, content=f"Failed to start labeling: {e!s}")
@@ -94,6 +97,7 @@ async def get_frame(request: Request, frame_idx: int):
         video_path = RECORDINGS_PATH / (recording.uuid + ".mp4")
         frame = cv2_get_frame(video_path, frame_idx)
         request.app.labeling_context.predictor.set_image(frame)
+        request.app.labeling_context.current_frame = frame
 
         ret, encoded_png = cv2.imencode(".png", frame)
         if not ret:
@@ -128,12 +132,18 @@ async def segmentation(request: Request, body: SegmentationRequestBody):
             points=body.points,
             points_labels=body.labels,
         )
-        mask = mask.repeat(3, axis=0).transpose(1, 2, 0) * 255
-        _, encoded_img = cv2.imencode(".png", mask)
-
-        if mask is None:
+        if mask is None or bounding_box is None:
             return Response(status_code=400, content="Error: Segmentation had no results")
         
-        return JSONResponse({"mask": base64.b64encode(encoded_img.tobytes()).decode("utf-8"), "bounding_box": bounding_box})
+        mask = mask.repeat(3, axis=0).transpose(1, 2, 0) * 255
+        _, encoded_mask = cv2.imencode(".png", mask)
+        mask_base64 = base64.b64encode(encoded_mask.tobytes()).decode("utf-8")
+        
+        x1, y1, x2, y2 = bounding_box
+        frame_crop = request.app.labeling_context.current_frame[y1:y2, x1:x2]
+        _, encoded_frame_crop = cv2.imencode(".png", frame_crop)
+        frame_crop_base64 = base64.b64encode(encoded_frame_crop.tobytes()).decode("utf-8")
+        
+        return JSONResponse({"mask": mask_base64, "bounding_box": bounding_box, "frame_crop": frame_crop_base64 })
     except Exception as e:
         return Response(status_code=500, content=f"Failed to segment frame: {e!s}")
