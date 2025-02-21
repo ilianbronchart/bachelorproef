@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, no_type_check
 
+import numpy as np
+import numpy.typing as npt
 from fastapi import Request as FastAPIRequest
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from src.config import Template
 from src.db import Recording
 from src.db.models import Annotation, CalibrationRecording, SimRoom, SimRoomClass
-import numpy.typing as npt
-import numpy as np
 
 if TYPE_CHECKING:
     from .app import App
@@ -71,6 +71,7 @@ class ClassListContext(BaseContext):
         dict_ = super().to_dict(ignore=["classes"])
         dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
         return dict_
+
 
 @dataclass
 class LabelingContext(BaseContext):

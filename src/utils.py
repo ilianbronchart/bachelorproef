@@ -3,6 +3,7 @@ import json
 import random
 from collections.abc import Generator
 from pathlib import Path
+import subprocess
 from typing import cast
 
 import aiohttp
@@ -10,6 +11,7 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 from fastapi import Request
+from src.config import FRAMES_PATH
 
 
 async def download_file(url: str, target_path: Path) -> None:
@@ -47,7 +49,7 @@ def is_hx_request(request: Request) -> bool:
     return request.headers.get("hx-request") == "true"
 
 
-def cv2_loadvideo(video_path: str) -> Generator[tuple[int, cv2.typing.MatLike], None, None]:
+def cv2_itervideo(video_path: str) -> Generator[tuple[int, cv2.typing.MatLike], None, None]:
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise ValueError(f"Video file not found: {video_path}")
@@ -186,3 +188,34 @@ def generate_pleasant_color() -> str:
 
     # Convert to hex
     return f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
+
+def iter_frames_dir(frames_path: Path) -> Generator[tuple[int, np.ndarray], None, None]:
+    frames = [frame for frame in frames_path.iterdir() if ".jpg" in frame.suffix]
+
+    if len(frames) == 0:
+        raise FileNotFoundError(f"No frames found in {frames_path}")
+
+    for frame_path in sorted(frames_path.iterdir()):
+        frame_idx = int(frame_path.stem)
+        frame = cv2.imread(str(frame_path))
+        yield frame_idx, frame
+
+def extract_frames_to_dir(video_path: Path, frames_path: Path = FRAMES_PATH):
+    if not video_path.name.endswith(".mp4"):
+        raise ValueError(f"Video file must be in MP4 format, got: {video_path.name}")
+    
+    # delete any existing frames
+    for file in frames_path.iterdir():
+        file.unlink()
+
+    subprocess.run(
+        ["ffmpeg", "-i", str(video_path), "-q:v", "2", "-start_number", "0", f"{str(frames_path)}/%05d.jpg"],
+        check=True,
+    )
+    
+def get_frame_from_dir(frame_idx: int, frames_path: Path = FRAMES_PATH) -> np.ndarray:
+    frame_path = frames_path / f"{frame_idx:05}.jpg"
+    if not frame_path.exists():
+        raise FileNotFoundError(f"Frame {frame_idx} not found in {frames_path}")
+
+    return cv2.imread(str(frame_path))

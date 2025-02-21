@@ -1,11 +1,11 @@
+from .calibration import Annotation, CalibrationRecording, PointLabel, SimRoom, SimRoomClass
 from .recording import Recording
-from .calibration import Annotation, CalibrationRecording, SimRoom, SimRoomClass, PointLabel
 
 __all__ = [
-    "Recording",
     "Annotation",
     "CalibrationRecording",
+    "PointLabel",
+    "Recording",
     "SimRoom",
     "SimRoomClass",
-    "PointLabel",
 ]

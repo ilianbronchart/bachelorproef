@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from fastapi import APIRouter, Form, Response
+
+from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from src.api.models import Request, SimRoomsContext
@@ -8,11 +9,11 @@ from src.config import Template, templates
 from src.db import Recording, SimRoom, SimRoomClass
 from src.db.db import engine
 from src.db.models import CalibrationRecording
+from src.db.models.calibration import Annotation, CalibrationRecording, PointLabel  # added import
 from src.utils import is_hx_request
-from src.db.models.calibration import CalibrationRecording, Annotation, PointLabel  # added import
-from fastapi import Request
 
 router = APIRouter(prefix="/simrooms")
+
 
 @dataclass
 class AnnotationBody:
@@ -187,6 +188,7 @@ async def delete_calibration_recording(request: Request, sim_room_id: int, calib
 
     return Response(status_code=200)
 
+
 @router.post("/{sim_room_id}/calibration_recordings/{calibration_id}/annotations", response_class=JSONResponse)
 async def add_calibration_annotation(request: Request, body: AnnotationBody):
     if body.bounding_box and len(body.bounding_box) != 4:
@@ -197,23 +199,23 @@ async def add_calibration_annotation(request: Request, body: AnnotationBody):
         cal_rec = session.query(CalibrationRecording).filter(CalibrationRecording.id == body.calibration_id).first()
         if not cal_rec:
             return Response(status_code=404, content="Calibration recording not found")
-        
+
         # Ensure the sim room relation is loaded
         if not cal_rec.sim_room or not cal_rec.sim_room.classes:
             return Response(status_code=400, content="No classes found for the associated Sim Room")
-        
+
         # Check for an existing annotation for this frame and class
         annotation = (
             session.query(Annotation)
             .filter(
-            Annotation.calibration_recording_id == cal_rec.id,
-            Annotation.frame_idx == body.frame_idx,
-            Annotation.sim_room_class_id == body.sim_room_class_id
+                Annotation.calibration_recording_id == cal_rec.id,
+                Annotation.frame_idx == body.frame_idx,
+                Annotation.sim_room_class_id == body.sim_room_class_id,
             )
             .first()
         )
         bounding_box = ",".join(map(str, body.bounding_box))
-        
+
         if annotation:
             # Update the annotation mask and clear existing point labels
             annotation.annotation_mask = body.mask
@@ -231,29 +233,32 @@ async def add_calibration_annotation(request: Request, body: AnnotationBody):
                 frame_crop=body.frame_crop,
             )
             session.add(annotation)
-        
+
         # Add new point labels
-        for (x, y), label in zip(body.points, body.labels):
+        for (x, y), label in zip(body.points, body.labels, strict=False):
             pl = PointLabel(annotation=annotation, x=x, y=y, label=bool(label))
             session.add(pl)
-        
+
         session.commit()
         return JSONResponse({"status": "success"})
 
 
-@router.delete("/{sim_room_id}/calibration_recordings/{calibration_id}/annotations/{annotation_id}", response_class=JSONResponse)
+@router.delete(
+    "/{sim_room_id}/calibration_recordings/{calibration_id}/annotations/{annotation_id}", response_class=JSONResponse
+)
 async def delete_calibration_annotation(sim_room_id: int, calibration_id: int, annotation_id: int):
     with Session(engine) as session:
         if not session.query(SimRoom).get(sim_room_id):
             return Response(status_code=404, content="Sim Room not found")
-        
+
         if not session.query(CalibrationRecording).get(calibration_id):
             return Response(status_code=404, content="Calibration Recording not found")
 
-        annotation = session.query(Annotation).filter(
-            Annotation.id == annotation_id,
-            Annotation.calibration_recording_id == calibration_id
-        ).first()
+        annotation = (
+            session.query(Annotation)
+            .filter(Annotation.id == annotation_id, Annotation.calibration_recording_id == calibration_id)
+            .first()
+        )
         if not annotation:
             return Response(status_code=404, content="Annotation not found")
         session.delete(annotation)

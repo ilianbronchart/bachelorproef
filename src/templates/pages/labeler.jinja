@@ -25,6 +25,19 @@
              hx-on:click="window.labeler.sliderClick(event)">
           <div class="seek-progress"></div>
         </div>
+        <button id="start-tracking-btn"
+                class="btn btn-primary text-nowrap"
+                type="button"
+                hx-swap="none"
+                hx-disabled-elt="this"
+                hx-indicator="find .spinner, find .bi"
+                hx-on:click="clearError()"
+                hx-confirm="Before starting tracking, please ensure that all annotations are complete. Continue?"
+                hx-post="/labeling/tracking?calibration_id={{ calibration_recording.id }}">
+          <i class="bi bi-pencil-square htmx-request-hide"></i>
+          <div class="spinner spinner-border spinner-border-sm" role="status"></div>
+          Start Tracking
+        </button>
       </div>
       <div id="annotation-list" class="d-flex flex-wrap gap-2 mb-3"></div>
     </div>
@@ -653,6 +666,9 @@
 
 .annotation-thumb:hover .annotation-delete {
   display: block;
+}
+
+.start-tracking-btn {
 }
 
 </style>

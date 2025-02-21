@@ -114,3 +114,13 @@ This paper also uses the Tobii Glasses 3, and may provide useful insights into m
   url={https://arxiv.org/abs/2304.13844}
 }
 ```
+
+### SAM2 for constant VRAM video inference:
+#INCLUDE I should also probably have a GPU/CPU memory optimization part in my thesis
+https://github.com/facebookresearch/sam2/issues/196
+https://arxiv.org/pdf/2411.18977 
+
+
+(ctrl+f for release_old_frames())
+
+https://chatgpt.com/share/67b70726-59d8-800c-8690-58d486d1c4cd

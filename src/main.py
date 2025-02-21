@@ -7,8 +7,9 @@ import src.logic.glasses as glasses
 from src.api import labeling, recordings, simrooms
 from src.api.models import App, GlassesConnectionContext, Request
 from src.config import Template, templates
-from src.db.db import engine, Base
-from src.db.models import Recording, Annotation, PointLabel
+from src.db.db import Base, engine
+from src.db.models import Recording
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ARG001

@@ -7,7 +7,7 @@ import numpy.typing as npt
 import torch
 from src.logic.glasses.domain import GazeData, GazePoint
 from src.logic.glasses.gaze import get_gaze_points, match_frames_to_gaze
-from src.utils import cv2_loadvideo
+from src.utils import cv2_itervideo
 from torchvision.ops import masks_to_boxes
 from ultralytics import FastSAM
 from ultralytics.engine.results import Boxes, Masks, Results
@@ -155,7 +155,7 @@ def get_viewed_masks(
         )
 
     results_per_frame = []
-    for frame_idx, frame in cv2_loadvideo(video_path):
+    for frame_idx, frame in cv2_itervideo(video_path):
         if save_video:
             original_frame = frame.copy()
 

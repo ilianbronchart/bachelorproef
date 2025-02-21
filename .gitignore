@@ -170,3 +170,4 @@ notebooks/output
 notebooks/reference_images/*
 database.db
 backup/
+segmentation_results/

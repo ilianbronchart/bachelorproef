@@ -1,13 +1,12 @@
-from typing import Any, Union, cast, no_type_check
+from typing import Any, Union, no_type_check, TYPE_CHECKING
 
 from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, Session, joinedload, mapped_column, relationship
 from sqlalchemy_serializer import SerializerMixin
 
 from src.db.db import Base, engine
-from src.db.models import Recording
+from .recording import Recording
 from src.utils import generate_pleasant_color
-
 
 # SimRoom entity (defines a simulation room)
 class SimRoom(Base, SerializerMixin):
@@ -75,9 +74,12 @@ class CalibrationRecording(Base, SerializerMixin):
 class Annotation(Base, SerializerMixin):
     __tablename__ = "annotations"
     __table_args__ = (
-        UniqueConstraint('calibration_recording_id', 'frame_idx', 'sim_room_class_id', 
-            name='_calibration_frame_class_uc',
-            sqlite_on_conflict='ROLLBACK'
+        UniqueConstraint(
+            "calibration_recording_id",
+            "frame_idx",
+            "sim_room_class_id",
+            name="_calibration_frame_class_uc",
+            sqlite_on_conflict="ROLLBACK",
         ),
     )
 
@@ -91,7 +93,7 @@ class Annotation(Base, SerializerMixin):
 
     frame_crop: Mapped[str] = mapped_column(String, nullable=False)
     """Base64 encoded frame crop for the annotation"""
-    
+
     bounding_box: Mapped[str] = mapped_column(String, nullable=False)
     """Bounding box coordinates (x1, y1, x2, y2)"""
 
@@ -99,7 +101,9 @@ class Annotation(Base, SerializerMixin):
         "CalibrationRecording", back_populates="annotations"
     )
     sim_room_class: Mapped["SimRoomClass"] = relationship("SimRoomClass", back_populates="annotations")
-    point_labels: Mapped[list["PointLabel"]] = relationship("PointLabel", back_populates="annotation", cascade="all, delete-orphan")
+    point_labels: Mapped[list["PointLabel"]] = relationship(
+        "PointLabel", back_populates="annotation", cascade="all, delete-orphan"
+    )
 
     @no_type_check
     def to_dict(self) -> dict[str, Any]:
@@ -112,7 +116,7 @@ class Annotation(Base, SerializerMixin):
             "frame_crop": self.frame_crop,
             "point_labels": [label.to_dict() for label in self.point_labels],
             "bounding_box": self.bounding_box.split(","),
-        }    
+        }
 
 
 # PointLabel entity (stores (x, y) coordinates and a binary label)
