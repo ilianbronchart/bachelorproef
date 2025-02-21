@@ -82,6 +82,7 @@ class Annotation(Base, SerializerMixin):
             sqlite_on_conflict="ROLLBACK",
         ),
     )
+    serialize_rules = ["-point_labels", "-calibration_recording", "-sim_room_class"]
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     calibration_recording_id: Mapped[int] = mapped_column(Integer, ForeignKey("calibration_recordings.id"))

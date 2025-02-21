@@ -1,0 +1,110 @@
+<div id="annotation-list"
+     class="d-flex flex-wrap gap-2 mb-3"
+     hx-trigger="active-class-changed from:window"
+     hx-get="/labeling/annotations"
+     hx-on::config-request="configAnnotationsRequest(event)"
+     hx-on::after-settle="adjustAnnotationSizes()">
+  {% if annotations %}
+    {% for ann in annotations %}
+      <div class="annotation-thumb" data-frame="{{ ann.frame_idx }}">
+        <!-- Clicking the image updates the main canvas with the corresponding frame -->
+        <img class="annotation-thumb-img"
+             src="data:image/png;base64,{{ ann.frame_crop }}"
+             alt="Annotation for frame {{ ann.frame_idx }}"
+             hx-on:click="seekToFrame({{ ann.frame_idx }})">
+        <!-- Delete button sends a DELETE request and updates the annotation list -->
+        <button class="btn btn-sm btn-danger annotation-delete"
+                hx-delete="/labeling/annotations/{{ ann.id }}"
+                hx-target="#annotation-list"
+                hx-swap="outerHTML">
+          <i class="bi bi-x-circle-fill text-center"></i>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+  <script>
+function configAnnotationsRequest(event) {
+  if (!event.target.className.includes('annotation-thumb-img')) {
+    event.detail.parameters.class_id = window.classManager.activeClass.id;
+  }
+}
+
+function seekToFrame(frameIndex) {
+  customEvent = new CustomEvent('labeling-seek-frame-index', { detail: { frameIndex } });
+  window.dispatchEvent(customEvent);
+}
+
+function adjustAnnotationSizes() {
+  const images = document.querySelectorAll('#annotation-list img');
+  images.forEach(img => {
+    if (img.complete) {
+      scaleImage(img);
+    } else {
+      img.addEventListener('load', () => scaleImage(img));
+    }
+  });
+
+  window.dispatchEvent(new Event('annotations-loaded'));
+}
+
+function scaleImage(img) {
+  const naturalWidth = img.naturalWidth;
+  const naturalHeight = img.naturalHeight;
+  // Determine scaling factor so that the longest edge is 100px.
+  const scale = 200 / Math.max(naturalWidth, naturalHeight);
+  img.style.width = (naturalWidth * scale) + 'px';
+  img.style.height = (naturalHeight * scale) + 'px';
+  img.style.display = 'block';
+}
+  </script>
+  <style>
+.annotation-thumb {
+  display: flex;
+  border-radius: 5px;
+  margin: 2px;
+  position: relative;
+  align-items: center;
+}
+
+.annotation-thumb img {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.2s ease;
+  border-radius: 5px;
+}
+
+.annotation-thumb img:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.annotation-thumb.selected img {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  outline: 2px solid #0d6efd;
+}
+
+.annotation-delete {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  cursor: pointer;
+  color: white;
+  padding: 4px;
+  display: none;
+}
+
+.annotation-delete i {
+  display: block;
+  line-height: 8px;
+  font-size: 16px;
+  box-sizing: content-box;
+}
+
+.annotation-thumb:hover .annotation-delete {
+  display: block;
+}
+
+.annotation-thumb-img {
+  cursor: pointer;
+  display: none;
+}
+  </style>
+</div>

@@ -1,0 +1,87 @@
+<div id="labeling-controls" class="d-flex align-items-center gap-2 mb-3">
+  <button id="select-mode-btn"
+          class="btn btn-secondary"
+          type="button"
+          hx-on:click="window.labelingControls.setMode('select')">
+    <i class="bi bi-cursor-fill"></i>
+  </button>
+  <button id="delete-mode-btn"
+          class="btn btn-secondary"
+          type="button"
+          hx-on:click="window.labelingControls.setMode('delete')">
+    <i class="bi bi-trash-fill"></i>
+  </button>
+  <div id="seek-slider"
+       class="seek-bar flex-grow-1"
+       hx-on:click="window.labelingControls.updateSlider(event)">
+    <div class="seek-progress"></div>
+  </div>
+</div>
+<script>
+window.labelingControls = {
+  mode: 'select',
+
+  init(frame_count) {
+    this.frame_count = parseInt(frame_count);
+    this.setMode('select');
+
+    window.addEventListener('active-class-changed', (event) => {
+      this.setMode('select');
+    });
+
+    window.addEventListener('labeling-seek-frame-index', (event) => {
+      const percent = event.detail.frameIndex / this.frame_count;
+      const slider = document.getElementById("seek-slider");
+      slider.querySelector(".seek-progress").style.width = percent * 100 + "%";
+      seekEvent = new CustomEvent('labeling-seek', { detail: { percent } });
+      window.dispatchEvent(seekEvent);
+    })
+  },
+
+  setMode: function(mode) {
+    this.mode = mode;
+    document.getElementById("select-mode-btn").classList.toggle("active", mode === "select");
+    document.getElementById("delete-mode-btn").classList.toggle("active", mode === "delete");
+  },
+
+  updateSlider: function(event) {
+    const slider = event.target;
+    const rect = slider.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const percent = clickX / slider.offsetWidth;
+    slider.querySelector(".seek-progress").style.width = percent * 100 + "%";
+    
+    seekEvent = new CustomEvent('labeling-seek', { detail: { percent } });
+    window.dispatchEvent(seekEvent);
+  },
+}
+
+window.labelingControls.init({{ frame_count }});
+</script>
+<style>
+.seek-bar {
+  position: relative;
+  width: 100%;
+  height: 16px; /* Increased height for easier clicking */
+  background-color: #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.seek-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  background-color: #0d6efd;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.btn.active {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: white;
+}
+</style>

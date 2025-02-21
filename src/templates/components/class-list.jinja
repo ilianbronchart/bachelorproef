@@ -89,7 +89,9 @@ window.classManager = {
           c => parseInt(c.id) === parseInt(class_id)
         ) || null;
 
-        window.eventBus.emit('active-class-changed', this.activeClass);
+        console.log('Active class:', this.activeClass);
+        classChanged = new CustomEvent('active-class-changed', { detail: { classId: this.activeClass.id } });
+        window.dispatchEvent(classChanged);
 
         window.localStorage.setItem("activeClass", JSON.stringify(this.activeClass));
     },
@@ -98,7 +100,8 @@ window.classManager = {
       event.detail.successful = true; // TODO: Currently after-request is broken so we use before-request
       // See: https://github.com/bigskysoftware/htmx/issues/3177
       if (event.detail.successful) {
-        window.eventBus.emit('class-deleted', classId);
+        classDeleted = new CustomEvent('class-deleted', { detail: { classId } });
+        window.dispatchEvent(classDeleted);
       }
     },
 };

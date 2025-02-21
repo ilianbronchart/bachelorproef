@@ -1,0 +1,31 @@
+<div id="recording-labeler" class="container-fluid px-4">
+  <div id="error-message" class="alert alert-danger mb-4"></div>
+  <div class="row">
+    <div class="col-md-9">
+      {% include "components/labeling/labeling-canvas.jinja" %}
+      {% include "components/labeling/labeling-controls.jinja" %}
+      <div id="annotations-container"
+           hx-get="/labeling/annotations"
+           hx-trigger="load"
+           hx-swap="outerHTML"></div>
+    </div>
+    <div class="col-md-3">
+      <div hx-get="/simrooms/{{ sim_room.id }}/classes"
+           hx-trigger="annotations-loaded from:window"
+           hx-swap="outerHTML"
+           hx-target="this"></div>
+    </div>
+  </div>
+</div>
+<script></script>
+<style>
+.class-management {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.class-list {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+</style>

@@ -3,10 +3,11 @@ from fastapi.staticfiles import StaticFiles
 from src.config import RECORDINGS_PATH
 
 from .context import LabelingContext
+from .labeler import Labeler
 
 
 class App(FastAPI):
-    labeling_context: LabelingContext | None = None
+    labeler: Labeler | None = None
 
     def __init__(self, *args, **kwargs):  # type: ignore
         super().__init__(*args, **kwargs)

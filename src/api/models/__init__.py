@@ -7,6 +7,7 @@ from .context import (
     Request,
     SimRoomsContext,
 )
+from .labeler import Labeler
 
 __all__ = [
     "App",
@@ -16,4 +17,5 @@ __all__ = [
     "RecordingsContext",
     "Request",
     "SimRoomsContext",
+    "Labeler",
 ]

@@ -96,6 +96,22 @@ async def delete_sim_room(request: Request, sim_room_id: int):
     except Exception as e:
         return Response(status_code=500, content=f"Error: {e!s}")
 
+@router.get("/{sim_room_id}/classes", response_class=HTMLResponse)
+async def sim_room_classes(request: Request, sim_room_id: int):
+    try:
+        with Session(engine) as session:
+            sim_room = session.query(SimRoom).get(sim_room_id)
+            if not sim_room:
+                return Response(status_code=404, content="Sim Room not found")
+
+            context = ClassListContext(
+                request=request,
+                selected_sim_room=sim_room,
+                classes=sim_room.classes,
+            )
+            return templates.TemplateResponse(Template.CLASS_LIST, context.to_dict())
+    except Exception as e:
+        return Response(status_code=500, content=f"Error: {e!s}")
 
 @router.post("/{sim_room_id}/classes/add", response_class=HTMLResponse)
 async def add_sim_room_class(
@@ -239,28 +255,5 @@ async def add_calibration_annotation(request: Request, body: AnnotationBody):
             pl = PointLabel(annotation=annotation, x=x, y=y, label=bool(label))
             session.add(pl)
 
-        session.commit()
-        return JSONResponse({"status": "success"})
-
-
-@router.delete(
-    "/{sim_room_id}/calibration_recordings/{calibration_id}/annotations/{annotation_id}", response_class=JSONResponse
-)
-async def delete_calibration_annotation(sim_room_id: int, calibration_id: int, annotation_id: int):
-    with Session(engine) as session:
-        if not session.query(SimRoom).get(sim_room_id):
-            return Response(status_code=404, content="Sim Room not found")
-
-        if not session.query(CalibrationRecording).get(calibration_id):
-            return Response(status_code=404, content="Calibration Recording not found")
-
-        annotation = (
-            session.query(Annotation)
-            .filter(Annotation.id == annotation_id, Annotation.calibration_recording_id == calibration_id)
-            .first()
-        )
-        if not annotation:
-            return Response(status_code=404, content="Annotation not found")
-        session.delete(annotation)
         session.commit()
         return JSONResponse({"status": "success"})

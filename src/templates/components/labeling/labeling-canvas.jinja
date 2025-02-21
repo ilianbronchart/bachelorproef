@@ -1,0 +1,56 @@
+<canvas id="labeling-canvas" width="1920" height="1080" class="mb-3"></canvas>
+<script>
+window.labelingCanvas = {
+  canvas: null,
+  ctx: null,
+  frameImage: null,
+
+  init() {
+    // Get the canvas and context.
+    this.canvas = document.getElementById('labeling-canvas');
+    this.ctx = this.canvas.getContext('2d');
+    // Load the initial frame (percent=0)
+    this.fetchAndDrawFrame(0);
+  },
+
+  fetchAndDrawFrame(percent) {
+    fetch(`/labeling/seek?percent=${percent}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create an object URL for the blob.
+        const objectURL = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          this.frameImage = img;
+          this.renderCanvas();
+          URL.revokeObjectURL(objectURL);
+        };
+        img.src = objectURL;
+      })
+      .catch(error => console.error("Error fetching frame:", error));
+  },
+
+  renderCanvas() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.drawImage(this.frameImage, 0, 0, this.canvas.width, this.canvas.height);
+  }
+};
+
+window.addEventListener('labeling-seek', (event) => {
+  window.labelingCanvas.fetchAndDrawFrame(event.detail.percent, event.detail.frameIndex);
+});
+
+window.labelingCanvas.init();
+</script>
+<style>
+#labeling-canvas {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 0.375rem;
+}
+</style>

@@ -47,10 +47,12 @@ class Template:
     INDEX: str = "index.jinja"
     RECORDINGS: str = "pages/recordings.jinja"
     SIMROOMS: str = "pages/simrooms.jinja"
-    LABELER: str = "pages/labeler.jinja"
+    LABELER: str = "pages/labeling.jinja"
 
     # Components
     CONNECTION_STATUS: str = "components/connection-status.jinja"
     LOCAL_RECORDINGS: str = "components/local-recordings.jinja"
     GLASSES_RECORDINGS: str = "components/glasses-recordings.jinja"
     CLASS_LIST: str = "components/class-list.jinja"
+    LABELING_CANVAS: str = "components/labeling/labeling-canvas.jinja"
+    ANNOTATIONS: str = "components/labeling/labeling-annotations.jinja"

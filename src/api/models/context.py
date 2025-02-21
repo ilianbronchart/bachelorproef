@@ -73,22 +73,28 @@ class ClassListContext(BaseContext):
         return dict_
 
 
+# @dataclass
+# class LabelingContext(BaseContext):
+#     calibration_recording: CalibrationRecording
+#     selected_sim_room: SimRoom
+#     recording: Recording
+#     predictor: SAM2ImagePredictor
+#     classes: list[SimRoomClass]
+#     annotations: list[Annotation]
+#     frame_count: int
+#     current_frame: npt.NDArray[np.uint8]
+#     resolution: tuple[int, int]
+#     content: str = Template.LABELER
+
+#     @no_type_check
+#     def to_dict(self) -> dict[str, Any]:
+#         dict_ = super().to_dict(ignore=["classes", "annotations"])
+#         dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
+#         dict_["annotations"] = [ann.to_dict() for ann in self.annotations]
+#         return dict_
+
 @dataclass
 class LabelingContext(BaseContext):
-    calibration_recording: CalibrationRecording
-    selected_sim_room: SimRoom
-    recording: Recording
-    predictor: SAM2ImagePredictor
-    classes: list[SimRoomClass]
-    annotations: list[Annotation]
+    sim_room: SimRoom
     frame_count: int
-    current_frame: npt.NDArray[np.uint8]
-    resolution: tuple[int, int]
     content: str = Template.LABELER
-
-    @no_type_check
-    def to_dict(self) -> dict[str, Any]:
-        dict_ = super().to_dict(ignore=["classes", "annotations"])
-        dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
-        dict_["annotations"] = [ann.to_dict() for ann in self.annotations]
-        return dict_
