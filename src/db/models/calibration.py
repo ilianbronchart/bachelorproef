@@ -1,12 +1,17 @@
-from typing import Any, Union, no_type_check, TYPE_CHECKING
-
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, UniqueConstraint
+from typing import Any, Union, no_type_check
+import os
+import shutil
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, UniqueConstraint, event
 from sqlalchemy.orm import Mapped, Session, joinedload, mapped_column, relationship
 from sqlalchemy_serializer import SerializerMixin
 
 from src.db.db import Base, engine
-from .recording import Recording
 from src.utils import generate_pleasant_color
+from src.config import LABELING_RESULTS_PATH
+from pathlib import Path
+
+from .recording import Recording
+
 
 # SimRoom entity (defines a simulation room)
 class SimRoom(Base, SerializerMixin):
@@ -52,7 +57,11 @@ class CalibrationRecording(Base, SerializerMixin):
 
     sim_room: Mapped["SimRoom"] = relationship("SimRoom", back_populates="calibration_recordings")
     recording: Mapped[Recording] = relationship("Recording", back_populates="calibration_recordings")
-    annotations: Mapped[list["Annotation"]] = relationship("Annotation", back_populates="calibration_recording")
+    annotations: Mapped[list["Annotation"]] = relationship("Annotation", back_populates="calibration_recording", cascade="all, delete-orphan")
+
+    @property
+    def labeling_results_path(self) -> Path:
+        return LABELING_RESULTS_PATH / f"labeling_{self.id}_{self.sim_room_id}_{self.recording_uuid}"
 
     @staticmethod
     def get_all() -> list["CalibrationRecording"]:
@@ -68,6 +77,17 @@ class CalibrationRecording(Base, SerializerMixin):
                 .filter(CalibrationRecording.id == id)
                 .first()
             )
+
+
+# Event listeners to create and remove labeling results directory
+@event.listens_for(CalibrationRecording, 'after_insert')
+def create_labeling_results_path(mapper, connection, target):
+    os.makedirs(target.labeling_results_path, exist_ok=True)
+
+@event.listens_for(CalibrationRecording, 'after_delete')
+def remove_labeling_results_path(mapper, connection, target):
+    if os.path.exists(target.labeling_results_path):
+        shutil.rmtree(target.labeling_results_path)
 
 
 # Annotation entity (links a calibration recording with a specific SimRoomClass)
@@ -105,6 +125,11 @@ class Annotation(Base, SerializerMixin):
     point_labels: Mapped[list["PointLabel"]] = relationship(
         "PointLabel", back_populates="annotation", cascade="all, delete-orphan"
     )
+
+    @property
+    def bbox(self) -> tuple[int, int, int, int]:
+        bbox = list(map(int, self.bounding_box.split(",")))
+        return (bbox[0], bbox[1], bbox[2], bbox[3])
 
     @no_type_check
     def to_dict(self) -> dict[str, Any]:

@@ -2,7 +2,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
 
+from src.api.models.labeler import Labeler
+from src.db.models.calibration import CalibrationRecording
 import src.logic.glasses as glasses
 from src.api import labeling, recordings, simrooms
 from src.api.models import App, GlassesConnectionContext, Request
@@ -24,6 +27,10 @@ app = App(lifespan=lifespan)
 app.include_router(recordings.router)
 app.include_router(labeling.router)
 app.include_router(simrooms.router)
+
+with Session(engine) as session:
+    cal_rec = session.query(CalibrationRecording).first()
+    app.labeler = Labeler(calibration_recording=cal_rec)
 
 
 @app.get("/", response_class=HTMLResponse)

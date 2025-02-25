@@ -22,7 +22,11 @@ def load_sam2_video_predictor(
     model_cfg = SAM_2_MODEL_CONFIGS[checkpoint_path]
     print(checkpoint_path, model_cfg)
     predictor = build_sam2_video_predictor(
-        model_cfg, str(checkpoint_path), device="cuda", max_cond_frames_in_attn=max_inference_state_frames,clear_non_cond_mem_around_input=True
+        model_cfg,
+        str(checkpoint_path),
+        device="cuda",
+        max_cond_frames_in_attn=max_inference_state_frames,
+        clear_non_cond_mem_around_input=True,
     )
     return predictor
 

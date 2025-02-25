@@ -1,6 +1,6 @@
 import base64
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import os
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 
 import cv2
@@ -10,18 +10,25 @@ from fastapi import APIRouter, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from src.api.models import LabelingContext, Request
-from src.config import RECORDINGS_PATH, Sam2Checkpoints, Template, templates, FRAMES_PATH
+from src.config import FRAMES_PATH, RECORDINGS_PATH, Sam2Checkpoints, Template, templates
 from src.db import CalibrationRecording, engine
 from src.db.models import Recording
 from src.logic.inference.sam_2 import load_sam2_predictor, load_sam2_video_predictor, predict_sam2
-from src.utils import cv2_video_frame_count, cv2_video_resolution, is_hx_request, get_frame_from_dir, extract_frames_to_dir
+from src.utils import (
+    cv2_video_frame_count,
+    cv2_video_resolution,
+    get_frame_from_dir,
+    is_hx_request,
+)
 
 router = APIRouter(prefix="/labeling")
 
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 @router.post("/", response_class=JSONResponse)
 async def start_labeling(request: Request, calibration_id: int):
@@ -156,6 +163,7 @@ async def segmentation(request: Request, body: SegmentationRequestBody):
     except Exception as e:
         return Response(status_code=500, content=f"Failed to segment frame: {e!s}")
 
+
 def save_segmentation(frame_idx: int, seg_data: dict, output_dir: str):
     try:
         # Define the output file path. Adjust the path as needed.
@@ -167,6 +175,7 @@ def save_segmentation(frame_idx: int, seg_data: dict, output_dir: str):
     finally:
         # Free up memory.
         del seg_data
+
 
 @router.post("/tracking", response_class=JSONResponse)
 async def tracking(request: Request, calibration_id: int):
@@ -185,7 +194,7 @@ async def tracking(request: Request, calibration_id: int):
         annotations = cal_rec.annotations
 
         video_predictor = load_sam2_video_predictor(Sam2Checkpoints.LARGE)
-        
+
         # del request.app.labeling_context.predictor
 
         inference_state = video_predictor.init_state(video_path=str(FRAMES_PATH), async_loading_frames=True)
@@ -215,14 +224,14 @@ async def tracking(request: Request, calibration_id: int):
         # Use ThreadPoolExecutor to offload saving to disk.
         futures = []
         with ProcessPoolExecutor() as executor:
-            with torch.amp.autocast('cuda'):  # type: ignore
+            with torch.amp.autocast("cuda"):  # type: ignore
                 for out_frame_idx, class_ids, out_mask_logits in video_predictor.propagate_in_video(inference_state):
                     seg_data = {}
                     for i, out_obj_id in enumerate(class_ids):
                         mask = (out_mask_logits[i] > 0.5).detach()
                         if mask.any():
                             seg_data[str(out_obj_id)] = mask.cpu().numpy()
-                    
+
                     future = executor.submit(save_segmentation, out_frame_idx, seg_data, output_dir)
                     futures.append(future)
 

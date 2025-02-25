@@ -6,21 +6,18 @@ from fastapi.templating import Jinja2Templates
 DATA_PATH = Path("data/")
 RECORDINGS_PATH = DATA_PATH / "recordings"
 RECORDINGS_PATH.mkdir(exist_ok=True)
-FRAMES_PATH = DATA_PATH / "frames" # used for storing frames extracted from videos
+FRAMES_PATH = DATA_PATH / "frames"  # used for storing frames extracted from videos
 FRAMES_PATH.mkdir(exist_ok=True)
 CHECKPOINTS_PATH = Path("checkpoints")
 CHECKPOINTS_PATH.mkdir(exist_ok=True)
-TRACKING_RESULTS_PATH = DATA_PATH / "tracking_results"
-TRACKING_RESULTS_PATH.mkdir(exist_ok=True)
+LABELING_RESULTS_PATH = DATA_PATH / "labeling_results"
+LABELING_RESULTS_PATH.mkdir(exist_ok=True)
 
 DEFAULT_GLASSES_HOSTNAME = "192.168.75.51"
 FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / "FastSAM-x.pt"
 
 # The amount of frames kept in memory for SAM2 video inference
 MAX_INFERENCE_STATE_FRAMES = 100
-
-
-
 
 
 @dataclass(frozen=True)

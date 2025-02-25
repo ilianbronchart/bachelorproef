@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from src.config import RECORDINGS_PATH
 
-from .context import LabelingContext
 from .labeler import Labeler
 
 

@@ -1,13 +1,11 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, no_type_check
 
-import numpy as np
-import numpy.typing as npt
 from fastapi import Request as FastAPIRequest
-from sam2.sam2_image_predictor import SAM2ImagePredictor
 from src.config import Template
 from src.db import Recording
-from src.db.models import Annotation, CalibrationRecording, SimRoom, SimRoomClass
+from src.db.models import CalibrationRecording, SimRoom, SimRoomClass
+from src.db.models.calibration import Annotation
 
 if TYPE_CHECKING:
     from .app import App
@@ -72,29 +70,12 @@ class ClassListContext(BaseContext):
         dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
         return dict_
 
-
-# @dataclass
-# class LabelingContext(BaseContext):
-#     calibration_recording: CalibrationRecording
-#     selected_sim_room: SimRoom
-#     recording: Recording
-#     predictor: SAM2ImagePredictor
-#     classes: list[SimRoomClass]
-#     annotations: list[Annotation]
-#     frame_count: int
-#     current_frame: npt.NDArray[np.uint8]
-#     resolution: tuple[int, int]
-#     content: str = Template.LABELER
-
-#     @no_type_check
-#     def to_dict(self) -> dict[str, Any]:
-#         dict_ = super().to_dict(ignore=["classes", "annotations"])
-#         dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
-#         dict_["annotations"] = [ann.to_dict() for ann in self.annotations]
-#         return dict_
-
 @dataclass
 class LabelingContext(BaseContext):
     sim_room: SimRoom
     frame_count: int
     content: str = Template.LABELER
+
+@dataclass
+class LabelingAnnotationsContext(BaseContext):
+    annotations: list[Annotation] = field(default_factory=list)

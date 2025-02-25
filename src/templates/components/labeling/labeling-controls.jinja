@@ -21,8 +21,8 @@
 window.labelingControls = {
   mode: 'select',
 
-  init(frame_count) {
-    this.frame_count = parseInt(frame_count);
+  init(frameCount) {
+    this.frameCount = parseInt(frameCount);
     this.setMode('select');
 
     window.addEventListener('active-class-changed', (event) => {
@@ -30,10 +30,14 @@ window.labelingControls = {
     });
 
     window.addEventListener('labeling-seek-frame-index', (event) => {
-      const percent = event.detail.frameIndex / this.frame_count;
+      const percent = event.detail.frameIndex / this.frameCount;
       const slider = document.getElementById("seek-slider");
       slider.querySelector(".seek-progress").style.width = percent * 100 + "%";
-      seekEvent = new CustomEvent('labeling-seek', { detail: { percent } });
+      seekEvent = new CustomEvent('labeling-seek', { 
+        detail: { 
+          frameIndex: event.detail.frameIndex
+        } 
+      });
       window.dispatchEvent(seekEvent);
     })
   },
@@ -51,7 +55,11 @@ window.labelingControls = {
     const percent = clickX / slider.offsetWidth;
     slider.querySelector(".seek-progress").style.width = percent * 100 + "%";
     
-    seekEvent = new CustomEvent('labeling-seek', { detail: { percent } });
+    seekEvent = new CustomEvent('labeling-seek', { 
+      detail: { 
+        frameIndex: parseInt(percent * this.frameCount)
+      } 
+    });
     window.dispatchEvent(seekEvent);
   },
 }

@@ -96,6 +96,7 @@ async def delete_sim_room(request: Request, sim_room_id: int):
     except Exception as e:
         return Response(status_code=500, content=f"Error: {e!s}")
 
+
 @router.get("/{sim_room_id}/classes", response_class=HTMLResponse)
 async def sim_room_classes(request: Request, sim_room_id: int):
     try:
@@ -112,6 +113,7 @@ async def sim_room_classes(request: Request, sim_room_id: int):
             return templates.TemplateResponse(Template.CLASS_LIST, context.to_dict())
     except Exception as e:
         return Response(status_code=500, content=f"Error: {e!s}")
+
 
 @router.post("/{sim_room_id}/classes/add", response_class=HTMLResponse)
 async def add_sim_room_class(

@@ -1,33 +1,72 @@
-<canvas id="labeling-canvas" width="1920" height="1080" class="mb-3"></canvas>
+<canvas id="labeling-canvas"
+        width="1920"
+        height="1080"
+        class="mb-3"
+        hx-on:mousedown="window.labelingCanvas.click(event)"
+        hx-on:mousemove="window.labelingCanvas.mouseMove(event)"></canvas>
 <script>
 window.labelingCanvas = {
   canvas: null,
   ctx: null,
   frameImage: null,
+  pointLabels: [],
 
   init() {
     // Get the canvas and context.
     this.canvas = document.getElementById('labeling-canvas');
     this.ctx = this.canvas.getContext('2d');
-    // Load the initial frame (percent=0)
-    this.fetchAndDrawFrame(0);
+    this.seek(0);
+
+    window.addEventListener('labeling-seek', (event) => {
+      this.seek(event.detail.frameIndex)
+    });
   },
 
-  fetchAndDrawFrame(percent) {
-    fetch(`/labeling/seek?percent=${percent}`)
+  getMousePos(event) {
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const mouseX = (event.clientX - rect.left) * scaleX;
+    const mouseY = (event.clientY - rect.top) * scaleY;
+    return { x: mouseX, y: mouseY };
+  },
+
+  getHoveredPoint() {
+    for (let pt of this.pointLabels.point_labels) {
+      const mousePos = this.getMousePos(event);
+      const dx = pt.x - mousePos.x;
+      const dy = pt.y - mousePos.y;
+      if (Math.sqrt(dx * dx + dy * dy) <= 10) {
+        return pt
+      }
+    }
+  },
+
+  click(event) {
+
+  },
+
+  mouseMove(event) {
+    if (window.labelingControls.mode !== 'delete') return;
+    const hoveredPoint = this.getHoveredPoint(); 
+    this.renderCanvas(hoveredPoint);
+  },
+
+  seek(frameIndex) {
+    return fetch(`/labeling/seek?frame_idx=${frameIndex}`)
       .then(response => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         return response.blob();
       })
-      .then(blob => {
-        // Create an object URL for the blob.
+      .then(async blob => {
+        await this.fetchPointLabels(frameIndex);
         const objectURL = URL.createObjectURL(blob);
         const img = new Image();
         img.onload = () => {
           this.frameImage = img;
-          this.renderCanvas();
+          this.renderCanvas()
           URL.revokeObjectURL(objectURL);
         };
         img.src = objectURL;
@@ -35,15 +74,49 @@ window.labelingCanvas = {
       .catch(error => console.error("Error fetching frame:", error));
   },
 
-  renderCanvas() {
+  fetchPointLabels(frameIndex) {
+    return fetch(`/labeling/point_labels?frame_idx=${frameIndex}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then(data => {
+        this.pointLabels = data;
+      })
+      .catch(error => console.error("Error fetching point labels:", error));
+  },
+
+  renderCanvas(hoverPoint) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.drawImage(this.frameImage, 0, 0, this.canvas.width, this.canvas.height);
+    
+    // Draw point labels with the currently selected class id
+    let selectedClass = window.classManager && window.classManager.activeClass ? window.classManager.activeClass : null;
+    if (selectedClass && this.pointLabels && this.pointLabels.point_labels) {
+      const labels = this.pointLabels.point_labels;
+      labels.forEach(pt => {
+        if (parseInt(pt.class_id) === parseInt(selectedClass.id)) {
+          this.ctx.beginPath();
+          this.ctx.arc(pt.x, pt.y, 7, 0, 2 * Math.PI);
+          // false label = negative point = red, true label = positive point = green
+          this.ctx.fillStyle = pt.label ? '#74eb34' : '#eb4034';
+          this.ctx.fill();
+        }
+      });
+    }
+
+    // Draw hover point if it exists
+    if (hoverPoint) {
+      this.ctx.beginPath();
+      this.ctx.arc(hoverPoint.x, hoverPoint.y, 10, 0, 2 * Math.PI);
+      this.ctx.strokeStyle = 'yellow';
+      this.ctx.lineWidth = 3;
+      this.ctx.stroke();
+    }
   }
 };
-
-window.addEventListener('labeling-seek', (event) => {
-  window.labelingCanvas.fetchAndDrawFrame(event.detail.percent, event.detail.frameIndex);
-});
 
 window.labelingCanvas.init();
 </script>
