@@ -7,7 +7,7 @@
         Create a <strong>Sim Room</strong> to represent a simulation environment
       </li>
       <li class="mb-2">
-        Add <strong>Objects</strong> that will be labeled in calibration recordings
+        Add <strong>Classes</strong> that will be labeled in calibration recordings
       </li>
       <li>
         Add <strong>Calibration Recordings</strong> and label them to train the model
@@ -15,7 +15,7 @@
     </ol>
     <hr class="my-2">
     <p class="mb-0 fst-italic">
-      <i class="bi bi-info-circle-fill me-1"></i> Note: You can also add objects while labeling a calibration recording.
+      <i class="bi bi-info-circle-fill me-1"></i> Note: You can also add classes while labeling a calibration recording.
     </p>
   </div>
   <div id="error-message" class="alert alert-danger mb-4"></div>
@@ -31,14 +31,25 @@
             autocomplete="off">
         <div class="mb-3">
           <label for="sim-room-name" class="form-label">New Sim Room Name</label>
-          <input type="text"
-                 class="form-control"
-                 id="sim-room-name"
-                 name="name"
-                 placeholder="Enter sim room name"
-                 required>
+          <div class="d-flex gap-1">
+            <input type="text"
+                   class="form-control"
+                   id="sim-room-name"
+                   name="name"
+                   placeholder="Enter sim room name"
+                   required>
+            <button type="submit" class="btn-plus btn btn-success ms-2">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                   width="24"
+                   height="24"
+                   fill="currentColor"
+                   class="bi bi-plus-lg"
+                   viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <button type="submit" class="btn btn-success">Add Sim Room</button>
       </form>
       <ul id="sim-rooms-list" class="list-group">
         {% if sim_rooms|length == 0 %}
@@ -54,7 +65,7 @@
               hx-target="#main-content">
             {{ sim_room.name }}
             <button class="btn btn-sm btn-danger"
-                    hx-confirm="Are you sure? This will delete all calibration recordings and objects linked to this Sim Room."
+                    hx-confirm="Are you sure? This will delete all calibration recordings, classes and annotations linked to this Sim Room."
                     hx-delete="/simrooms/{{ sim_room.id }}"
                     hx-target="#main-content"
                     hx-target-4xx="#error-message"
@@ -67,11 +78,11 @@
     </div>
     <!-- Column 2: Manage Classes for a Selected Sim Room -->
     <div class="col-md-4 d-flex flex-column">
-      <h2>Sim Room Objects</h2>
+      <h2>Sim Room Classes</h2>
       {% if selected_sim_room %}
         {% include "components/class-list.jinja" %}
       {% else %}
-        <p class="text-muted">Please select a Sim Room from the left to manage its objects.</p>
+        <p class="text-muted">Please select a Sim Room from the left to manage its classes.</p>
       {% endif %}
     </div>
     <!-- Column 3: Add Calibration Recordings -->
@@ -86,24 +97,33 @@
               autocomplete="off">
           <div class="mb-3">
             <label for="recording-select" class="form-label">Select Recording</label>
-            <select class="form-select"
-                    name="recording_uuid"
-                    id="recording-select"
-                    required>
-              <option value="">Select a recording...</option>
-              {% for recording in recordings %}
-                <option value="{{ recording.uuid }}">{{ recording.participant }} - {{ recording.formatted_created }}</option>
-              {% endfor %}
-            </select>
+            <div class="d-flex gap-1">
+              <select class="form-select"
+                      name="recording_uuid"
+                      id="recording-select"
+                      required>
+                <option value="">Select a recording...</option>
+                {% for recording in recordings %}
+                  <option value="{{ recording.uuid }}">{{ recording.participant }} - {{ recording.formatted_created }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-success ms-2 btn-plus">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     width="24"
+                     height="24"
+                     fill="currentColor"
+                     class="bi bi-plus-lg"
+                     viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
+                </svg>
+              </button>
+            </div>
           </div>
-          <button type="submit" class="btn btn-success">Add Calibration Recording</button>
         </form>
       {% endif %}
       <ul id="calibration-recordings-list" class="list-group">
         {% if not selected_sim_room %}
-          <li class="list-group-item text-muted text-center">
-            Please select a Sim Room from the left to manage its Calibration Recordings
-          </li>
+          <p class="text-muted">Please select a Sim Room from the left to manage its Calibration Recordings</p>
         {% elif calibration_recordings|length == 0 %}
           <li class="list-group-item text-muted text-center">No calibration recordings added yet</li>
         {% endif %}
@@ -147,30 +167,30 @@
 </div>
 <!-- Added style for selected list item -->
 <style>
-  .selected {
-    background-color: rgba(0,0,0,.075);
-  }
-  .transition-bg {
-    transition: background-color 0.2s ease-in-out;
-  }
-  .transition-bg:hover {
-    background-color: rgba(0,0,0,.055);
-  }
-  .list-group:empty {
-    display: none;
-  }
-  .list-group-item {
-    transition: border-left-color 0.2s ease-in-out;
-  }
-  .list-group-item:hover {
-    border-left: 3px solid var(--bs-primary);
-  }
-  .list-group-item.selected {
-    border-left: 3px solid var(--bs-primary);
-  }
-  form + .list-group {
-    margin-top: 1.5rem;
-  }
+.selected {
+  background-color: rgba(0,0,0,.075);
+}
+.transition-bg {
+  transition: background-color 0.2s ease-in-out;
+}
+.transition-bg:hover {
+  background-color: rgba(0,0,0,.055);
+}
+.list-group:empty {
+  display: none;
+}
+.list-group-item {
+  transition: border-left-color 0.2s ease-in-out;
+}
+.list-group-item:hover {
+  border-left: 3px solid var(--bs-primary);
+}
+.list-group-item.selected {
+  border-left: 3px solid var(--bs-primary);
+}
+form + .list-group {
+  margin-top: 1.5rem;
+}
 </style>
 <script>
   // Add click event delegation for sim room list items

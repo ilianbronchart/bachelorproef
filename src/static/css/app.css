@@ -39,3 +39,9 @@ select[aria-controls="local-recordings-table"] {
 .alert-danger:not(:empty) {
   display: block !important;
 }
+
+.btn-plus {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+}
