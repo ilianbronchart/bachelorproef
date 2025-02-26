@@ -10,22 +10,11 @@
            hx-swap="outerHTML"></div>
     </div>
     <div class="col-md-3">
-      <div hx-get="/simrooms/{{ sim_room.id }}/classes"
+      <div class="d-flex flex-column h-100"
+           hx-get="/simrooms/{{ sim_room_id }}/classes"
            hx-trigger="annotations-loaded from:window"
            hx-swap="outerHTML"
            hx-target="this"></div>
     </div>
   </div>
 </div>
-<script></script>
-<style>
-.class-management {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-.class-list {
-  flex-grow: 1;
-  overflow-y: auto;
-}
-</style>

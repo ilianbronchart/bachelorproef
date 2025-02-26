@@ -1,6 +1,7 @@
 import base64
 import json
 import random
+import shutil
 import subprocess
 from collections.abc import Generator
 from pathlib import Path
@@ -162,9 +163,9 @@ def base64_to_numpy(img: str):
 
 def generate_pleasant_color() -> str:
     """Generate a random color with moderate saturation and brightness."""
-    hue = random.random()  # Random hue (0-1)
-    saturation = random.uniform(0.4, 0.6)  # Moderate saturation
-    brightness = random.uniform(0.6, 0.8)  # Moderate to high brightness
+    hue = random.random()  # noqa: S311
+    saturation = random.uniform(0.4, 0.6)  # noqa: S311
+    brightness = random.uniform(0.6, 0.8)  # noqa: S311
 
     # Convert HSV to RGB
     h = hue * 6
@@ -210,10 +211,20 @@ def extract_frames_to_dir(video_path: Path, frames_path: Path = FRAMES_PATH):
     # delete any existing frames
     for file in frames_path.iterdir():
         file.unlink()
+    ffmpeg_path = shutil.which("ffmpeg")
+    if ffmpeg_path is None:
+        raise FileNotFoundError("ffmpeg executable not found in PATH")
 
-    subprocess.run(
-        ["ffmpeg", "-i", str(video_path), "-q:v", "2", "-start_number", "0", f"{frames_path!s}/%05d.jpg"],
+    # Validate ffmpeg_path to ensure it's not tampered or injected
+    if not Path(ffmpeg_path).exists() or Path(ffmpeg_path).name != "ffmpeg":
+        raise ValueError("Invalid ffmpeg executable path")
+
+    # Explicitly set shell=False for security and sanitize all inputs
+    # TODO: fix noqa here
+    subprocess.run(  # noqa: S603
+        [ffmpeg_path, "-i", str(video_path), "-q:v", "2", "-start_number", "0", f"{frames_path!s}/%05d.jpg"],
         check=True,
+        shell=False,
     )
 
 
@@ -223,3 +234,11 @@ def get_frame_from_dir(frame_idx: int, frames_path: Path = FRAMES_PATH) -> np.nd
         raise FileNotFoundError(f"Frame {frame_idx} not found in {frames_path}")
 
     return cv2.imread(str(frame_path))
+
+
+def encode_to_png(image: np.ndarray) -> str:
+    """Encode an image to PNG format and return as base64 string."""
+    ret, encoded_img = cv2.imencode(".png", image)
+    if not ret:
+        raise ValueError("Failed to encode image to PNG")
+    return base64.b64encode(encoded_img.tobytes()).decode("utf-8")

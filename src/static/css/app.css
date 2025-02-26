@@ -40,8 +40,11 @@ select[aria-controls="local-recordings-table"] {
   display: block !important;
 }
 
-.btn-plus {
+.btn-square {
   display: flex;
   align-items: center;
-  padding: 6px;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
 }

@@ -1,5 +1,11 @@
 from .db import Base, engine
-from .models.calibration import Annotation, CalibrationRecording, PointLabel, SimRoom, SimRoomClass
+from .models.calibration import (
+    Annotation,
+    CalibrationRecording,
+    PointLabel,
+    SimRoom,
+    SimRoomClass,
+)
 from .models.recording import Recording
 
 __all__ = [

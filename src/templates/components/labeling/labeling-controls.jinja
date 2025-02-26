@@ -1,60 +1,58 @@
-<div id="labeling-controls" class="d-flex align-items-center gap-2 mb-3">
-  <button id="select-mode-btn"
-          class="btn btn-secondary"
-          type="button"
-          hx-on:click="window.labelingControls.setMode('select')">
-    <i class="bi bi-cursor-fill"></i>
+<div id="labeling-controls"
+     class="d-flex align-items-center gap-2 mb-3 h-auto">
+  <button id="btn-track" class="btn btn-primary btn-square">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         height="24px"
+         viewBox="0 -960 960 960"
+         width="24px"
+         fill="#e3e3e3">
+      <path d="M440-40v-80q-125-14-214.5-103.5T122-438H42v-80h80q14-125 103.5-214.5T440-836v-80h80v80q125 14 214.5 103.5T838-518h80v80h-80q-14 125-103.5 214.5T520-120v80h-80Zm40-158q116 0 198-82t82-198q0-116-82-198t-198-82q-116 0-198 82t-82 198q0 116 82 198t198 82Z" />
+    </svg>
   </button>
-  <button id="delete-mode-btn"
-          class="btn btn-secondary"
-          type="button"
-          hx-on:click="window.labelingControls.setMode('delete')">
-    <i class="bi bi-trash-fill"></i>
-  </button>
-  <div id="seek-slider"
-       class="seek-bar flex-grow-1"
+  <div id="timeline"
+       class="position-relative w-100 rounded"
        hx-on:click="window.labelingControls.updateSlider(event)">
-    <div class="seek-progress"></div>
+    <div id="timeline-position" class="rounded"></div>
   </div>
 </div>
 <script>
 window.labelingControls = {
-  mode: 'select',
-
   init(frameCount) {
     this.frameCount = parseInt(frameCount);
-    this.setMode('select');
-
-    window.addEventListener('active-class-changed', (event) => {
-      this.setMode('select');
-    });
-
+    
+    // Listen for seek events from other components
     window.addEventListener('labeling-seek-frame-index', (event) => {
       const percent = event.detail.frameIndex / this.frameCount;
-      const slider = document.getElementById("seek-slider");
-      slider.querySelector(".seek-progress").style.width = percent * 100 + "%";
+      this.updateTimelinePosition(percent);
+      
+      // Dispatch seek event
       seekEvent = new CustomEvent('labeling-seek', { 
         detail: { 
           frameIndex: event.detail.frameIndex
         } 
       });
       window.dispatchEvent(seekEvent);
-    })
+    });
   },
-
-  setMode: function(mode) {
-    this.mode = mode;
-    document.getElementById("select-mode-btn").classList.toggle("active", mode === "select");
-    document.getElementById("delete-mode-btn").classList.toggle("active", mode === "delete");
+  
+  updateTimelinePosition(percent) {
+    // Calculate position based on timeline width
+    const timeline = document.getElementById("timeline");
+    const position = document.getElementById("timeline-position");
+    const left = percent * timeline.offsetWidth - position.offsetWidth / 2;
+    position.style.left = Math.max(0, Math.min(timeline.offsetWidth - position.offsetWidth, left)) + 'px';
   },
 
   updateSlider: function(event) {
-    const slider = event.target;
-    const rect = slider.getBoundingClientRect();
+    const timeline = document.getElementById("timeline");
+    const rect = timeline.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
-    const percent = clickX / slider.offsetWidth;
-    slider.querySelector(".seek-progress").style.width = percent * 100 + "%";
+    const percent = clickX / timeline.offsetWidth;
     
+    // Update timeline position visually
+    this.updateTimelinePosition(percent);
+    
+    // Dispatch seek event
     seekEvent = new CustomEvent('labeling-seek', { 
       detail: { 
         frameIndex: parseInt(percent * this.frameCount)
@@ -67,29 +65,40 @@ window.labelingControls = {
 window.labelingControls.init({{ frame_count }});
 </script>
 <style>
-.seek-bar {
-  position: relative;
-  width: 100%;
-  height: 16px; /* Increased height for easier clicking */
-  background-color: #ddd;
-  border-radius: 6px;
+#btn-track {
+  width: 40px;
+  height: 40px;
+}
+
+#timeline {
+  height: 30px;
+  background-color: rgb(231, 231, 231);
   cursor: pointer;
 }
 
-.seek-progress {
+#timeline-position {
   position: absolute;
-  top: 0;
+  top: -3px;
   left: 0;
-  height: 100%;
   width: 0;
-  background-color: #0d6efd;
-  border-radius: 6px;
-  pointer-events: none;
+  height: 36px;
+  width: 8px;
+  background-color: white;
+  z-index: 10;
+  -webkit-box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.5);
+  -moz-box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.5);
+  box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.5);
+  outline: 3px solid #0d6efd; 
 }
 
-.btn.active {
-  background-color: var(--bs-primary);
-  border-color: var(--bs-primary);
-  color: white;
+.track {
+  position: absolute;
+  top: -3px;
+  left: 300px;
+  height: 36px;
+  width: 200px; 
+  -webkit-box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.5);
+  -moz-box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.5);
+  box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.5);
 }
 </style>

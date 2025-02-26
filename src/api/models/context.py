@@ -23,7 +23,7 @@ class Request(FastAPIRequest):
 class BaseContext:
     request: Request
 
-    def to_dict(self, ignore: list[str] = ["request"]) -> dict[str, Any]:
+    def to_dict(self, ignore: tuple[str] = ("request",)) -> dict[str, Any]:
         dict_ = {k: v for k, v in self.__dict__.items() if k not in ignore}
         dict_["request"] = self.request
         return dict_
@@ -70,11 +70,13 @@ class ClassListContext(BaseContext):
         dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
         return dict_
 
+
 @dataclass
 class LabelingContext(BaseContext):
-    sim_room: SimRoom
+    sim_room_id: int
     frame_count: int
     content: str = Template.LABELER
+
 
 @dataclass
 class LabelingAnnotationsContext(BaseContext):

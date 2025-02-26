@@ -18,7 +18,11 @@ window.labelingCanvas = {
     this.seek(0);
 
     window.addEventListener('labeling-seek', (event) => {
-      this.seek(event.detail.frameIndex)
+      this.seek(event.detail.frameIndex);
+    });
+
+    window.addEventListener('annotation-deleted', () => {
+      this.seek();
     });
   },
 
@@ -32,7 +36,7 @@ window.labelingCanvas = {
   },
 
   getHoveredPoint() {
-    for (let pt of this.pointLabels.point_labels) {
+    for (let pt of this.pointLabels) {
       const mousePos = this.getMousePos(event);
       const dx = pt.x - mousePos.x;
       const dy = pt.y - mousePos.y;
@@ -40,52 +44,83 @@ window.labelingCanvas = {
         return pt
       }
     }
+    return null;
   },
 
-  click(event) {
+  async click(event) {
+    event.preventDefault(); // Prevent default behavior
+    
+    // Get the mouse position
+    const mousePos = this.getMousePos(event);
+    const hoveredPoint = this.getHoveredPoint();
+    const point = hoveredPoint ? hoveredPoint : mousePos;
+    const deletePoint = Boolean(hoveredPoint);
+    
+    // Set label based on mouse button: left = positive (1), right = negative (0)
+    const label = event.button === 0 ? 1 : (event.button === 2 ? 0 : null);
+    if (label === null) return; // Ignore other mouse buttons
+    
+    // Make sure we have an active class selected
+    const selectedClass = window.classManager && window.classManager.activeClass;
+    if (!selectedClass) {
+      alert("No class selected. Please select a class first.");
+      return;
+    }
+    
+    try {      
+      const annotationData = {
+        point: [Math.round(point.x), Math.round(point.y)],
+        label: label,
+        classId: selectedClass.id,
+        deletePoint: deletePoint
+      };
+      
+      // Post the annotation
+      const newFrameBlob = await window.API.postAnnotation(annotationData);
+      await this.fetchPointLabels();
+      this.setImage(newFrameBlob);
 
+      annotationPostedEvent = new CustomEvent('annotation-posted');
+      window.dispatchEvent(annotationPostedEvent);
+    } catch (error) {
+      console.error("Error posting annotation:", error);
+    }
   },
 
   mouseMove(event) {
-    if (window.labelingControls.mode !== 'delete') return;
-    const hoveredPoint = this.getHoveredPoint(); 
+    const hoveredPoint = this.getHoveredPoint();
     this.renderCanvas(hoveredPoint);
   },
 
-  seek(frameIndex) {
-    return fetch(`/labeling/seek?frame_idx=${frameIndex}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.blob();
-      })
-      .then(async blob => {
-        await this.fetchPointLabels(frameIndex);
-        const objectURL = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = () => {
-          this.frameImage = img;
-          this.renderCanvas()
-          URL.revokeObjectURL(objectURL);
-        };
-        img.src = objectURL;
-      })
-      .catch(error => console.error("Error fetching frame:", error));
+  setImage(blob) {
+    const objectURL = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      this.frameImage = img;
+      this.renderCanvas();
+      URL.revokeObjectURL(objectURL);
+    };
+    img.src = objectURL;
   },
 
-  fetchPointLabels(frameIndex) {
-    return fetch(`/labeling/point_labels?frame_idx=${frameIndex}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then(data => {
-        this.pointLabels = data;
-      })
-      .catch(error => console.error("Error fetching point labels:", error));
+  async seek(frameIndex) {
+    try {
+      const blob = await window.API.seekFrame(frameIndex);
+      await this.fetchPointLabels();
+      this.setImage(blob);
+    } catch (error) {
+      console.error("Error seeking frame:", error);
+    }      
+  },
+
+  async fetchPointLabels() {
+    try {
+      // Use the API utility to fetch point labels
+      this.pointLabels = await window.API.getPointLabels();
+    } catch (error) {
+      this.pointLabels = [];
+      console.error("Error fetching point labels:", error);
+    }
   },
 
   renderCanvas(hoverPoint) {
@@ -94,8 +129,8 @@ window.labelingCanvas = {
     
     // Draw point labels with the currently selected class id
     let selectedClass = window.classManager && window.classManager.activeClass ? window.classManager.activeClass : null;
-    if (selectedClass && this.pointLabels && this.pointLabels.point_labels) {
-      const labels = this.pointLabels.point_labels;
+    if (selectedClass && this.pointLabels) {
+      const labels = this.pointLabels;
       labels.forEach(pt => {
         if (parseInt(pt.class_id) === parseInt(selectedClass.id)) {
           this.ctx.beginPath();
@@ -119,6 +154,11 @@ window.labelingCanvas = {
 };
 
 window.labelingCanvas.init();
+
+// Add right-click context menu prevention
+document.getElementById('labeling-canvas').addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+});
 </script>
 <style>
 #labeling-canvas {

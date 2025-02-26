@@ -1,14 +1,15 @@
-from typing import Any, Union, no_type_check
-import os
+import math
 import shutil
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, UniqueConstraint, event
+from pathlib import Path
+from typing import Any, Union, no_type_check
+
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint, event
 from sqlalchemy.orm import Mapped, Session, joinedload, mapped_column, relationship
 from sqlalchemy_serializer import SerializerMixin
 
+from src.config import LABELING_RESULTS_PATH
 from src.db.db import Base, engine
 from src.utils import generate_pleasant_color
-from src.config import LABELING_RESULTS_PATH
-from pathlib import Path
 
 from .recording import Recording
 
@@ -57,7 +58,9 @@ class CalibrationRecording(Base, SerializerMixin):
 
     sim_room: Mapped["SimRoom"] = relationship("SimRoom", back_populates="calibration_recordings")
     recording: Mapped[Recording] = relationship("Recording", back_populates="calibration_recordings")
-    annotations: Mapped[list["Annotation"]] = relationship("Annotation", back_populates="calibration_recording", cascade="all, delete-orphan")
+    annotations: Mapped[list["Annotation"]] = relationship(
+        "Annotation", back_populates="calibration_recording", cascade="all, delete-orphan"
+    )
 
     @property
     def labeling_results_path(self) -> Path:
@@ -69,24 +72,25 @@ class CalibrationRecording(Base, SerializerMixin):
             return session.query(CalibrationRecording).options(joinedload(CalibrationRecording.recording)).all()
 
     @staticmethod
-    def get(id: int | str) -> Union["CalibrationRecording", None]:
+    def get(id_: int | str) -> Union["CalibrationRecording", None]:
         with Session(engine) as session:
             return (
                 session.query(CalibrationRecording)
                 .options(joinedload(CalibrationRecording.recording))
-                .filter(CalibrationRecording.id == id)
+                .filter(CalibrationRecording.id == id_)
                 .first()
             )
 
 
 # Event listeners to create and remove labeling results directory
-@event.listens_for(CalibrationRecording, 'after_insert')
-def create_labeling_results_path(mapper, connection, target):
-    os.makedirs(target.labeling_results_path, exist_ok=True)
+@event.listens_for(CalibrationRecording, "after_insert")
+def create_labeling_results_path(_mapper: Any, _connection: Any, target: CalibrationRecording) -> None:
+    target.labeling_results_path.mkdir(parents=True, exist_ok=True)
 
-@event.listens_for(CalibrationRecording, 'after_delete')
-def remove_labeling_results_path(mapper, connection, target):
-    if os.path.exists(target.labeling_results_path):
+
+@event.listens_for(CalibrationRecording, "after_delete")
+def remove_labeling_results_path(_mapper: Any, _connection: Any, target: CalibrationRecording) -> None:
+    if target.labeling_results_path.exists():
         shutil.rmtree(target.labeling_results_path)
 
 
@@ -109,13 +113,13 @@ class Annotation(Base, SerializerMixin):
     sim_room_class_id: Mapped[int] = mapped_column(Integer, ForeignKey("classes.id"))
     frame_idx: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    annotation_mask: Mapped[str] = mapped_column(String, nullable=False)
+    annotation_mask: Mapped[str] = mapped_column(String, nullable=False, default="")
     """Base64 encoded mask of the annotation"""
 
-    frame_crop: Mapped[str] = mapped_column(String, nullable=False)
+    frame_crop: Mapped[str] = mapped_column(String, nullable=False, default="")
     """Base64 encoded frame crop for the annotation"""
 
-    bounding_box: Mapped[str] = mapped_column(String, nullable=False)
+    bounding_box: Mapped[str] = mapped_column(String, nullable=False, default="0,0,0,0")
     """Bounding box coordinates (x1, y1, x2, y2)"""
 
     calibration_recording: Mapped["CalibrationRecording"] = relationship(
@@ -125,6 +129,22 @@ class Annotation(Base, SerializerMixin):
     point_labels: Mapped[list["PointLabel"]] = relationship(
         "PointLabel", back_populates="annotation", cascade="all, delete-orphan"
     )
+
+    def __init__(
+        self,
+        calibration_recording_id: int,
+        sim_room_class_id: int,
+        frame_idx: int,
+        annotation_mask: str = "",
+        frame_crop: str = "",
+        bounding_box: tuple[int, int, int, int] = (0, 0, 0, 0),
+    ) -> None:
+        self.calibration_recording_id = calibration_recording_id
+        self.sim_room_class_id = sim_room_class_id
+        self.frame_idx = frame_idx
+        self.annotation_mask = annotation_mask
+        self.frame_crop = frame_crop
+        self.bounding_box = ",".join(map(str, bounding_box))
 
     @property
     def bbox(self) -> tuple[int, int, int, int]:
@@ -152,8 +172,46 @@ class PointLabel(Base, SerializerMixin):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     annotation_id: Mapped[int] = mapped_column(Integer, ForeignKey("annotations.id"))
-    x: Mapped[float] = mapped_column(Float)
-    y: Mapped[float] = mapped_column(Float)
-    label: Mapped[bool] = mapped_column(Boolean)
+    x: Mapped[int] = mapped_column(Integer)
+    y: Mapped[int] = mapped_column(Integer)
+    label: Mapped[int] = mapped_column(Integer)
 
     annotation: Mapped["Annotation"] = relationship("Annotation", back_populates="point_labels")
+
+    @staticmethod
+    def find_closest(annotation_id: int, x: int, y: int, max_distance: int = 1) -> Union["PointLabel", None]:
+        """
+        Find the closest point label to the given coordinates within an annotation.
+
+        Args:
+            annotation_id: The ID of the annotation to search within
+            x: X-coordinate of the reference point
+            y: Y-coordinate of the reference point
+
+        Returns:
+            The closest PointLabel or None if there are no points for the annotation
+
+        Raises:
+            ValueError: If the closest point exceeds MAX_DISTANCE
+        """
+
+        with Session(engine) as session:
+            points = session.query(PointLabel).filter(PointLabel.annotation_id == annotation_id).all()
+
+            if not points:
+                return None
+
+            closest_point = None
+            min_distance = float("inf")
+
+            for point in points:
+                distance = math.sqrt((point.x - x) ** 2 + (point.y - y) ** 2)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_point = point
+
+            # Check if the closest point exceeds MAX_DISTANCE
+            if min_distance > max_distance:
+                return None
+
+            return closest_point

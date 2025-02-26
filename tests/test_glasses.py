@@ -1,5 +1,6 @@
-import src.logic.glasses as glasses
 import pytest
+
+import src.logic.glasses as glasses
 
 
 @pytest.mark.asyncio

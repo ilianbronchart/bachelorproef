@@ -1,6 +1,6 @@
 <div id="annotation-list"
      class="d-flex flex-wrap gap-2 mb-3"
-     hx-trigger="active-class-changed from:window"
+     hx-trigger="active-class-changed from:window, annotation-posted from:window"
      hx-get="/labeling/annotations"
      hx-on::config-request="configAnnotationsRequest(event)"
      hx-on::after-settle="adjustAnnotationSizes()">
@@ -9,6 +9,8 @@
       <div class="annotation-thumb" data-frame="{{ ann.frame_idx }}">
         <!-- Clicking the image updates the main canvas with the corresponding frame -->
         <img class="annotation-thumb-img"
+             width="0"
+             height="0"
              src="data:image/png;base64,{{ ann.frame_crop }}"
              alt="Annotation for frame {{ ann.frame_idx }}"
              hx-on:click="seekToFrame({{ ann.frame_idx }})">
@@ -16,7 +18,8 @@
         <button class="btn btn-sm btn-danger annotation-delete"
                 hx-delete="/labeling/annotations/{{ ann.id }}"
                 hx-target="#annotation-list"
-                hx-swap="outerHTML">
+                hx-swap="outerHTML"
+                hx-on::before-request="annotationDeleted(event)">
           <i class="bi bi-x-circle-fill text-center"></i>
         </button>
       </div>
@@ -24,7 +27,11 @@
   {% endif %}
   <script>
 function configAnnotationsRequest(event) {
-  if (!event.target.className.includes('annotation-thumb-img')) {
+  // Only add class_id parameter if the event target is not related to annotation thumbs or delete buttons
+  const targetClass = event.target.className || '';
+  const isAnnotationElement = targetClass.includes('annotation-thumb-img') || 
+                              targetClass.includes('annotation-delete');
+  if (!isAnnotationElement) {
     event.detail.parameters.class_id = window.classManager.activeClass.id;
   }
 }
@@ -32,6 +39,15 @@ function configAnnotationsRequest(event) {
 function seekToFrame(frameIndex) {
   customEvent = new CustomEvent('labeling-seek-frame-index', { detail: { frameIndex } });
   window.dispatchEvent(customEvent);
+}
+
+function annotationDeleted() {
+  event.detail.successful = true; // TODO: Currently after-request is broken so we use before-request
+  // See: https://github.com/bigskysoftware/htmx/issues/3177
+
+  if (event.detail.successful) {
+    window.dispatchEvent(new Event('annotation-deleted'));
+  }
 }
 
 function adjustAnnotationSizes() {
@@ -63,7 +79,6 @@ function scaleImage(img) {
   border-radius: 5px;
   margin: 2px;
   position: relative;
-  align-items: center;
 }
 
 .annotation-thumb img {
