@@ -3,16 +3,19 @@
   <div class="row">
     <div class="col-md-9">
       {% include "components/labeling/labeling-canvas.jinja" %}
-      {% include "components/labeling/labeling-controls.jinja" %}
+      <div id="labeling-controls"
+           hx-get="/labeling/controls?frame_idx=0"
+           hx-trigger="load"
+           hx-swap="outerHTML"></div>
       <div id="annotations-container"
            hx-get="/labeling/annotations"
-           hx-trigger="load"
+           hx-trigger="classes-loaded from:window"
            hx-swap="outerHTML"></div>
     </div>
     <div class="col-md-3">
       <div class="d-flex flex-column h-100"
-           hx-get="/simrooms/{{ sim_room_id }}/classes"
-           hx-trigger="annotations-loaded from:window"
+           hx-get="/labeling/classes"
+           hx-trigger="load"
            hx-swap="outerHTML"
            hx-target="this"></div>
     </div>

@@ -1,8 +1,7 @@
 <div id="annotation-list"
      class="d-flex flex-wrap gap-2 mb-3"
-     hx-trigger="active-class-changed from:window, annotation-posted from:window"
+     hx-trigger="classes-loaded from:window, annotation-posted from:window"
      hx-get="/labeling/annotations"
-     hx-on::config-request="configAnnotationsRequest(event)"
      hx-on::after-settle="adjustAnnotationSizes()">
   {% if annotations %}
     {% for ann in annotations %}
@@ -26,16 +25,6 @@
     {% endfor %}
   {% endif %}
   <script>
-function configAnnotationsRequest(event) {
-  // Only add class_id parameter if the event target is not related to annotation thumbs or delete buttons
-  const targetClass = event.target.className || '';
-  const isAnnotationElement = targetClass.includes('annotation-thumb-img') || 
-                              targetClass.includes('annotation-delete');
-  if (!isAnnotationElement) {
-    event.detail.parameters.class_id = window.classManager.activeClass.id;
-  }
-}
-
 function seekToFrame(frameIndex) {
   customEvent = new CustomEvent('labeling-seek-frame-index', { detail: { frameIndex } });
   window.dispatchEvent(customEvent);
@@ -59,8 +48,6 @@ function adjustAnnotationSizes() {
       img.addEventListener('load', () => scaleImage(img));
     }
   });
-
-  window.dispatchEvent(new Event('annotations-loaded'));
 }
 
 function scaleImage(img) {

@@ -1,22 +1,17 @@
-import logging
 from dataclasses import dataclass
 
 import cv2
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
-from src.api.dependencies import get_labeler
-from src.api.models import Labeler, LabelingAnnotationsContext, Request
+from src.api.dependencies import get_labeler, get_selected_class_id
+from src.api.models import Labeler, LabelingAnnotationsContext, LabelingClassesContext, LabelingControlsContext, Request
 from src.config import Template, templates
 from src.db import CalibrationRecording, engine
-from src.db.models import Annotation, PointLabel
+from src.db.models import Annotation, PointLabel, SimRoomClass
 from src.utils import encode_to_png, is_hx_request
 
 router = APIRouter(prefix="/labeling")
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 @router.post("/", response_class=Response)
@@ -68,19 +63,14 @@ async def point_labels(labeler: Labeler = Depends(get_labeler)) -> JSONResponse:
         return JSONResponse(content=point_labels)
 
 
-@router.get("/seek", response_class=Response)
-async def seek(frame_idx: int | None = None, labeler: Labeler = Depends(get_labeler)) -> Response:
+@router.get("/current_frame", response_class=Response)
+async def current_frame(labeler: Labeler = Depends(get_labeler)) -> Response:
     with Session(engine) as session:
-        if frame_idx is None:
-            frame_idx = labeler.current_frame_idx
-
-        labeler.seek(frame_idx)
-
         annotations = (
             session.query(Annotation)
             .filter(
                 Annotation.calibration_recording_id == labeler.calibration_recording.id,
-                Annotation.frame_idx == frame_idx,
+                Annotation.frame_idx == labeler.current_frame_idx,
             )
             .all()
         )
@@ -93,23 +83,84 @@ async def seek(frame_idx: int | None = None, labeler: Labeler = Depends(get_labe
         return Response(content=encoded_png.tobytes(), media_type="image/png")
 
 
+@router.get("/controls", response_class=HTMLResponse)
+async def controls(request: Request, frame_idx: int, labeler: Labeler = Depends(get_labeler)) -> HTMLResponse:
+    labeler.seek(frame_idx)
+    context = LabelingControlsContext(
+        request=request, current_frame_idx=labeler.current_frame_idx, frame_count=labeler.frame_count
+    )
+
+    return templates.TemplateResponse(Template.LABELING_CONTROLS, context=context.to_dict())
+
+
+@router.get("/classes", response_class=HTMLResponse)
+async def classes(
+    request: Request, selected_class_id: int = -1, labeler: Labeler = Depends(get_labeler)
+) -> HTMLResponse:
+    with Session(engine) as session:
+        classes = (
+            session.query(SimRoomClass)
+            .filter(SimRoomClass.sim_room_id == labeler.calibration_recording.sim_room_id)
+            .all()
+        )
+
+        if selected_class_id == -1 and len(classes) > 0:
+            selected_class_id = classes[0].id
+
+        labeler.selected_class_id = selected_class_id
+
+        context = LabelingClassesContext(
+            request=request,
+            selected_class_id=selected_class_id,
+            sim_room_id=labeler.calibration_recording.sim_room_id,
+            classes=classes,
+        )
+
+        return templates.TemplateResponse(Template.LABELING_CLASSES, context=context.to_dict())
+
+
 @dataclass
 class AnnotationPostBody:
     point: tuple[int, int]
     label: int
-    class_id: int
     delete_point: bool = False
 
 
+@router.get("/annotations", response_class=HTMLResponse)
+async def annotations(
+    request: Request, labeler: Labeler = Depends(get_labeler), selected_class_id: int = Depends(get_selected_class_id)
+) -> HTMLResponse:
+    context = LabelingAnnotationsContext(request=request)
+    with Session(engine) as session:
+        cal_rec_id = labeler.calibration_recording.id
+        context.annotations = (
+            session.query(Annotation)
+            .filter(
+                Annotation.calibration_recording_id == cal_rec_id,
+                Annotation.sim_room_class_id == selected_class_id,
+            )
+            .all()
+        )
+
+    return templates.TemplateResponse(Template.LABELING_ANNOTATIONS, context.to_dict())
+
+
 @router.post("/annotations", response_class=Response)
-async def post_annotation(body: AnnotationPostBody, labeler: Labeler = Depends(get_labeler)) -> Response:
+async def post_annotation(
+    body: AnnotationPostBody,
+    labeler: Labeler = Depends(get_labeler),
+    selected_class_id: int = Depends(get_selected_class_id),
+) -> Response:
+    if selected_class_id == -1:
+        return Response(status_code=400, content="Error: No class selected")
+
     with Session(engine) as session:
         annotation = (
             session.query(Annotation)
             .filter(
                 Annotation.calibration_recording_id == labeler.calibration_recording.id,
                 Annotation.frame_idx == labeler.current_frame_idx,
-                Annotation.sim_room_class_id == body.class_id,
+                Annotation.sim_room_class_id == selected_class_id,
             )
             .first()
         )
@@ -120,7 +171,7 @@ async def post_annotation(body: AnnotationPostBody, labeler: Labeler = Depends(g
         if not annotation:
             annotation = Annotation(
                 calibration_recording_id=labeler.calibration_recording.id,
-                sim_room_class_id=body.class_id,
+                sim_room_class_id=selected_class_id,
                 frame_idx=labeler.current_frame_idx,
             )
             session.add(annotation)
@@ -144,7 +195,7 @@ async def post_annotation(body: AnnotationPostBody, labeler: Labeler = Depends(g
         if len(points) == 0:
             session.delete(annotation)
             session.commit()
-            return await seek(labeler.current_frame_idx, labeler)
+            return await current_frame(labeler)
 
         # update annotation mask and bounding box
         result = labeler.predict_image(points, labels)
@@ -156,27 +207,7 @@ async def post_annotation(body: AnnotationPostBody, labeler: Labeler = Depends(g
         annotation.frame_crop = encode_to_png(result.frame_crop)
 
         session.commit()
-        return await seek(labeler.current_frame_idx, labeler)
-
-
-@router.get("/annotations", response_class=HTMLResponse)
-async def annotations(
-    request: Request, class_id: int | None = None, labeler: Labeler = Depends(get_labeler)
-) -> HTMLResponse:
-    context = LabelingAnnotationsContext(request=request)
-    if class_id is not None:
-        with Session(engine) as session:
-            cal_rec_id = labeler.calibration_recording.id
-            context.annotations = (
-                session.query(Annotation)
-                .filter(
-                    Annotation.calibration_recording_id == cal_rec_id,
-                    Annotation.sim_room_class_id == class_id,
-                )
-                .all()
-            )
-
-    return templates.TemplateResponse(Template.ANNOTATIONS, context.to_dict())
+        return await current_frame(labeler)
 
 
 @router.delete("/annotations/{annotation_id}", response_class=HTMLResponse)
@@ -193,10 +224,18 @@ async def delete_calibration_annotation(
         session.delete(annotation)
         session.commit()
 
-        return await annotations(request, sim_room_class_id, labeler)
+        return await annotations(request, labeler, sim_room_class_id)
 
 
-# def save_segmentation(frame_idx: int, seg_data: dict, output_dir: str):
+@router.get("/tracking/status", response_class=HTMLResponse)
+async def tracking_status(request: Request, labeler: Labeler = Depends(get_labeler)) -> HTMLResponse:
+    if labeler.tracking_job is None:
+        return HTMLResponse(status_code=204)
+
+    return await controls(request, labeler.current_frame_idx, labeler)
+
+
+# def save_segmentation(frame_idx: int, seg_data: dict, output_dir: str) -> None:
 #     try:
 #         # Define the output file path. Adjust the path as needed.
 #         file_path = os.path.join(output_dir, f"{frame_idx:05d}.npz")
@@ -210,25 +249,13 @@ async def delete_calibration_annotation(
 
 
 # @router.post("/tracking", response_class=JSONResponse)
-# async def tracking(request: Request, calibration_id: int):
-#     # if not request.app.labeling_context:
-#     #     return RedirectResponse(status_code=307, url="/simrooms")
-
-#     # if request.app.labeling_context.calibration_recording.id != calibration_id:
-#     #     return RedirectResponse(status_code=307, url="/simrooms")
-
+# async def tracking(labeler: Labeler = Depends(get_labeler)) -> JSONResponse:
 #     with Session(engine) as session:
-#         cal_rec = session.query(CalibrationRecording).filter(CalibrationRecording.id == calibration_id).first()
-
-#         if not cal_rec:
-#             return Response(status_code=404, content="Error: Calibration recording not found")
-
-#         annotations = cal_rec.annotations
+#         annotations = session.query(Annotation).filter(
+#             Annotation.calibration_recording_id == labeler.calibration_recording.id
+#         ).all()
 
 #         video_predictor = load_sam2_video_predictor(Sam2Checkpoints.LARGE)
-
-#         # del request.app.labeling_context.predictor
-
 #         inference_state = video_predictor.init_state(video_path=str(FRAMES_PATH), async_loading_frames=True)
 
 #         for annotation in annotations:
@@ -253,7 +280,7 @@ async def delete_calibration_annotation(
 #         os.makedirs(output_dir, exist_ok=True)
 #         logger.info(f"Segmentation output directory set to {output_dir}")
 
-#         # Use ThreadPoolExecutor to offload saving to disk.
+#         # Use ThreadPoolExecutor to offload saving to disk.r
 #         futures = []
 #         with ProcessPoolExecutor() as executor:
 #             with torch.amp.autocast("cuda"):

@@ -74,10 +74,23 @@ class ClassListContext(BaseContext):
 @dataclass
 class LabelingContext(BaseContext):
     sim_room_id: int
-    frame_count: int
+    recording_uuid: str
     content: str = Template.LABELER
 
 
 @dataclass
 class LabelingAnnotationsContext(BaseContext):
     annotations: list[Annotation] = field(default_factory=list)
+
+
+@dataclass
+class LabelingControlsContext(BaseContext):
+    frame_count: int
+    current_frame_idx: int
+
+
+@dataclass
+class LabelingClassesContext(BaseContext):
+    selected_class_id: int
+    sim_room_id: int
+    classes: list[SimRoomClass]

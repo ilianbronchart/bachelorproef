@@ -11,8 +11,12 @@ from src.aliases import UInt8Array
 from src.api.models.context import LabelingContext, Request
 from src.config import FRAMES_PATH, RECORDINGS_PATH, Sam2Checkpoints
 from src.db.models.calibration import Annotation, CalibrationRecording
-from src.logic.inference.sam_2 import load_sam2_predictor, predict_sam2
+from src.logic.inference.sam_2 import load_sam2_predictor, load_sam2_video_predictor, predict_sam2
 from src.utils import get_frame_from_dir
+
+
+class TrackingJob:
+    pass
 
 
 @dataclass
@@ -25,25 +29,24 @@ class ImagePredictionResult:
 class Labeler:
     calibration_recording: CalibrationRecording
     video_path: Path
-    current_frame: UInt8Array
-    frame_count: int
-    image_predictor: SAM2ImagePredictor
-    video_predictor: SAM2VideoPredictor | None
+    current_frame: UInt8Array = get_frame_from_dir(0, FRAMES_PATH)
+    frame_count: int = len(list(FRAMES_PATH.glob("*.jpg")))
+    image_predictor: SAM2ImagePredictor = load_sam2_predictor(Sam2Checkpoints.LARGE)
+    video_predictor: SAM2VideoPredictor = load_sam2_video_predictor(Sam2Checkpoints.LARGE)
+    tracking_job: TrackingJob | None = None
     current_frame_idx: int = -1
+    selected_class_id: int = -1
 
     def __init__(self, calibration_recording: CalibrationRecording):
         self.calibration_recording = calibration_recording
         self.video_path = RECORDINGS_PATH / (calibration_recording.recording_uuid + ".mp4")
-        self.current_frame = get_frame_from_dir(0, FRAMES_PATH)
-        self.frame_count = len(list(FRAMES_PATH.glob("*.jpg")))
-        self.image_predictor = load_sam2_predictor(Sam2Checkpoints.LARGE)
         self.seek(0)
 
     def get_labeling_context(self, request: Request) -> LabelingContext:
         return LabelingContext(
             request=request,
             sim_room_id=self.calibration_recording.sim_room_id,
-            frame_count=self.frame_count,
+            recording_uuid=self.calibration_recording.recording_uuid,
         )
 
     def seek(self, frame_idx: int) -> None:

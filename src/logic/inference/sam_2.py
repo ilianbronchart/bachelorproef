@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import cast
 
 import numpy as np
 import torch
@@ -13,7 +12,7 @@ from torchvision.ops import masks_to_boxes
 
 def load_sam2_predictor(checkpoint_path: Path) -> SAM2ImagePredictor:
     model_cfg = SAM_2_MODEL_CONFIGS[checkpoint_path]
-    predictor = SAM2ImagePredictor(build_sam2(model_cfg, str(checkpoint_path))) # type: ignore[no-untyped-call]
+    predictor = SAM2ImagePredictor(build_sam2(model_cfg, str(checkpoint_path)))  # type: ignore[no-untyped-call]
     return predictor
 
 
@@ -22,13 +21,13 @@ def load_sam2_video_predictor(
 ) -> SAM2VideoPredictor:
     model_cfg = SAM_2_MODEL_CONFIGS[checkpoint_path]
     print(checkpoint_path, model_cfg)
-    predictor = SAM2VideoPredictor(build_sam2_video_predictor(
+    predictor = build_sam2_video_predictor(
         model_cfg,
         str(checkpoint_path),
         device="cuda",
         max_cond_frames_in_attn=max_inference_state_frames,
         clear_non_cond_mem_around_input=True,
-    )) # type: ignore[no-untyped-call]
+    )  # type: ignore[no-untyped-call]
     return predictor
 
 

@@ -10,20 +10,19 @@ window.labelingCanvas = {
   ctx: null,
   frameImage: null,
   pointLabels: [],
+  selectedClassId: null,
 
   init() {
     // Get the canvas and context.
     this.canvas = document.getElementById('labeling-canvas');
     this.ctx = this.canvas.getContext('2d');
-    this.seek(0);
+    this.fetchCurrentFrame();
 
-    window.addEventListener('labeling-seek', (event) => {
-      this.seek(event.detail.frameIndex);
-    });
-
-    window.addEventListener('annotation-deleted', () => {
-      this.seek();
-    });
+    window.addEventListener('labeling-seek', this.fetchCurrentFrame.bind(this));
+    window.addEventListener('annotation-deleted', this.fetchCurrentFrame.bind(this));
+    window.addEventListener('classes-loaded', event => {
+      this.selectedClassId = event.detail.selectedClassId;
+    })
   },
 
   getMousePos(event) {
@@ -59,19 +58,11 @@ window.labelingCanvas = {
     // Set label based on mouse button: left = positive (1), right = negative (0)
     const label = event.button === 0 ? 1 : (event.button === 2 ? 0 : null);
     if (label === null) return; // Ignore other mouse buttons
-    
-    // Make sure we have an active class selected
-    const selectedClass = window.classManager && window.classManager.activeClass;
-    if (!selectedClass) {
-      alert("No class selected. Please select a class first.");
-      return;
-    }
-    
+
     try {      
       const annotationData = {
         point: [Math.round(point.x), Math.round(point.y)],
         label: label,
-        classId: selectedClass.id,
         deletePoint: deletePoint
       };
       
@@ -103,9 +94,9 @@ window.labelingCanvas = {
     img.src = objectURL;
   },
 
-  async seek(frameIndex) {
+  async fetchCurrentFrame() {
     try {
-      const blob = await window.API.seekFrame(frameIndex);
+      const blob = await window.API.fetchCurrentFrame();
       await this.fetchPointLabels();
       this.setImage(blob);
     } catch (error) {
@@ -128,11 +119,10 @@ window.labelingCanvas = {
     this.ctx.drawImage(this.frameImage, 0, 0, this.canvas.width, this.canvas.height);
     
     // Draw point labels with the currently selected class id
-    let selectedClass = window.classManager && window.classManager.activeClass ? window.classManager.activeClass : null;
-    if (selectedClass && this.pointLabels) {
+    if (this.selectedClassId && this.pointLabels) {
       const labels = this.pointLabels;
       labels.forEach(pt => {
-        if (parseInt(pt.class_id) === parseInt(selectedClass.id)) {
+        if (parseInt(pt.class_id) === this.selectedClassId) {
           this.ctx.beginPath();
           this.ctx.arc(pt.x, pt.y, 7, 0, 2 * Math.PI);
           // false label = negative point = red, true label = positive point = green

@@ -1,12 +1,13 @@
 <div id="class-list"
      class="class-management d-flex flex-column"
-     {% if selected_sim_room.id %}data-sim-room-id="{{ selected_sim_room.id }}"{% endif %}>
-  <form hx-post="/simrooms/{{ selected_sim_room.id }}/classes/add"
-        hx-target="#class-list"
-        hx-target-4xx="#error-message"
-        hx-target-5xx="#error-message"
-        hx-on:click="clearError()"
-        autocomplete="off">
+     hx-on::after-settle="setActiveClass()"
+     hx-trigger="classes-changed from:window"
+     hx-get="/labeling/classes"
+     hx-swap="outerHTML">
+  <form hx-post="/simrooms/{{ sim_room_id }}/classes/add"
+        hx-swap="none"
+        autocomplete="off"
+        hx-on::after-request="classesChanged()">
     <div class="mb-3">
       <label for="class-name" class="form-label user-select-none">New Class Name:</label>
       <div class="d-flex gap-2">
@@ -31,32 +32,67 @@
   <ul class="list-group class-list user-select-none">
     {% if classes|length == 0 %}<li class="list-group-item text-muted text-center">No classes defined</li>{% endif %}
     {% for class in classes %}
-      <li class=" list-group-item d-flex justify-content-between align-items-center">
+      <li class="class-item list-group-item d-flex justify-content-between align-items-center transition-bg"
+          data-class-id="{{ class.id }}"
+          hx-trigger="click"
+          hx-get="/labeling/classes?selected_class_id={{ class.id }}"
+          hx-swap="outerHTML"
+          hx-target="#class-list">
         <div class="d-flex align-items-center gap-2">
           <div class="color-preview" style="background-color: {{ class.color }}"></div>
           <span class="class-name">{{ class.class_name }}</span>
         </div>
         <button class="btn btn-sm btn-danger"
                 hx-confirm="Are you sure? This will delete all annotations linked to this class."
-                hx-delete="/simrooms/{{ selected_sim_room.id }}/classes/{{ class.id }}"
-                hx-target="#class-list"
-                hx-target-400="#error-message"
-                hx-target-404="#error-message"
-                hx-target-500="#error-message">
+                hx-delete="/simrooms/{{ sim_room_id }}/classes/{{ class.id }}"
+                hx-trigger="click consume"
+                hx-swap="none"
+                hx-stop-propagation="true"
+                hx-on::after-request="classesChanged()">
           <i class="bi bi-trash-fill"></i>
         </button>
       </li>
     {% endfor %}
   </ul>
-</div>
-<style>
+  <script>
+function setActiveClass() {
+  const selectedClassId = parseInt({{ selected_class_id }})
+  window.dispatchEvent(new CustomEvent('classes-loaded', { detail: { selectedClassId } }));
+  const activeClass = document.querySelector(`.class-item[data-class-id="${selectedClassId}"]`);
+  activeClass.classList.add('active');
+}
+
+function classesChanged() {
+  window.dispatchEvent(new CustomEvent('classes-changed'));
+}
+
+
+  </script>
+  <style>
   .list-group {
     margin-top: 1.5rem;
   }
   .class-list .list-group-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
     background-color: transparent;
     min-height: 3rem; /* Ensure consistent height */
     font-weight: 400; /* Fix font weight for consistency */
+  }
+  .class-list .list-group-item:hover {
+    background-color: rgba(0,0,0,.055);
+    border-left: 3px solid var(--bs-primary);
+  }
+  .class-list .list-group-item.active {
+    color: inherit;
+    background-color: rgba(0,0,0,.075);
+    border-color: rgba(0,0,0,.125);
+    border-left: 3px solid var(--bs-primary);
+    font-weight: 400; /* Maintain consistent font weight */
+  }
+  .class-list .list-group-item.active:hover {
+    background-color: rgba(0,0,0,.1);
+    border-left: 3px solid var(--bs-primary);
   }
   .class-list .list-group-item .class-name {
     flex-grow: 1;
@@ -77,4 +113,5 @@
     flex-grow: 1;
     overflow-y: auto;
   }
-</style>
+  </style>
+</div>

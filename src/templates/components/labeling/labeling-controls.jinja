@@ -1,5 +1,9 @@
 <div id="labeling-controls"
-     class="d-flex align-items-center gap-2 mb-3 h-auto">
+     class="d-flex align-items-center gap-3 mb-3 h-auto"
+     hx-on::after-settle="setTimelinePosition(event)"
+     hx-get="/labeling/tracking/status"
+     hx-trigger="every 1s"
+     hx-swap="outerHTML">
   <button id="btn-track" class="btn btn-primary btn-square">
     <svg xmlns="http://www.w3.org/2000/svg"
          height="24px"
@@ -11,60 +15,41 @@
   </button>
   <div id="timeline"
        class="position-relative w-100 rounded"
-       hx-on:click="window.labelingControls.updateSlider(event)">
+       hx-get="/labeling/controls"
+       hx-target="#labeling-controls"
+       hx-swap="outerHTML"
+       hx-trigger="labeling-seek-frame-index from:window, click"
+       hx-on::config-request="configSeekRequest(event)">
     <div id="timeline-position" class="rounded"></div>
   </div>
-</div>
-<script>
-window.labelingControls = {
-  init(frameCount) {
-    this.frameCount = parseInt(frameCount);
-    
-    // Listen for seek events from other components
-    window.addEventListener('labeling-seek-frame-index', (event) => {
-      const percent = event.detail.frameIndex / this.frameCount;
-      this.updateTimelinePosition(percent);
-      
-      // Dispatch seek event
-      seekEvent = new CustomEvent('labeling-seek', { 
-        detail: { 
-          frameIndex: event.detail.frameIndex
-        } 
-      });
-      window.dispatchEvent(seekEvent);
-    });
-  },
-  
-  updateTimelinePosition(percent) {
-    // Calculate position based on timeline width
-    const timeline = document.getElementById("timeline");
-    const position = document.getElementById("timeline-position");
-    const left = percent * timeline.offsetWidth - position.offsetWidth / 2;
-    position.style.left = Math.max(0, Math.min(timeline.offsetWidth - position.offsetWidth, left)) + 'px';
-  },
+  <script>
+frameCount = parseInt({{ frame_count }});
+currentFrameIdx = parseInt({{ current_frame_idx }});
 
-  updateSlider: function(event) {
+function configSeekRequest(event) {
+  const triggeringEvent = event.detail.triggeringEvent;
+  if (triggeringEvent.detail.frameIndex !== undefined) {
+    event.detail.parameters.frame_idx = triggeringEvent.detail.frameIndex;
+  } else {
     const timeline = document.getElementById("timeline");
     const rect = timeline.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
+    const clickX = triggeringEvent.clientX - rect.left;
     const percent = clickX / timeline.offsetWidth;
-    
-    // Update timeline position visually
-    this.updateTimelinePosition(percent);
-    
-    // Dispatch seek event
-    seekEvent = new CustomEvent('labeling-seek', { 
-      detail: { 
-        frameIndex: parseInt(percent * this.frameCount)
-      } 
-    });
-    window.dispatchEvent(seekEvent);
-  },
+    event.detail.parameters.frame_idx = parseInt(percent * frameCount);
+  }
 }
 
-window.labelingControls.init({{ frame_count }});
-</script>
-<style>
+function setTimelinePosition(event) {
+  if (!event.detail.requestConfig.path.includes('tracking')) {
+    // canvas shouldn't be updated if the call is for tracking status
+    window.dispatchEvent(new CustomEvent('labeling-seek'));
+  }
+  const position = document.getElementById("timeline-position");
+  position.style.left = `${currentFrameIdx / frameCount * 100}%`;
+  position.style.transform = 'translateX(-50%)';
+}
+  </script>
+  <style>
 #btn-track {
   width: 40px;
   height: 40px;
@@ -101,4 +86,5 @@ window.labelingControls.init({{ frame_count }});
   -moz-box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.5);
   box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.5);
 }
-</style>
+  </style>
+</div>

@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -51,5 +52,21 @@ class Template:
     LOCAL_RECORDINGS: str = "components/local-recordings.jinja"
     GLASSES_RECORDINGS: str = "components/glasses-recordings.jinja"
     CLASS_LIST: str = "components/class-list.jinja"
+
+    # Labeling
+    LABELING_CLASSES: str = "components/labeling/labeling-classes.jinja"
+    LABELING_ANNOTATIONS: str = "components/labeling/labeling-annotations.jinja"
     LABELING_CANVAS: str = "components/labeling/labeling-canvas.jinja"
-    ANNOTATIONS: str = "components/labeling/labeling-annotations.jinja"
+    LABELING_CONTROLS: str = "components/labeling/labeling-controls.jinja"
+
+
+class EndpointFilter(logging.Filter):
+    # List of endpoints to filter out from logs
+    FILTERED_ENDPOINTS = ["/tracking/status", "/glasses/connection"]
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        return not any(endpoint in message for endpoint in self.FILTERED_ENDPOINTS)
+
+
+logging.getLogger("uvicorn.access").addFilter(EndpointFilter())

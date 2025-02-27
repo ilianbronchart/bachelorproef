@@ -52,10 +52,10 @@
       </form>
       <ul id="sim-rooms-list" class="list-group">
         {% if sim_rooms|length == 0 %}
-          <li class="list-group-item text-muted text-center">No sim rooms created yet</li>
+          <li class="list-group-item text-muted text-center selectable">No sim rooms created yet</li>
         {% endif %}
         {% for sim_room in sim_rooms %}
-          {% set li_classes = "list-group-item d-flex justify-content-between align-items-center transition-bg" %}
+          {% set li_classes = "list-group-item d-flex justify-content-between align-items-center transition-bg selectable" %}
           {% if sim_room and sim_room.id == selected_sim_room.id %}
             {% set li_classes = li_classes + " selected" %}
           {% endif %}
@@ -126,7 +126,7 @@
           <li class="list-group-item text-muted text-center">No calibration recordings added yet</li>
         {% endif %}
         {% for cal_rec in calibration_recordings %}
-          <li class="list-group-item transition-bg">
+          <li class="list-group-item">
             <div class="d-flex justify-content-between align-items-center">
               <div class="d-flex flex-column">
                 <div class="fw-bold">{{ cal_rec.recording.participant }}</div>
@@ -177,17 +177,20 @@
 .list-group:empty {
   display: none;
 }
-.list-group-item {
+.list-group-item .selectable {
   transition: border-left-color 0.2s ease-in-out;
 }
-.list-group-item:hover {
+.list-group-item:hover .selectable {
   border-left: 3px solid var(--bs-primary);
 }
-.list-group-item.selected {
+.list-group-item.selected .selectable {
   border-left: 3px solid var(--bs-primary);
 }
 form + .list-group {
   margin-top: 1.5rem;
+}
+#calibration-recordings-list .list-group-item {
+  min-height: 3rem; /* Ensure consistent height */
 }
 </style>
 <script>
