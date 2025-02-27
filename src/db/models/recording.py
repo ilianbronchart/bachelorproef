@@ -78,7 +78,9 @@ class Recording(Base):
                 file.unlink()
 
     def remove(self, recordings_path: Path = RECORDINGS_PATH) -> None:
-        recordings = [file for file in os.listdir(recordings_path) if str(self.uuid) in file]
+        recordings = [
+            file for file in os.listdir(recordings_path) if str(self.uuid) in file
+        ]
         for file in recordings:
             (recordings_path / file).unlink()
 
@@ -94,8 +96,12 @@ class Recording(Base):
             raise FileNotFoundError(f"Recordings path {recordings_path} does not exist")
 
         try:
-            await download_file(str(self.scene_video_url), recordings_path / f"{self.uuid}.mp4")
-            await download_file(str(self.gaze_data_url), recordings_path / f"{self.uuid}.tsv")
+            await download_file(
+                str(self.scene_video_url), recordings_path / f"{self.uuid}.mp4"
+            )
+            await download_file(
+                str(self.gaze_data_url), recordings_path / f"{self.uuid}.tsv"
+            )
 
             with Session(engine) as session:
                 session.add(self)
@@ -108,4 +114,6 @@ class Recording(Base):
     def is_complete(self, recordings_path: Path = RECORDINGS_PATH) -> bool:
         """Checks if all files of a recording exist in the output recordings path"""
         is_in_db = self.get(str(self.uuid)) is not None
-        return is_in_db and all((recordings_path / f"{self.uuid}.{ext}").exists() for ext in ["mp4", "tsv"])
+        return is_in_db and all(
+            (recordings_path / f"{self.uuid}.{ext}").exists() for ext in ["mp4", "tsv"]
+        )

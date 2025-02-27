@@ -43,6 +43,8 @@ async def root(request: Request) -> HTMLResponse:
 async def glasses_connection(request: Request) -> HTMLResponse:
     """Retrieve connection details for the glasses"""
     context = GlassesConnectionContext(
-        request=request, glasses_connected=await glasses.is_connected(), battery_level=await glasses.get_battery_level()
+        request=request,
+        glasses_connected=await glasses.is_connected(),
+        battery_level=await glasses.get_battery_level(),
     )
     return templates.TemplateResponse(Template.CONNECTION_STATUS, context.to_dict())

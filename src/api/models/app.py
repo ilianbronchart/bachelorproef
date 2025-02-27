@@ -11,5 +11,11 @@ class App(FastAPI):
     def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         super().__init__(*args, **kwargs)
 
-        self.mount("/static", StaticFiles(directory="src/static", html=True), name="static")
-        self.mount(str("/" / RECORDINGS_PATH), StaticFiles(directory=RECORDINGS_PATH), name="recordings")
+        self.mount(
+            "/static", StaticFiles(directory="src/static", html=True), name="static"
+        )
+        self.mount(
+            str("/" / RECORDINGS_PATH),
+            StaticFiles(directory=RECORDINGS_PATH),
+            name="recordings",
+        )

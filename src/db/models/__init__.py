@@ -1,4 +1,10 @@
-from .calibration import Annotation, CalibrationRecording, PointLabel, SimRoom, SimRoomClass
+from .calibration import (
+    Annotation,
+    CalibrationRecording,
+    PointLabel,
+    SimRoom,
+    SimRoomClass,
+)
 from .recording import Recording
 
 __all__ = [

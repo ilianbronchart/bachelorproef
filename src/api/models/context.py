@@ -87,6 +87,7 @@ class LabelingAnnotationsContext(BaseContext):
 class LabelingControlsContext(BaseContext):
     frame_count: int
     current_frame_idx: int
+    selected_class_id: int
 
 
 @dataclass

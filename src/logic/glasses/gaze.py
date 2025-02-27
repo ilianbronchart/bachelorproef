@@ -14,7 +14,9 @@ def parse_gazedata_file(file_path: Path) -> list[GazeData]:
         return [GazeData.from_dict(json.loads(line)) for line in f.readlines()]
 
 
-def get_gaze_points(gaze_data: list[GazeData], resolution: tuple[int, int]) -> list[GazePoint]:
+def get_gaze_points(
+    gaze_data: list[GazeData], resolution: tuple[int, int]
+) -> list[GazePoint]:
     """
     Extract gaze points from a list of gaze data and denormalize them to the video resolution.
 
@@ -52,7 +54,9 @@ def get_gaze_points(gaze_data: list[GazeData], resolution: tuple[int, int]) -> l
     return gaze_points
 
 
-def match_frames_to_gaze(num_frames: int, gaze_points: list[GazePoint], fps: float) -> list[list[GazePoint]]:
+def match_frames_to_gaze(
+    num_frames: int, gaze_points: list[GazePoint], fps: float
+) -> list[list[GazePoint]]:
     """
     Match video frames to their corresponding gaze points.
     The polling rate of gaze data is twice the fps of the video, so there are max two gaze points per frame.
@@ -72,7 +76,10 @@ def match_frames_to_gaze(num_frames: int, gaze_points: list[GazePoint], fps: flo
         next_frame_timestamp = (frame_num + 1) / fps
         frame_gazes = []
 
-        while gaze_index < len(gaze_points) and gaze_points[gaze_index].timestamp < next_frame_timestamp:
+        while (
+            gaze_index < len(gaze_points)
+            and gaze_points[gaze_index].timestamp < next_frame_timestamp
+        ):
             gaze_point = gaze_points[gaze_index]
             frame_gazes.append(gaze_point)
             gaze_index += 1
@@ -81,6 +88,8 @@ def match_frames_to_gaze(num_frames: int, gaze_points: list[GazePoint], fps: flo
 
     gaze_counts = {len(points) for points in frame_gaze_mapping}
     if 3 in gaze_counts:
-        raise Warning("Detected 3 gaze points for a frame in the video. This is unexpected.")
+        raise Warning(
+            "Detected 3 gaze points for a frame in the video. This is unexpected."
+        )
 
     return frame_gaze_mapping

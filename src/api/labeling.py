@@ -5,7 +5,13 @@ from fastapi import APIRouter, Depends, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from src.api.dependencies import get_labeler, get_selected_class_id
-from src.api.models import Labeler, LabelingAnnotationsContext, LabelingClassesContext, LabelingControlsContext, Request
+from src.api.models import (
+    Labeler,
+    LabelingAnnotationsContext,
+    LabelingClassesContext,
+    LabelingControlsContext,
+    Request,
+)
 from src.config import Template, templates
 from src.db import CalibrationRecording, engine
 from src.db.models import Annotation, PointLabel, SimRoomClass
@@ -17,10 +23,16 @@ router = APIRouter(prefix="/labeling")
 @router.post("/", response_class=Response)
 async def start_labeling(request: Request, calibration_id: int) -> Response:
     with Session(engine) as session:
-        cal_rec = session.query(CalibrationRecording).filter(CalibrationRecording.id == calibration_id).first()
+        cal_rec = (
+            session.query(CalibrationRecording)
+            .filter(CalibrationRecording.id == calibration_id)
+            .first()
+        )
 
         if not cal_rec:
-            return Response(status_code=404, content="Error: Calibration recording not found")
+            return Response(
+                status_code=404, content="Error: Calibration recording not found"
+            )
 
         try:
             request.app.labeler = Labeler(calibration_recording=cal_rec)
@@ -34,7 +46,9 @@ async def start_labeling(request: Request, calibration_id: int) -> Response:
 
 
 @router.get("/", response_class=HTMLResponse)
-async def labeling(request: Request, labeler: Labeler = Depends(get_labeler)) -> HTMLResponse:
+async def labeling(
+    request: Request, labeler: Labeler = Depends(get_labeler)
+) -> HTMLResponse:
     labeling_context = labeler.get_labeling_context(request).to_dict()
     if is_hx_request(request):
         return templates.TemplateResponse(Template.LABELER, labeling_context)
@@ -48,7 +62,8 @@ async def point_labels(labeler: Labeler = Depends(get_labeler)) -> JSONResponse:
         annotations = (
             session.query(Annotation)
             .filter(
-                Annotation.calibration_recording_id == cal_rec_id, Annotation.frame_idx == labeler.current_frame_idx
+                Annotation.calibration_recording_id == cal_rec_id,
+                Annotation.frame_idx == labeler.current_frame_idx,
             )
             .all()
         )
@@ -84,13 +99,23 @@ async def current_frame(labeler: Labeler = Depends(get_labeler)) -> Response:
 
 
 @router.get("/controls", response_class=HTMLResponse)
-async def controls(request: Request, frame_idx: int, labeler: Labeler = Depends(get_labeler)) -> HTMLResponse:
+async def controls(
+    request: Request,
+    frame_idx: int,
+    labeler: Labeler = Depends(get_labeler),
+    selected_class_id: int = Depends(get_selected_class_id),
+) -> HTMLResponse:
     labeler.seek(frame_idx)
     context = LabelingControlsContext(
-        request=request, current_frame_idx=labeler.current_frame_idx, frame_count=labeler.frame_count
+        request=request,
+        current_frame_idx=labeler.current_frame_idx,
+        frame_count=labeler.frame_count,
+        selected_class_id=selected_class_id,
     )
 
-    return templates.TemplateResponse(Template.LABELING_CONTROLS, context=context.to_dict())
+    return templates.TemplateResponse(
+        Template.LABELING_CONTROLS, context=context.to_dict()
+    )
 
 
 @router.get("/classes", response_class=HTMLResponse)
@@ -116,7 +141,9 @@ async def classes(
             classes=classes,
         )
 
-        return templates.TemplateResponse(Template.LABELING_CLASSES, context=context.to_dict())
+        return templates.TemplateResponse(
+            Template.LABELING_CLASSES, context=context.to_dict()
+        )
 
 
 @dataclass
@@ -128,7 +155,9 @@ class AnnotationPostBody:
 
 @router.get("/annotations", response_class=HTMLResponse)
 async def annotations(
-    request: Request, labeler: Labeler = Depends(get_labeler), selected_class_id: int = Depends(get_selected_class_id)
+    request: Request,
+    labeler: Labeler = Depends(get_labeler),
+    selected_class_id: int = Depends(get_selected_class_id),
 ) -> HTMLResponse:
     context = LabelingAnnotationsContext(request=request)
     with Session(engine) as session:
@@ -178,13 +207,20 @@ async def post_annotation(
             session.flush()
 
         if body.delete_point:
-            closest_point = PointLabel.find_closest(annotation.id, body.point[0], body.point[1])
+            closest_point = PointLabel.find_closest(
+                annotation.id, body.point[0], body.point[1]
+            )
             if not closest_point:
                 return Response(status_code=404, content="Point not found")
 
             session.delete(closest_point)
         else:
-            point_label = PointLabel(annotation_id=annotation.id, x=body.point[0], y=body.point[1], label=body.label)
+            point_label = PointLabel(
+                annotation_id=annotation.id,
+                x=body.point[0],
+                y=body.point[1],
+                label=body.label,
+            )
             session.add(point_label)
 
         session.flush()
@@ -215,7 +251,9 @@ async def delete_calibration_annotation(
     request: Request, annotation_id: int, labeler: Labeler = Depends(get_labeler)
 ) -> HTMLResponse:
     with Session(engine) as session:
-        annotation = session.query(Annotation).filter(Annotation.id == annotation_id).first()
+        annotation = (
+            session.query(Annotation).filter(Annotation.id == annotation_id).first()
+        )
 
         if not annotation:
             return HTMLResponse(status_code=404, content="Annotation not found")
@@ -228,7 +266,9 @@ async def delete_calibration_annotation(
 
 
 @router.get("/tracking/status", response_class=HTMLResponse)
-async def tracking_status(request: Request, labeler: Labeler = Depends(get_labeler)) -> HTMLResponse:
+async def tracking_status(
+    request: Request, labeler: Labeler = Depends(get_labeler)
+) -> HTMLResponse:
     if labeler.tracking_job is None:
         return HTMLResponse(status_code=204)
 

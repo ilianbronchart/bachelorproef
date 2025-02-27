@@ -11,7 +11,11 @@ from src.aliases import UInt8Array
 from src.api.models.context import LabelingContext, Request
 from src.config import FRAMES_PATH, RECORDINGS_PATH, Sam2Checkpoints
 from src.db.models.calibration import Annotation, CalibrationRecording
-from src.logic.inference.sam_2 import load_sam2_predictor, load_sam2_video_predictor, predict_sam2
+from src.logic.inference.sam_2 import (
+    load_sam2_predictor,
+    load_sam2_video_predictor,
+    predict_sam2,
+)
 from src.utils import get_frame_from_dir
 
 
@@ -39,7 +43,9 @@ class Labeler:
 
     def __init__(self, calibration_recording: CalibrationRecording):
         self.calibration_recording = calibration_recording
-        self.video_path = RECORDINGS_PATH / (calibration_recording.recording_uuid + ".mp4")
+        self.video_path = RECORDINGS_PATH / (
+            calibration_recording.recording_uuid + ".mp4"
+        )
         self.seek(0)
 
     def get_labeling_context(self, request: Request) -> LabelingContext:
@@ -75,7 +81,9 @@ class Labeler:
             binary_mask = mask > 0
 
             # Apply alpha blending (0.2) on the white overlay only at locations where the mask is present
-            roi[binary_mask] = cv2.addWeighted(roi[binary_mask], 1, white_overlay[binary_mask], 0.2, 0)
+            roi[binary_mask] = cv2.addWeighted(
+                roi[binary_mask], 1, white_overlay[binary_mask], 0.2, 0
+            )
             frame[y1:y2, x1:x2] = roi
 
         return frame
@@ -87,14 +95,32 @@ class Labeler:
             color_bgr = (color_rgb[2], color_rgb[1], color_rgb[0])  # type: ignore[index]
             label = annotation.sim_room_class.class_name
 
-            (text_width, text_height), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 2)
+            (text_width, text_height), _ = cv2.getTextSize(
+                label, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 2
+            )
             cv2.rectangle(frame, (x1, y1), (x2, y2), color_bgr, 2)
-            cv2.rectangle(frame, (x1, y1 - text_height - 10), (x1 + text_width + 10, y1), color_bgr, -1)
-            cv2.putText(frame, label, (x1 + 5, y1 - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 2)
+            cv2.rectangle(
+                frame,
+                (x1, y1 - text_height - 10),
+                (x1 + text_width + 10, y1),
+                color_bgr,
+                -1,
+            )
+            cv2.putText(
+                frame,
+                label,
+                (x1 + 5, y1 - 7),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.9,
+                (0, 0, 0),
+                2,
+            )
 
         return frame
 
-    def predict_image(self, points: list[tuple[int, int]], labels: list[int]) -> ImagePredictionResult | None:
+    def predict_image(
+        self, points: list[tuple[int, int]], labels: list[int]
+    ) -> ImagePredictionResult | None:
         mask, bounding_box = predict_sam2(
             predictor=self.image_predictor,
             points=points,
@@ -107,4 +133,6 @@ class Labeler:
         x1, y1, x2, y2 = bounding_box
         frame_crop = self.current_frame[y1:y2, x1:x2]
 
-        return ImagePredictionResult(mask=mask_rgb, bounding_box=bounding_box, frame_crop=frame_crop)
+        return ImagePredictionResult(
+            mask=mask_rgb, bounding_box=bounding_box, frame_crop=frame_crop
+        )

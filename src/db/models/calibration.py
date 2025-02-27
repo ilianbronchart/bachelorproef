@@ -56,20 +56,31 @@ class CalibrationRecording(Base, SerializerMixin):
     sim_room_id: Mapped[int] = mapped_column(Integer, ForeignKey("sim_rooms.id"))
     recording_uuid: Mapped[str] = mapped_column(String, ForeignKey("recordings.uuid"))
 
-    sim_room: Mapped["SimRoom"] = relationship("SimRoom", back_populates="calibration_recordings")
-    recording: Mapped[Recording] = relationship("Recording", back_populates="calibration_recordings")
+    sim_room: Mapped["SimRoom"] = relationship(
+        "SimRoom", back_populates="calibration_recordings"
+    )
+    recording: Mapped[Recording] = relationship(
+        "Recording", back_populates="calibration_recordings"
+    )
     annotations: Mapped[list["Annotation"]] = relationship(
         "Annotation", back_populates="calibration_recording", cascade="all, delete-orphan"
     )
 
     @property
     def labeling_results_path(self) -> Path:
-        return LABELING_RESULTS_PATH / f"labeling_{self.id}_{self.sim_room_id}_{self.recording_uuid}"
+        return (
+            LABELING_RESULTS_PATH
+            / f"labeling_{self.id}_{self.sim_room_id}_{self.recording_uuid}"
+        )
 
     @staticmethod
     def get_all() -> list["CalibrationRecording"]:
         with Session(engine) as session:
-            return session.query(CalibrationRecording).options(joinedload(CalibrationRecording.recording)).all()
+            return (
+                session.query(CalibrationRecording)
+                .options(joinedload(CalibrationRecording.recording))
+                .all()
+            )
 
     @staticmethod
     def get(id_: int | str) -> Union["CalibrationRecording", None]:
@@ -84,12 +95,16 @@ class CalibrationRecording(Base, SerializerMixin):
 
 # Event listeners to create and remove labeling results directory
 @event.listens_for(CalibrationRecording, "after_insert")
-def create_labeling_results_path(_mapper: Any, _connection: Any, target: CalibrationRecording) -> None:
+def create_labeling_results_path(
+    _mapper: Any, _connection: Any, target: CalibrationRecording
+) -> None:
     target.labeling_results_path.mkdir(parents=True, exist_ok=True)
 
 
 @event.listens_for(CalibrationRecording, "after_delete")
-def remove_labeling_results_path(_mapper: Any, _connection: Any, target: CalibrationRecording) -> None:
+def remove_labeling_results_path(
+    _mapper: Any, _connection: Any, target: CalibrationRecording
+) -> None:
     if target.labeling_results_path.exists():
         shutil.rmtree(target.labeling_results_path)
 
@@ -109,7 +124,9 @@ class Annotation(Base, SerializerMixin):
     serialize_rules = ["-point_labels", "-calibration_recording", "-sim_room_class"]
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    calibration_recording_id: Mapped[int] = mapped_column(Integer, ForeignKey("calibration_recordings.id"))
+    calibration_recording_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("calibration_recordings.id")
+    )
     sim_room_class_id: Mapped[int] = mapped_column(Integer, ForeignKey("classes.id"))
     frame_idx: Mapped[int] = mapped_column(Integer, nullable=False)
 
@@ -125,7 +142,9 @@ class Annotation(Base, SerializerMixin):
     calibration_recording: Mapped["CalibrationRecording"] = relationship(
         "CalibrationRecording", back_populates="annotations"
     )
-    sim_room_class: Mapped["SimRoomClass"] = relationship("SimRoomClass", back_populates="annotations")
+    sim_room_class: Mapped["SimRoomClass"] = relationship(
+        "SimRoomClass", back_populates="annotations"
+    )
     point_labels: Mapped[list["PointLabel"]] = relationship(
         "PointLabel", back_populates="annotation", cascade="all, delete-orphan"
     )
@@ -176,10 +195,14 @@ class PointLabel(Base, SerializerMixin):
     y: Mapped[int] = mapped_column(Integer)
     label: Mapped[int] = mapped_column(Integer)
 
-    annotation: Mapped["Annotation"] = relationship("Annotation", back_populates="point_labels")
+    annotation: Mapped["Annotation"] = relationship(
+        "Annotation", back_populates="point_labels"
+    )
 
     @staticmethod
-    def find_closest(annotation_id: int, x: int, y: int, max_distance: int = 1) -> Union["PointLabel", None]:
+    def find_closest(
+        annotation_id: int, x: int, y: int, max_distance: int = 1
+    ) -> Union["PointLabel", None]:
         """
         Find the closest point label to the given coordinates within an annotation.
 
@@ -196,7 +219,11 @@ class PointLabel(Base, SerializerMixin):
         """
 
         with Session(engine) as session:
-            points = session.query(PointLabel).filter(PointLabel.annotation_id == annotation_id).all()
+            points = (
+                session.query(PointLabel)
+                .filter(PointLabel.annotation_id == annotation_id)
+                .all()
+            )
 
             if not points:
                 return None

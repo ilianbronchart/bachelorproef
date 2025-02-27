@@ -21,7 +21,9 @@ async def is_connected(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> bool
 
 async def get_battery_level(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> float:
     try:
-        async with connect_to_glasses.with_hostname(glasses_hostname, using_ip=True) as g3:
+        async with connect_to_glasses.with_hostname(
+            glasses_hostname, using_ip=True
+        ) as g3:
             return round((await g3.system.battery.get_level()) * 100)
     except asyncio.TimeoutError:
         return -1
@@ -42,7 +44,9 @@ async def recording_from_glasses(glasses_recording: GlassesRecording) -> Recordi
     return recording
 
 
-async def get_recordings(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> list[Recording]:
+async def get_recordings(
+    glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME,
+) -> list[Recording]:
     """Retrieve metadata for all recordings on the glasses"""
     async with (
         connect_to_glasses.with_hostname(glasses_hostname, using_ip=True) as g3,
@@ -52,7 +56,9 @@ async def get_recordings(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> li
         return [await recording_from_glasses(recording) for recording in recordings]
 
 
-async def get_recording(uuid: str, glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> Recording:
+async def get_recording(
+    uuid: str, glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME
+) -> Recording:
     """Retrieve metadata for recording by its UUID"""
     async with (
         connect_to_glasses.with_hostname(glasses_hostname, using_ip=True) as g3,

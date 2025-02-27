@@ -27,15 +27,23 @@ async def simrooms(request: Request, sim_room_id: int | None = None) -> HTMLResp
 
             if not context.selected_sim_room:
                 headers = {"HX-Push-Url": "/simrooms"}
-                return HTMLResponse(status_code=404, content="Sim Room not found", headers=headers)
+                return HTMLResponse(
+                    status_code=404, content="Sim Room not found", headers=headers
+                )
 
-            context.calibration_recordings = context.selected_sim_room.calibration_recordings
+            context.calibration_recordings = (
+                context.selected_sim_room.calibration_recordings
+            )
             context.classes = context.selected_sim_room.classes
 
         headers = {"HX-Push-Url": f"/simrooms/?sim_room_id={sim_room_id}"}
         if is_hx_request(request):
-            return templates.TemplateResponse(Template.SIMROOMS, context.to_dict(), headers=headers)
-        return templates.TemplateResponse(Template.INDEX, context.to_dict(), headers=headers)
+            return templates.TemplateResponse(
+                Template.SIMROOMS, context.to_dict(), headers=headers
+            )
+        return templates.TemplateResponse(
+            Template.INDEX, context.to_dict(), headers=headers
+        )
 
 
 @router.post("/add", response_class=HTMLResponse)
@@ -114,7 +122,9 @@ async def add_sim_room_class(
 
 
 @router.delete("/{sim_room_id}/classes/{class_id}", response_class=HTMLResponse)
-async def delete_sim_room_class(request: Request, sim_room_id: int, class_id: int) -> HTMLResponse:
+async def delete_sim_room_class(
+    request: Request, sim_room_id: int, class_id: int
+) -> HTMLResponse:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
@@ -149,14 +159,26 @@ async def add_calibration_recording(
             if not sim_room:
                 return HTMLResponse(status_code=404, content="Sim Room not found")
 
-            if any(cr.recording_uuid == recording_uuid for cr in sim_room.calibration_recordings):
-                return HTMLResponse(status_code=400, content="Calibration Recording already exists in this Sim Room")
+            if any(
+                cr.recording_uuid == recording_uuid
+                for cr in sim_room.calibration_recordings
+            ):
+                return HTMLResponse(
+                    status_code=400,
+                    content="Calibration Recording already exists in this Sim Room",
+                )
 
             recording = session.query(Recording).get(recording_uuid)
             if not sim_room or not recording:
-                return HTMLResponse(status_code=404, content="Sim Room or Recording not found")
+                return HTMLResponse(
+                    status_code=404, content="Sim Room or Recording not found"
+                )
 
-            session.add(CalibrationRecording(sim_room_id=sim_room_id, recording_uuid=recording_uuid))
+            session.add(
+                CalibrationRecording(
+                    sim_room_id=sim_room_id, recording_uuid=recording_uuid
+                )
+            )
             session.commit()
 
             return await simrooms(request, sim_room_id=sim_room_id)
@@ -164,13 +186,19 @@ async def add_calibration_recording(
         return HTMLResponse(status_code=500, content=str(e))
 
 
-@router.delete("/{sim_room_id}/calibration_recordings/{calibration_id}", response_class=HTMLResponse)
-async def delete_calibration_recording(request: Request, sim_room_id: int, calibration_id: int) -> HTMLResponse:
+@router.delete(
+    "/{sim_room_id}/calibration_recordings/{calibration_id}", response_class=HTMLResponse
+)
+async def delete_calibration_recording(
+    request: Request, sim_room_id: int, calibration_id: int
+) -> HTMLResponse:
     try:
         with Session(engine) as session:
             cal_rec = session.query(CalibrationRecording).get(calibration_id)
             if not cal_rec:
-                return HTMLResponse(status_code=404, content="Calibration Recording not found")
+                return HTMLResponse(
+                    status_code=404, content="Calibration Recording not found"
+                )
             session.delete(cal_rec)
             session.commit()
 

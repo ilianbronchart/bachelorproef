@@ -39,7 +39,11 @@ def recalculate_boxes(results: Results):
         return results
 
     boxes = torch.stack([
-        torch.cat([masks_to_boxes(mask.data)[0], results.boxes[i].conf, results.boxes[i].cls])
+        torch.cat([
+            masks_to_boxes(mask.data)[0],
+            results.boxes[i].conf,
+            results.boxes[i].cls,
+        ])
         for i, mask in enumerate(results.masks)
     ])
 
@@ -60,7 +64,8 @@ def filter_result(results: Results, filtered_idxs: list[int]) -> None:
         return results
 
     boxes = torch.stack([
-        torch.cat([results.boxes[i].xyxy[0], results.boxes[i].conf, results.boxes[i].cls]) for i in filtered_idxs
+        torch.cat([results.boxes[i].xyxy[0], results.boxes[i].conf, results.boxes[i].cls])
+        for i in filtered_idxs
     ])
 
     masks = torch.stack([results.masks[i].data[0] for i in filtered_idxs])
@@ -94,7 +99,9 @@ def filter_large_masks(results: Results) -> None:
     filter_result(results, filtered_masks)
 
 
-def filter_viewed_masks(results: Results, gaze_point: tuple[int, int], viewed_radius: int) -> None:
+def filter_viewed_masks(
+    results: Results, gaze_point: tuple[int, int], viewed_radius: int
+) -> None:
     """
     Filter out masks that are not within the viewed radius of the gaze point
 
@@ -186,21 +193,35 @@ def get_viewed_masks(
         # Pad the bottom right corner to make the frame square
         pad_x = crop_size - cropped_frame.shape[1]
         pad_y = crop_size - cropped_frame.shape[0]
-        padded_frame = cv2.copyMakeBorder(cropped_frame, 0, pad_y, 0, pad_x, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+        padded_frame = cv2.copyMakeBorder(
+            cropped_frame, 0, pad_y, 0, pad_x, cv2.BORDER_CONSTANT, value=(0, 0, 0)
+        )
 
         results: Results = model(
-            source=padded_frame, retina_masks=True, device="cuda", verbose=False, imgsz=crop_size, conf=conf, iou=iou
+            source=padded_frame,
+            retina_masks=True,
+            device="cuda",
+            verbose=False,
+            imgsz=crop_size,
+            conf=conf,
+            iou=iou,
         )[0]
 
         filter_viewed_masks(results, (crop_x, crop_y), viewed_radius)
         filter_large_masks(results)
-        recalculate_boxes(results)  # Seems like some boxes are wrong so we need to recalculate them
+        recalculate_boxes(
+            results
+        )  # Seems like some boxes are wrong so we need to recalculate them
         results_per_frame.append(results)
 
         if save_video:
             result_frame = results.plot(conf=True)
-            result_unpad = result_frame[0 : padded_frame.shape[0] - pad_y, 0 : padded_frame.shape[1] - pad_x]
-            original_frame[top:bottom, left:right] = cv2.cvtColor(result_unpad, cv2.COLOR_BGR2RGB)
+            result_unpad = result_frame[
+                0 : padded_frame.shape[0] - pad_y, 0 : padded_frame.shape[1] - pad_x
+            ]
+            original_frame[top:bottom, left:right] = cv2.cvtColor(
+                result_unpad, cv2.COLOR_BGR2RGB
+            )
             overlay_gaze_points(original_frame, frame_gaze_points, viewed_radius)
             video_result.write(original_frame)
 
@@ -262,7 +283,9 @@ def segment(
     # Pad the bottom right corner to make the frame square
     pad_x = crop_size - cropped_frame.shape[1]
     pad_y = crop_size - cropped_frame.shape[0]
-    padded_frame = cv2.copyMakeBorder(cropped_frame, 0, pad_y, 0, pad_x, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+    padded_frame = cv2.copyMakeBorder(
+        cropped_frame, 0, pad_y, 0, pad_x, cv2.BORDER_CONSTANT, value=(0, 0, 0)
+    )
     padded_frame = cv2.cvtColor(padded_frame, cv2.COLOR_BGR2RGB)
 
     results: Results = cast(

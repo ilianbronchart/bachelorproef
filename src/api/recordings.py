@@ -43,17 +43,23 @@ async def delete_local_recording(request: Request, recording_id: str) -> HTMLRes
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context.to_dict())
     except Exception as e:
         print(e)
-        return HTMLResponse(status_code=500, content="Error: Something went wrong, please try again later")
+        return HTMLResponse(
+            status_code=500, content="Error: Something went wrong, please try again later"
+        )
 
 
 @router.get("/glasses", response_class=HTMLResponse)
 async def glasses_recordings(request: Request) -> HTMLResponse:
     """Retrieve metadata for all recordings on the glasses"""
-    context = RecordingsContext(request=request, glasses_connected=await glasses.is_connected())
+    context = RecordingsContext(
+        request=request, glasses_connected=await glasses.is_connected()
+    )
 
     if not context.glasses_connected:
         context.failed_connection = True
-        return templates.TemplateResponse(Template.GLASSES_RECORDINGS, context.to_dict(), status_code=503)
+        return templates.TemplateResponse(
+            Template.GLASSES_RECORDINGS, context.to_dict(), status_code=503
+        )
 
     context.recordings = await glasses.get_recordings()
 
@@ -65,23 +71,36 @@ async def glasses_recordings(request: Request) -> HTMLResponse:
 @router.get("/glasses/{recording_uuid}/download", response_class=HTMLResponse)
 async def download_recording(request: Request, recording_uuid: str) -> HTMLResponse:
     """Download a recording from the glasses"""
-    context = RecordingsContext(request=request, glasses_connected=await glasses.is_connected())
+    context = RecordingsContext(
+        request=request, glasses_connected=await glasses.is_connected()
+    )
 
     if not context.glasses_connected:
         context.failed_connection = True
-        return templates.TemplateResponse(Template.GLASSES_RECORDINGS, context.to_dict(), status_code=503)
+        return templates.TemplateResponse(
+            Template.GLASSES_RECORDINGS, context.to_dict(), status_code=503
+        )
 
     try:
         recording = await glasses.get_recording(recording_uuid)
         if recording.is_complete():
-            return HTMLResponse(status_code=409, content="Error: Recording already exists in local directory")
+            return HTMLResponse(
+                status_code=409,
+                content="Error: Recording already exists in local directory",
+            )
         await recording.download()
 
         context.recordings = Recording.get_all()
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context.to_dict())
     except KeyError:
-        return HTMLResponse(status_code=404, content="Error: Recording not found on the glasses")
+        return HTMLResponse(
+            status_code=404, content="Error: Recording not found on the glasses"
+        )
     except RuntimeError:
-        return HTMLResponse(status_code=500, content="Error: Failed to download recording")
+        return HTMLResponse(
+            status_code=500, content="Error: Failed to download recording"
+        )
     except Exception:
-        return HTMLResponse(status_code=500, content="Error: Something went wrong, please try again later")
+        return HTMLResponse(
+            status_code=500, content="Error: Something went wrong, please try again later"
+        )

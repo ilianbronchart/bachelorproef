@@ -51,7 +51,9 @@ def is_hx_request(request: Request) -> bool:
     return request.headers.get("hx-request") == "true"
 
 
-def cv2_itervideo(video_path: str) -> Generator[tuple[int, cv2.typing.MatLike], None, None]:
+def cv2_itervideo(
+    video_path: str,
+) -> Generator[tuple[int, cv2.typing.MatLike], None, None]:
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise ValueError(f"Video file not found: {video_path}")
@@ -84,7 +86,10 @@ def cv2_video_resolution(video_path: Path, flip: bool = False) -> tuple[int, int
     if not cap.isOpened():
         raise ValueError(f"Video file not found: {video_path}")
 
-    resolution = (int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)))
+    resolution = (
+        int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+        int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+    )
     cap.release()
 
     if flip:
@@ -138,7 +143,9 @@ def cv2_get_frame(video_path: Path, frame_idx: int) -> UInt8Array:
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     if frame_idx < 0 or frame_idx >= frame_count:
         cap.release()
-        raise IndexError(f"Frame index {frame_idx} is out of range, total frames: {frame_count}")
+        raise IndexError(
+            f"Frame index {frame_idx} is out of range, total frames: {frame_count}"
+        )
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
     ret, frame = cap.read()
@@ -222,7 +229,16 @@ def extract_frames_to_dir(video_path: Path, frames_path: Path = FRAMES_PATH):
     # Explicitly set shell=False for security and sanitize all inputs
     # TODO: fix noqa here
     subprocess.run(  # noqa: S603
-        [ffmpeg_path, "-i", str(video_path), "-q:v", "2", "-start_number", "0", f"{frames_path!s}/%05d.jpg"],
+        [
+            ffmpeg_path,
+            "-i",
+            str(video_path),
+            "-q:v",
+            "2",
+            "-start_number",
+            "0",
+            f"{frames_path!s}/%05d.jpg",
+        ],
         check=True,
         shell=False,
     )
