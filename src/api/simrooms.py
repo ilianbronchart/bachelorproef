@@ -13,7 +13,7 @@ router = APIRouter(prefix="/simrooms")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def simrooms(request: Request, sim_room_id: int | None = None):
+async def simrooms(request: Request, sim_room_id: int | None = None) -> HTMLResponse | Response:
     context = SimRoomsContext(
         request=request,
         recordings=Recording.get_all(),
@@ -39,7 +39,7 @@ async def simrooms(request: Request, sim_room_id: int | None = None):
 
 
 @router.post("/add", response_class=HTMLResponse)
-async def add_sim_room(request: Request, name: str = Form(...)):
+async def add_sim_room(request: Request, name: str = Form(...)) -> HTMLResponse | Response:
     try:
         with Session(engine) as session:
             sim_room = SimRoom(name=name)
@@ -53,7 +53,7 @@ async def add_sim_room(request: Request, name: str = Form(...)):
 
 
 @router.delete("/{sim_room_id}", response_class=HTMLResponse)
-async def delete_sim_room(request: Request, sim_room_id: int):
+async def delete_sim_room(request: Request, sim_room_id: int) -> HTMLResponse | Response:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
@@ -70,7 +70,7 @@ async def delete_sim_room(request: Request, sim_room_id: int):
 
 
 @router.get("/{sim_room_id}/classes", response_class=HTMLResponse)
-async def sim_room_classes(request: Request, sim_room_id: int):
+async def sim_room_classes(request: Request, sim_room_id: int) -> HTMLResponse | Response:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
@@ -92,7 +92,7 @@ async def add_sim_room_class(
     request: Request,
     sim_room_id: int,
     class_name: str = Form(...),
-):
+) -> HTMLResponse | Response:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
@@ -114,7 +114,7 @@ async def add_sim_room_class(
 
 
 @router.delete("/{sim_room_id}/classes/{class_id}", response_class=HTMLResponse)
-async def delete_sim_room_class(request: Request, sim_room_id: int, class_id: int):
+async def delete_sim_room_class(request: Request, sim_room_id: int, class_id: int) -> HTMLResponse | Response:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
@@ -139,7 +139,9 @@ async def delete_sim_room_class(request: Request, sim_room_id: int, class_id: in
 
 
 @router.post("/{sim_room_id}/calibration_recordings", response_class=HTMLResponse)
-async def add_calibration_recording(request: Request, sim_room_id: int, recording_uuid: str = Form(...)):
+async def add_calibration_recording(
+    request: Request, sim_room_id: int, recording_uuid: str = Form(...)
+) -> HTMLResponse | Response:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
@@ -162,8 +164,8 @@ async def add_calibration_recording(request: Request, sim_room_id: int, recordin
         return Response(status_code=500, content=str(e))
 
 
-@router.delete("/{sim_room_id}/calibration_recordings/{calibration_id}", response_class=HTMLResponse)
-async def delete_calibration_recording(request: Request, sim_room_id: int, calibration_id: int):
+@router.delete("/{sim_room_id}/calibration_recordings/{calibration_id}", response_class=Response)
+async def delete_calibration_recording(request: Request, sim_room_id: int, calibration_id: int) -> Response:
     try:
         with Session(engine) as session:
             cal_rec = session.query(CalibrationRecording).get(calibration_id)

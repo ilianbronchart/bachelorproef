@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/", response_class=JSONResponse)
-async def start_labeling(request: Request, calibration_id: int):
+async def start_labeling(request: Request, calibration_id: int) -> Response:
     with Session(engine) as session:
         cal_rec = session.query(CalibrationRecording).filter(CalibrationRecording.id == calibration_id).first()
 
@@ -39,7 +39,7 @@ async def start_labeling(request: Request, calibration_id: int):
 
 
 @router.get("/", response_class=HTMLResponse)
-async def labeling(request: Request, labeler: Labeler = Depends(get_labeler)):
+async def labeling(request: Request, labeler: Labeler = Depends(get_labeler)) -> HTMLResponse:
     labeling_context = labeler.get_labeling_context(request).to_dict()
     if is_hx_request(request):
         return templates.TemplateResponse(Template.LABELER, labeling_context)
@@ -47,7 +47,7 @@ async def labeling(request: Request, labeler: Labeler = Depends(get_labeler)):
 
 
 @router.get("/point_labels", response_class=JSONResponse)
-async def point_labels(labeler: Labeler = Depends(get_labeler)):
+async def point_labels(labeler: Labeler = Depends(get_labeler)) -> JSONResponse:
     with Session(engine) as session:
         cal_rec_id = labeler.calibration_recording.id
         annotations = (
@@ -62,14 +62,14 @@ async def point_labels(labeler: Labeler = Depends(get_labeler)):
         for annotation in annotations:
             for point_label in annotation.point_labels:
                 point_label_dict = point_label.to_dict()
-                point_label_dict["class_id"] = annotation.sim_room_class_id  # type: ignore
+                point_label_dict["class_id"] = annotation.sim_room_class_id
                 point_labels.append(point_label_dict)
 
         return JSONResponse(content=point_labels)
 
 
 @router.get("/seek", response_class=Response)
-async def seek(frame_idx: int | None = None, labeler: Labeler = Depends(get_labeler)):
+async def seek(frame_idx: int | None = None, labeler: Labeler = Depends(get_labeler)) -> Response:
     with Session(engine) as session:
         if frame_idx is None:
             frame_idx = labeler.current_frame_idx
@@ -102,7 +102,7 @@ class AnnotationPostBody:
 
 
 @router.post("/annotations", response_class=Response)
-async def post_annotation(body: AnnotationPostBody, labeler: Labeler = Depends(get_labeler)):
+async def post_annotation(body: AnnotationPostBody, labeler: Labeler = Depends(get_labeler)) -> Response:
     with Session(engine) as session:
         annotation = (
             session.query(Annotation)
@@ -156,8 +156,10 @@ async def post_annotation(body: AnnotationPostBody, labeler: Labeler = Depends(g
         return await seek(labeler.current_frame_idx, labeler)
 
 
-@router.get("/annotations", response_class=Response)
-async def annotations(request: Request, class_id: int | None = None, labeler: Labeler = Depends(get_labeler)):
+@router.get("/annotations", response_class=HTMLResponse)
+async def annotations(
+    request: Request, class_id: int | None = None, labeler: Labeler = Depends(get_labeler)
+) -> HTMLResponse:
     context = LabelingAnnotationsContext(request=request)
     if class_id is not None:
         with Session(engine) as session:
@@ -174,8 +176,10 @@ async def annotations(request: Request, class_id: int | None = None, labeler: La
     return templates.TemplateResponse(Template.ANNOTATIONS, context.to_dict())
 
 
-@router.delete("/annotations/{annotation_id}", response_class=Response)
-async def delete_calibration_annotation(request: Request, annotation_id: int, labeler: Labeler = Depends(get_labeler)):
+@router.delete("/annotations/{annotation_id}", response_class=HTMLResponse)
+async def delete_calibration_annotation(
+    request: Request, annotation_id: int, labeler: Labeler = Depends(get_labeler)
+) -> HTMLResponse | Response:
     with Session(engine) as session:
         annotation = session.query(Annotation).filter(Annotation.id == annotation_id).first()
 
@@ -249,7 +253,7 @@ async def delete_calibration_annotation(request: Request, annotation_id: int, la
 #         # Use ThreadPoolExecutor to offload saving to disk.
 #         futures = []
 #         with ProcessPoolExecutor() as executor:
-#             with torch.amp.autocast("cuda"):  # type: ignore
+#             with torch.amp.autocast("cuda"):
 #                 for out_frame_idx, class_ids, out_mask_logits in video_predictor.propagate_in_video(inference_state):
 #                     seg_data = {}
 #                     for i, out_obj_id in enumerate(class_ids):

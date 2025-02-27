@@ -28,7 +28,7 @@ async def local_recordings(request: Request) -> HTMLResponse:
 
 
 @router.delete("/local/{recording_id}", response_class=HTMLResponse)
-async def delete_local_recording(request: Request, recording_id: str):
+async def delete_local_recording(request: Request, recording_id: str) -> HTMLResponse | Response:
     """Delete a recording from the local directory"""
     context = RecordingsContext(request=request)
 
@@ -47,7 +47,7 @@ async def delete_local_recording(request: Request, recording_id: str):
 
 
 @router.get("/glasses", response_class=HTMLResponse)
-async def glasses_recordings(request: Request):
+async def glasses_recordings(request: Request) -> HTMLResponse:
     """Retrieve metadata for all recordings on the glasses"""
     context = RecordingsContext(request=request, glasses_connected=await glasses.is_connected())
 
@@ -63,7 +63,7 @@ async def glasses_recordings(request: Request):
 
 
 @router.get("/glasses/{recording_uuid}/download", response_class=HTMLResponse)
-async def download_recording(request: Request, recording_uuid: str):
+async def download_recording(request: Request, recording_uuid: str) -> HTMLResponse | Response:
     """Download a recording from the glasses"""
     context = RecordingsContext(request=request, glasses_connected=await glasses.is_connected())
 

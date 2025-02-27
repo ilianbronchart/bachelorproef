@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from enum import Enum
 
 import numpy as np
+import numpy.typing as npt
 
 
 @dataclass
@@ -18,12 +18,13 @@ class GazePoint:
 
 @dataclass
 class EyeGazeData:
-    origin: np.ndarray
-    direction: np.ndarray
+    origin: npt.NDArray[np.float64]
+    direction: npt.NDArray[np.float64]
     pupil_diameter: float
 
 
-class GazeDataType(Enum):
+@dataclass(frozen=True)
+class GazeDataType:
     GAZE: str = "gaze"
     MISSING: str = "missing"
 
@@ -38,7 +39,7 @@ class GazeData:
     eye_data_right: EyeGazeData | None
 
     @staticmethod
-    def from_dict(data: dict) -> "GazeData":
+    def from_dict(data: dict) -> "GazeData":  # type: ignore[type-arg]
         gaze_data = data["data"]
 
         if len(gaze_data.keys()) == 0:

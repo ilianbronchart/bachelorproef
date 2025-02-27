@@ -6,7 +6,7 @@ sizes = [512]
 
 for model_name in models:
     for size in sizes:
-        model = FastSAM(CHECKPOINTS_PATH / model_name)
+        model = FastSAM(str(CHECKPOINTS_PATH / model_name))
         model.export(
             format="engine",
             imgsz=size,
