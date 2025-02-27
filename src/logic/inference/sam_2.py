@@ -1,11 +1,11 @@
 from pathlib import Path
 
 import numpy as np
-import numpy.typing as npt
 import torch
 from sam2.build_sam import build_sam2, build_sam2_video_predictor
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.sam2_video_predictor import SAM2VideoPredictor
+from src.aliases import UInt8Array
 from src.config import MAX_INFERENCE_STATE_FRAMES, SAM_2_MODEL_CONFIGS
 from torchvision.ops import masks_to_boxes
 
@@ -35,7 +35,7 @@ def predict_sam2(
     predictor: SAM2ImagePredictor,
     points: list[tuple[int, int]],
     points_labels: list[int],
-) -> tuple[npt.NDArray[np.uint8] | None, tuple[int, int, int, int] | None]:
+) -> tuple[UInt8Array | None, tuple[int, int, int, int] | None]:
     masks, _, _ = predictor.predict(
         point_coords=np.array(points),
         point_labels=np.array(points_labels),

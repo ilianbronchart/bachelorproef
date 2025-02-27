@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, Response
+from fastapi import APIRouter, Form
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from src.api.models import Request, SimRoomsContext
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/simrooms")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def simrooms(request: Request, sim_room_id: int | None = None) -> HTMLResponse | Response:
+async def simrooms(request: Request, sim_room_id: int | None = None) -> HTMLResponse:
     context = SimRoomsContext(
         request=request,
         recordings=Recording.get_all(),
@@ -27,7 +27,7 @@ async def simrooms(request: Request, sim_room_id: int | None = None) -> HTMLResp
 
             if not context.selected_sim_room:
                 headers = {"HX-Push-Url": "/simrooms"}
-                return Response(status_code=404, content="Sim Room not found", headers=headers)
+                return HTMLResponse(status_code=404, content="Sim Room not found", headers=headers)
 
             context.calibration_recordings = context.selected_sim_room.calibration_recordings
             context.classes = context.selected_sim_room.classes
@@ -39,7 +39,7 @@ async def simrooms(request: Request, sim_room_id: int | None = None) -> HTMLResp
 
 
 @router.post("/add", response_class=HTMLResponse)
-async def add_sim_room(request: Request, name: str = Form(...)) -> HTMLResponse | Response:
+async def add_sim_room(request: Request, name: str = Form(...)) -> HTMLResponse:
     try:
         with Session(engine) as session:
             sim_room = SimRoom(name=name)
@@ -49,16 +49,16 @@ async def add_sim_room(request: Request, name: str = Form(...)) -> HTMLResponse 
 
         return await simrooms(request, sim_room_id=sim_room.id)
     except Exception as e:
-        return Response(status_code=500, content=f"Error: {e!s}")
+        return HTMLResponse(status_code=500, content=f"Error: {e!s}")
 
 
 @router.delete("/{sim_room_id}", response_class=HTMLResponse)
-async def delete_sim_room(request: Request, sim_room_id: int) -> HTMLResponse | Response:
+async def delete_sim_room(request: Request, sim_room_id: int) -> HTMLResponse:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
             if not sim_room:
-                return Response(status_code=404, content="Sim Room not found")
+                return HTMLResponse(status_code=404, content="Sim Room not found")
             session.delete(sim_room)
             session.commit()
 
@@ -66,16 +66,16 @@ async def delete_sim_room(request: Request, sim_room_id: int) -> HTMLResponse | 
             response.headers["HX-Push-Url"] = "/simrooms"
             return response
     except Exception as e:
-        return Response(status_code=500, content=f"Error: {e!s}")
+        return HTMLResponse(status_code=500, content=f"Error: {e!s}")
 
 
 @router.get("/{sim_room_id}/classes", response_class=HTMLResponse)
-async def sim_room_classes(request: Request, sim_room_id: int) -> HTMLResponse | Response:
+async def sim_room_classes(request: Request, sim_room_id: int) -> HTMLResponse:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
             if not sim_room:
-                return Response(status_code=404, content="Sim Room not found")
+                return HTMLResponse(status_code=404, content="Sim Room not found")
 
             context = ClassListContext(
                 request=request,
@@ -84,7 +84,7 @@ async def sim_room_classes(request: Request, sim_room_id: int) -> HTMLResponse |
             )
             return templates.TemplateResponse(Template.CLASS_LIST, context.to_dict())
     except Exception as e:
-        return Response(status_code=500, content=f"Error: {e!s}")
+        return HTMLResponse(status_code=500, content=f"Error: {e!s}")
 
 
 @router.post("/{sim_room_id}/classes/add", response_class=HTMLResponse)
@@ -92,12 +92,12 @@ async def add_sim_room_class(
     request: Request,
     sim_room_id: int,
     class_name: str = Form(...),
-) -> HTMLResponse | Response:
+) -> HTMLResponse:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
             if not sim_room:
-                return Response(status_code=404, content="Sim Room not found")
+                return HTMLResponse(status_code=404, content="Sim Room not found")
 
             sim_room_class = SimRoomClass(sim_room_id=sim_room.id, class_name=class_name)
             session.add(sim_room_class)
@@ -110,20 +110,20 @@ async def add_sim_room_class(
             )
             return templates.TemplateResponse(Template.CLASS_LIST, context.to_dict())
     except Exception as e:
-        return Response(status_code=500, content=f"Error: {e!s}")
+        return HTMLResponse(status_code=500, content=f"Error: {e!s}")
 
 
 @router.delete("/{sim_room_id}/classes/{class_id}", response_class=HTMLResponse)
-async def delete_sim_room_class(request: Request, sim_room_id: int, class_id: int) -> HTMLResponse | Response:
+async def delete_sim_room_class(request: Request, sim_room_id: int, class_id: int) -> HTMLResponse:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
             if not sim_room:
-                return Response(status_code=404, content="Sim Room not found")
+                return HTMLResponse(status_code=404, content="Sim Room not found")
 
             sim_room_class = session.query(SimRoomClass).get(class_id)
             if not sim_room_class:
-                return Response(status_code=404, content="Sim Room Class not found")
+                return HTMLResponse(status_code=404, content="Sim Room Class not found")
 
             session.delete(sim_room_class)
             session.commit()
@@ -135,47 +135,47 @@ async def delete_sim_room_class(request: Request, sim_room_id: int, class_id: in
             )
             return templates.TemplateResponse(Template.CLASS_LIST, context.to_dict())
     except Exception as e:
-        return Response(status_code=500, content=f"Error: {e!s}")
+        return HTMLResponse(status_code=500, content=f"Error: {e!s}")
 
 
 @router.post("/{sim_room_id}/calibration_recordings", response_class=HTMLResponse)
 async def add_calibration_recording(
     request: Request, sim_room_id: int, recording_uuid: str = Form(...)
-) -> HTMLResponse | Response:
+) -> HTMLResponse:
     try:
         with Session(engine) as session:
             sim_room = session.query(SimRoom).get(sim_room_id)
 
             if not sim_room:
-                return Response(status_code=404, content="Sim Room not found")
+                return HTMLResponse(status_code=404, content="Sim Room not found")
 
             if any(cr.recording_uuid == recording_uuid for cr in sim_room.calibration_recordings):
-                return Response(status_code=400, content="Calibration Recording already exists in this Sim Room")
+                return HTMLResponse(status_code=400, content="Calibration Recording already exists in this Sim Room")
 
             recording = session.query(Recording).get(recording_uuid)
             if not sim_room or not recording:
-                return Response(status_code=404, content="Sim Room or Recording not found")
+                return HTMLResponse(status_code=404, content="Sim Room or Recording not found")
 
             session.add(CalibrationRecording(sim_room_id=sim_room_id, recording_uuid=recording_uuid))
             session.commit()
 
             return await simrooms(request, sim_room_id=sim_room_id)
     except Exception as e:
-        return Response(status_code=500, content=str(e))
+        return HTMLResponse(status_code=500, content=str(e))
 
 
-@router.delete("/{sim_room_id}/calibration_recordings/{calibration_id}", response_class=Response)
-async def delete_calibration_recording(request: Request, sim_room_id: int, calibration_id: int) -> Response:
+@router.delete("/{sim_room_id}/calibration_recordings/{calibration_id}", response_class=HTMLResponse)
+async def delete_calibration_recording(request: Request, sim_room_id: int, calibration_id: int) -> HTMLResponse:
     try:
         with Session(engine) as session:
             cal_rec = session.query(CalibrationRecording).get(calibration_id)
             if not cal_rec:
-                return Response(status_code=404, content="Calibration Recording not found")
+                return HTMLResponse(status_code=404, content="Calibration Recording not found")
             session.delete(cal_rec)
             session.commit()
 
             return await simrooms(request, sim_room_id=sim_room_id)
     except Exception as e:
-        return Response(status_code=500, content=f"Error: {e!s}")
+        return HTMLResponse(status_code=500, content=f"Error: {e!s}")
 
-    return Response(status_code=200)
+    return HTMLResponse(status_code=200)

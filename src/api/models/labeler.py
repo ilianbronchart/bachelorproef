@@ -1,12 +1,13 @@
 import base64
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
 import numpy as np
-from fastapi import Response
 from PIL import ImageColor
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.sam2_video_predictor import SAM2VideoPredictor
+from src.aliases import UInt8Array
 from src.api.models.context import LabelingContext, Request
 from src.config import FRAMES_PATH, RECORDINGS_PATH, Sam2Checkpoints
 from src.db.models.calibration import Annotation, CalibrationRecording
@@ -14,10 +15,17 @@ from src.logic.inference.sam_2 import load_sam2_predictor, predict_sam2
 from src.utils import get_frame_from_dir
 
 
+@dataclass
+class ImagePredictionResult:
+    mask: UInt8Array
+    bounding_box: tuple[int, int, int, int]
+    frame_crop: UInt8Array
+
+
 class Labeler:
     calibration_recording: CalibrationRecording
     video_path: Path
-    current_frame: np.ndarray
+    current_frame: UInt8Array
     frame_count: int
     image_predictor: SAM2ImagePredictor
     video_predictor: SAM2VideoPredictor | None
@@ -52,7 +60,7 @@ class Labeler:
         frame = self.draw_bboxes(frame, annotations)
         return frame
 
-    def draw_masks(self, frame: np.ndarray, annotations: list[Annotation]) -> np.ndarray:
+    def draw_masks(self, frame: np.ndarray, annotations: list[Annotation]) -> UInt8Array:
         for annotation in annotations:
             x1, y1, x2, y2 = annotation.bbox
             mask_bytes = base64.b64decode(annotation.annotation_mask)
@@ -69,11 +77,11 @@ class Labeler:
 
         return frame
 
-    def draw_bboxes(self, frame: np.ndarray, annotations: list[Annotation]) -> np.ndarray:
+    def draw_bboxes(self, frame: UInt8Array, annotations: list[Annotation]) -> UInt8Array:
         for annotation in annotations:
             x1, y1, x2, y2 = annotation.bbox
             color_rgb = ImageColor.getcolor(annotation.sim_room_class.color, "RGB")
-            color_bgr = (color_rgb[2], color_rgb[1], color_rgb[0])  # type: ignore[]
+            color_bgr = (color_rgb[2], color_rgb[1], color_rgb[0])  # type: ignore[index]
             label = annotation.sim_room_class.class_name
 
             (text_width, text_height), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 2)
@@ -83,19 +91,17 @@ class Labeler:
 
         return frame
 
-    def predict_image(
-        self, points: list[tuple[int, int]], labels: list[int]
-    ) -> tuple[np.ndarray, tuple[int, int, int, int], np.ndarray]:
+    def predict_image(self, points: list[tuple[int, int]], labels: list[int]) -> ImagePredictionResult | None:
         mask, bounding_box = predict_sam2(
             predictor=self.image_predictor,
             points=points,
             points_labels=labels,
         )
         if mask is None or bounding_box is None:
-            return Response(status_code=400, content="Error: Segmentation had no results")
+            return None
 
-        mask = mask.repeat(3, axis=0).transpose(1, 2, 0) * 255
+        mask_rgb = (mask.repeat(3, axis=0).transpose(1, 2, 0) * 255).astype(np.uint8)
         x1, y1, x2, y2 = bounding_box
         frame_crop = self.current_frame[y1:y2, x1:x2]
 
-        return mask, bounding_box, frame_crop
+        return ImagePredictionResult(mask=mask_rgb, bounding_box=bounding_box, frame_crop=frame_crop)

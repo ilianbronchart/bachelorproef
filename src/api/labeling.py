@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@router.post("/", response_class=JSONResponse)
+@router.post("/", response_class=Response)
 async def start_labeling(request: Request, calibration_id: int) -> Response:
     with Session(engine) as session:
         cal_rec = session.query(CalibrationRecording).filter(CalibrationRecording.id == calibration_id).first()
@@ -147,10 +147,13 @@ async def post_annotation(body: AnnotationPostBody, labeler: Labeler = Depends(g
             return await seek(labeler.current_frame_idx, labeler)
 
         # update annotation mask and bounding box
-        mask, bounding_box, frame_crop = labeler.predict_image(points, labels)
-        annotation.annotation_mask = encode_to_png(mask)
-        annotation.bounding_box = ",".join(map(str, bounding_box))
-        annotation.frame_crop = encode_to_png(frame_crop)
+        result = labeler.predict_image(points, labels)
+        if result is None:
+            return Response(status_code=500, content="Error: Failed to predict image")
+
+        annotation.annotation_mask = encode_to_png(result.mask)
+        annotation.bounding_box = ",".join(map(str, result.bounding_box))
+        annotation.frame_crop = encode_to_png(result.frame_crop)
 
         session.commit()
         return await seek(labeler.current_frame_idx, labeler)
@@ -179,12 +182,12 @@ async def annotations(
 @router.delete("/annotations/{annotation_id}", response_class=HTMLResponse)
 async def delete_calibration_annotation(
     request: Request, annotation_id: int, labeler: Labeler = Depends(get_labeler)
-) -> HTMLResponse | Response:
+) -> HTMLResponse:
     with Session(engine) as session:
         annotation = session.query(Annotation).filter(Annotation.id == annotation_id).first()
 
         if not annotation:
-            return Response(status_code=404, content="Annotation not found")
+            return HTMLResponse(status_code=404, content="Annotation not found")
 
         sim_room_class_id = annotation.sim_room_class_id
         session.delete(annotation)

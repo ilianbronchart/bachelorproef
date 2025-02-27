@@ -3,8 +3,8 @@ from typing import cast
 
 import cv2
 import numpy as np
-import numpy.typing as npt
 import torch
+from src.aliases import UInt8Array
 from src.logic.glasses.domain import GazeData, GazePoint
 from src.logic.glasses.gaze import get_gaze_points, match_frames_to_gaze
 from src.utils import cv2_itervideo
@@ -227,11 +227,11 @@ def crop_box(orig_img: np.ndarray, box: Boxes, mask: Masks | None = None) -> np.
 
 
 def segment(
-    image: npt.NDArray[np.uint8],
+    image: UInt8Array,
     model: FastSAM,
     points: list[tuple[int, int]],
     point_labels: list[int],
-) -> tuple[npt.NDArray[np.uint8] | None, tuple[int, int, int, int] | None]:
+) -> tuple[UInt8Array | None, tuple[int, int, int, int] | None]:
     """
     Perform inference on image using points
 

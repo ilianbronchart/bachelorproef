@@ -1,5 +1,5 @@
 import src.logic.glasses as glasses
-from fastapi import APIRouter, Response
+from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from src.api.models import RecordingsContext, Request
 from src.config import Template, templates
@@ -28,7 +28,7 @@ async def local_recordings(request: Request) -> HTMLResponse:
 
 
 @router.delete("/local/{recording_id}", response_class=HTMLResponse)
-async def delete_local_recording(request: Request, recording_id: str) -> HTMLResponse | Response:
+async def delete_local_recording(request: Request, recording_id: str) -> HTMLResponse:
     """Delete a recording from the local directory"""
     context = RecordingsContext(request=request)
 
@@ -36,14 +36,14 @@ async def delete_local_recording(request: Request, recording_id: str) -> HTMLRes
         recording = Recording.get(recording_id)
 
         if recording is None:
-            return Response(status_code=404, content="Error: Recording not found")
+            return HTMLResponse(status_code=404, content="Error: Recording not found")
 
         recording.remove()
         context.recordings = Recording.get_all()
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context.to_dict())
     except Exception as e:
         print(e)
-        return Response(status_code=500, content="Error: Something went wrong, please try again later")
+        return HTMLResponse(status_code=500, content="Error: Something went wrong, please try again later")
 
 
 @router.get("/glasses", response_class=HTMLResponse)
@@ -63,7 +63,7 @@ async def glasses_recordings(request: Request) -> HTMLResponse:
 
 
 @router.get("/glasses/{recording_uuid}/download", response_class=HTMLResponse)
-async def download_recording(request: Request, recording_uuid: str) -> HTMLResponse | Response:
+async def download_recording(request: Request, recording_uuid: str) -> HTMLResponse:
     """Download a recording from the glasses"""
     context = RecordingsContext(request=request, glasses_connected=await glasses.is_connected())
 
@@ -74,14 +74,14 @@ async def download_recording(request: Request, recording_uuid: str) -> HTMLRespo
     try:
         recording = await glasses.get_recording(recording_uuid)
         if recording.is_complete():
-            return Response(status_code=409, content="Error: Recording already exists in local directory")
+            return HTMLResponse(status_code=409, content="Error: Recording already exists in local directory")
         await recording.download()
 
         context.recordings = Recording.get_all()
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context.to_dict())
     except KeyError:
-        return Response(status_code=404, content="Error: Recording not found on the glasses")
+        return HTMLResponse(status_code=404, content="Error: Recording not found on the glasses")
     except RuntimeError:
-        return Response(status_code=500, content="Error: Failed to download recording")
+        return HTMLResponse(status_code=500, content="Error: Failed to download recording")
     except Exception:
-        return Response(status_code=500, content="Error: Something went wrong, please try again later")
+        return HTMLResponse(status_code=500, content="Error: Something went wrong, please try again later")

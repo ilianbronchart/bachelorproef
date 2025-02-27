@@ -10,9 +10,9 @@ from typing import cast
 import aiohttp
 import cv2
 import numpy as np
-import numpy.typing as npt
 from fastapi import Request
 
+from src.aliases import UInt8Array
 from src.config import FRAMES_PATH
 
 
@@ -130,7 +130,7 @@ def cv2_video_frame_count(video_path: Path) -> int:
     return frame_count
 
 
-def cv2_get_frame(video_path: Path, frame_idx: int) -> npt.NDArray[np.uint8]:
+def cv2_get_frame(video_path: Path, frame_idx: int) -> UInt8Array:
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         raise ValueError(f"Video file not found: {video_path}")
@@ -147,7 +147,7 @@ def cv2_get_frame(video_path: Path, frame_idx: int) -> npt.NDArray[np.uint8]:
         raise ValueError(f"Could not read frame at index {frame_idx}")
 
     cap.release()
-    return cast(npt.NDArray[np.uint8], frame)
+    return cast(UInt8Array, frame)
 
 
 def clamp(x: float, lower: float, upper: float) -> float:
@@ -228,7 +228,7 @@ def extract_frames_to_dir(video_path: Path, frames_path: Path = FRAMES_PATH):
     )
 
 
-def get_frame_from_dir(frame_idx: int, frames_path: Path = FRAMES_PATH) -> np.ndarray:
+def get_frame_from_dir(frame_idx: int, frames_path: Path = FRAMES_PATH) -> UInt8Array:
     frame_path = frames_path / f"{frame_idx:05}.jpg"
     if not frame_path.exists():
         raise FileNotFoundError(f"Frame {frame_idx} not found in {frames_path}")
@@ -236,7 +236,7 @@ def get_frame_from_dir(frame_idx: int, frames_path: Path = FRAMES_PATH) -> np.nd
     return cv2.imread(str(frame_path))
 
 
-def encode_to_png(image: np.ndarray) -> str:
+def encode_to_png(image: UInt8Array) -> str:
     """Encode an image to PNG format and return as base64 string."""
     ret, encoded_img = cv2.imencode(".png", image)
     if not ret:
