@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import torch
@@ -12,7 +13,7 @@ from torchvision.ops import masks_to_boxes
 
 def load_sam2_predictor(checkpoint_path: Path) -> SAM2ImagePredictor:
     model_cfg = SAM_2_MODEL_CONFIGS[checkpoint_path]
-    predictor = SAM2ImagePredictor(build_sam2(model_cfg, str(checkpoint_path)))
+    predictor = SAM2ImagePredictor(build_sam2(model_cfg, str(checkpoint_path))) # type: ignore[no-untyped-call]
     return predictor
 
 
@@ -21,13 +22,13 @@ def load_sam2_video_predictor(
 ) -> SAM2VideoPredictor:
     model_cfg = SAM_2_MODEL_CONFIGS[checkpoint_path]
     print(checkpoint_path, model_cfg)
-    predictor = build_sam2_video_predictor(
+    predictor = SAM2VideoPredictor(build_sam2_video_predictor(
         model_cfg,
         str(checkpoint_path),
         device="cuda",
         max_cond_frames_in_attn=max_inference_state_frames,
         clear_non_cond_mem_around_input=True,
-    )
+    )) # type: ignore[no-untyped-call]
     return predictor
 
 
@@ -45,9 +46,9 @@ def predict_sam2(
     if len(masks) == 0:
         return (None, None)
 
-    mask = torch.from_numpy(masks[0]).unsqueeze(0)
-    x1, y1, x2, y2 = masks_to_boxes(mask)[0].cpu().numpy().astype(np.int32)
-    mask = mask.cpu().numpy().astype(np.uint8)
+    mask_torch = torch.from_numpy(masks[0]).unsqueeze(0)
+    x1, y1, x2, y2 = masks_to_boxes(mask_torch)[0].cpu().numpy().astype(np.int32)
+    mask = mask_torch.cpu().numpy().astype(np.uint8)
 
     x1, x2 = min(x1, x2), max(x1, x2)
     y1, y2 = min(y1, y2), max(y1, y2)
