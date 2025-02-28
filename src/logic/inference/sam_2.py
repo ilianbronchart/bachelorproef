@@ -5,7 +5,7 @@ import torch
 from sam2.build_sam import build_sam2, build_sam2_video_predictor
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.sam2_video_predictor import SAM2VideoPredictor
-from src.aliases import UInt8Array
+from src.aliases import Int32Array, UInt8Array
 from src.config import MAX_INFERENCE_STATE_FRAMES, SAM_2_MODEL_CONFIGS
 from torchvision.ops import masks_to_boxes
 
@@ -35,7 +35,7 @@ def predict_sam2(
     predictor: SAM2ImagePredictor,
     points: list[tuple[int, int]],
     points_labels: list[int],
-) -> tuple[UInt8Array | None, tuple[int, int, int, int] | None]:
+) -> tuple[UInt8Array | None, Int32Array | None]:
     masks, _, _ = predictor.predict(
         point_coords=np.array(points),
         point_labels=np.array(points_labels),
@@ -53,4 +53,4 @@ def predict_sam2(
     y1, y2 = min(y1, y2), max(y1, y2)
     final_mask = mask[:, y1:y2, x1:x2]
 
-    return final_mask, (int(x1), int(y1), int(x2), int(y2))
+    return final_mask, np.array([x1, y1, x2, y2]).astype(np.int32)

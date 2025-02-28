@@ -4,7 +4,7 @@
     <div class="col-md-9">
       {% include "components/labeling/labeling-canvas.jinja" %}
       <div id="labeling-controls"
-           hx-get="/labeling/controls?frame_idx=0"
+           hx-get="/labeling/controls?frame_idx=0&polling=False"
            hx-trigger="load"
            hx-swap="outerHTML"></div>
       <div id="annotations-container"

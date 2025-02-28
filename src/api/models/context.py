@@ -80,7 +80,7 @@ class LabelingContext(BaseContext):
 
 @dataclass
 class LabelingAnnotationsContext(BaseContext):
-    annotations: list[Annotation] = field(default_factory=list)
+    annotations: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -88,6 +88,11 @@ class LabelingControlsContext(BaseContext):
     frame_count: int
     current_frame_idx: int
     selected_class_id: int
+    selected_class_color: str = "#000000"
+    tracks: list[tuple[int, int]] = field(default_factory=list)
+    tracking_progress: float = 0.0
+    is_tracking: bool = False
+    update_canvas: bool = False
 
 
 @dataclass

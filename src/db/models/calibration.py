@@ -47,6 +47,14 @@ class SimRoomClass(Base, SerializerMixin):
         "Annotation", back_populates="sim_room_class", cascade="all, delete-orphan"
     )
 
+event.listens_for(SimRoomClass, "after_delete")
+def remove_sim_room_class_labeling_results(_mapper: Any, _connection: Any, target: SimRoomClass) -> None:
+    with Session(engine) as session:
+        calibration_recordings = session.query(CalibrationRecording).all()
+        for calibration_recording in calibration_recordings:
+            shutil.rmtree(calibration_recording.labeling_results_path / str(target.id))
+
+
 
 # CalibrationRecording entity (links a Recording with a SimRoom for calibration/grounding)
 class CalibrationRecording(Base, SerializerMixin):
@@ -130,15 +138,6 @@ class Annotation(Base, SerializerMixin):
     sim_room_class_id: Mapped[int] = mapped_column(Integer, ForeignKey("classes.id"))
     frame_idx: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    annotation_mask: Mapped[str] = mapped_column(String, nullable=False, default="")
-    """Base64 encoded mask of the annotation"""
-
-    frame_crop: Mapped[str] = mapped_column(String, nullable=False, default="")
-    """Base64 encoded frame crop for the annotation"""
-
-    bounding_box: Mapped[str] = mapped_column(String, nullable=False, default="0,0,0,0")
-    """Bounding box coordinates (x1, y1, x2, y2)"""
-
     calibration_recording: Mapped["CalibrationRecording"] = relationship(
         "CalibrationRecording", back_populates="annotations"
     )
@@ -154,21 +153,14 @@ class Annotation(Base, SerializerMixin):
         calibration_recording_id: int,
         sim_room_class_id: int,
         frame_idx: int,
-        annotation_mask: str = "",
-        frame_crop: str = "",
-        bounding_box: tuple[int, int, int, int] = (0, 0, 0, 0),
     ) -> None:
         self.calibration_recording_id = calibration_recording_id
         self.sim_room_class_id = sim_room_class_id
         self.frame_idx = frame_idx
-        self.annotation_mask = annotation_mask
-        self.frame_crop = frame_crop
-        self.bounding_box = ",".join(map(str, bounding_box))
 
     @property
-    def bbox(self) -> tuple[int, int, int, int]:
-        bbox = list(map(int, self.bounding_box.split(",")))
-        return (bbox[0], bbox[1], bbox[2], bbox[3])
+    def result_path(self) -> Path:
+        return self.calibration_recording.labeling_results_path / str(self.sim_room_class_id) / f"{self.frame_idx}.npz"
 
     @no_type_check
     def to_dict(self) -> dict[str, Any]:
@@ -177,12 +169,15 @@ class Annotation(Base, SerializerMixin):
             "calibration_recording_id": self.calibration_recording_id,
             "sim_room_class_id": self.sim_room_class_id,
             "frame_idx": self.frame_idx,
-            "annotation_mask": self.annotation_mask,
-            "frame_crop": self.frame_crop,
             "point_labels": [label.to_dict() for label in self.point_labels],
-            "bounding_box": self.bounding_box.split(","),
         }
-
+    
+@event.listens_for(Annotation, "after_delete")
+def remove_annotation_result(
+    _mapper: Any, _connection: Any, target: Annotation
+) -> None:
+    if target.result_path.exists():
+        target.result_path.unlink()
 
 # PointLabel entity (stores (x, y) coordinates and a binary label)
 class PointLabel(Base, SerializerMixin):

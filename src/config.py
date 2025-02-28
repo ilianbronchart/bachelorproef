@@ -62,7 +62,7 @@ class Template:
 
 class EndpointFilter(logging.Filter):
     # List of endpoints to filter out from logs
-    FILTERED_ENDPOINTS = ["/tracking/status", "/glasses/connection"]
+    FILTERED_ENDPOINTS = ["/labeling/controls", "/glasses/connection"]
 
     def filter(self, record: logging.LogRecord) -> bool:
         message = record.getMessage()

@@ -3,7 +3,8 @@ from dataclasses import dataclass
 import cv2
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import HTMLResponse, JSONResponse
-from sqlalchemy.orm import Session
+import numpy as np
+from sqlalchemy.orm import Session, joinedload
 from src.api.dependencies import get_labeler, get_selected_class_id
 from src.api.models import (
     Labeler,
@@ -80,38 +81,43 @@ async def point_labels(labeler: Labeler = Depends(get_labeler)) -> JSONResponse:
 
 @router.get("/current_frame", response_class=Response)
 async def current_frame(labeler: Labeler = Depends(get_labeler)) -> Response:
-    with Session(engine) as session:
-        annotations = (
-            session.query(Annotation)
-            .filter(
-                Annotation.calibration_recording_id == labeler.calibration_recording.id,
-                Annotation.frame_idx == labeler.current_frame_idx,
-            )
-            .all()
-        )
+    frame = labeler.get_overlay()
+    ret, encoded_png = cv2.imencode(".png", frame)
+    if not ret:
+        return Response(status_code=500, content="Error: Failed to encode frame")
 
-        frame = labeler.get_overlay(annotations)
-        ret, encoded_png = cv2.imencode(".png", frame)
-        if not ret:
-            return Response(status_code=500, content="Error: Failed to encode frame")
-
-        return Response(content=encoded_png.tobytes(), media_type="image/png")
+    return Response(content=encoded_png.tobytes(), media_type="image/png")
 
 
 @router.get("/controls", response_class=HTMLResponse)
 async def controls(
     request: Request,
-    frame_idx: int,
+    polling: bool,
+    frame_idx: int | None = None,
     labeler: Labeler = Depends(get_labeler),
     selected_class_id: int = Depends(get_selected_class_id),
 ) -> HTMLResponse:
-    labeler.seek(frame_idx)
+    frame_idx = labeler.current_frame_idx if frame_idx is None else frame_idx
     context = LabelingControlsContext(
         request=request,
-        current_frame_idx=labeler.current_frame_idx,
+        current_frame_idx=frame_idx,
         frame_count=labeler.frame_count,
         selected_class_id=selected_class_id,
     )
+    
+    with Session(engine) as session:
+        sim_room_class: SimRoomClass = session.query(SimRoomClass).get(selected_class_id) 
+        if sim_room_class:
+            context.tracks = labeler.get_tracks()
+            context.selected_class_color = sim_room_class.color
+
+    if labeler.tracking_job is not None and labeler.tracking_job.class_id == selected_class_id:
+        context.tracking_progress = labeler.tracking_job.progress
+        context.is_tracking = True
+    
+    if not polling:
+        labeler.seek(frame_idx)
+        context.update_canvas = True
 
     return templates.TemplateResponse(
         Template.LABELING_CONTROLS, context=context.to_dict()
@@ -146,11 +152,6 @@ async def classes(
         )
 
 
-@dataclass
-class AnnotationPostBody:
-    point: tuple[int, int]
-    label: int
-    delete_point: bool = False
 
 
 @router.get("/annotations", response_class=HTMLResponse)
@@ -162,7 +163,8 @@ async def annotations(
     context = LabelingAnnotationsContext(request=request)
     with Session(engine) as session:
         cal_rec_id = labeler.calibration_recording.id
-        context.annotations = (
+        
+        annotations = (
             session.query(Annotation)
             .filter(
                 Annotation.calibration_recording_id == cal_rec_id,
@@ -171,8 +173,31 @@ async def annotations(
             .all()
         )
 
+        annotations_dicts = []
+        for ann in annotations:
+            file = np.load(ann.result_path)
+            x1, y1, x2, y2 = file["bbox"]
+
+            frame_crop = labeler.get_frame(ann.frame_idx)[y1:y2, x1:x2]
+            encoded_png = encode_to_png(frame_crop)
+
+            annotations_dicts.append(
+                {
+                    "id": ann.id,
+                    "frame_idx": ann.frame_idx,
+                    "frame_crop": encoded_png,
+                }
+            )
+
+        context.annotations = annotations_dicts
+
     return templates.TemplateResponse(Template.LABELING_ANNOTATIONS, context.to_dict())
 
+@dataclass
+class AnnotationPostBody:
+    point: tuple[int, int]
+    label: int
+    delete_point: bool = False
 
 @router.post("/annotations", response_class=Response)
 async def post_annotation(
@@ -234,14 +259,11 @@ async def post_annotation(
             return await current_frame(labeler)
 
         # update annotation mask and bounding box
-        result = labeler.predict_image(points, labels)
-        if result is None:
+        try:
+            labeler.predict_image(points, labels)
+        except ValueError:
             return Response(status_code=500, content="Error: Failed to predict image")
-
-        annotation.annotation_mask = encode_to_png(result.mask)
-        annotation.bounding_box = ",".join(map(str, result.bounding_box))
-        annotation.frame_crop = encode_to_png(result.frame_crop)
-
+        
         session.commit()
         return await current_frame(labeler)
 
@@ -263,76 +285,34 @@ async def delete_calibration_annotation(
         session.commit()
 
         return await annotations(request, labeler, sim_room_class_id)
+    
+@router.post("/tracking", response_class=HTMLResponse)
+async def tracking(request: Request, labeler: Labeler = Depends(get_labeler), selected_class_id: int = Depends(get_selected_class_id)) -> HTMLResponse:
+    if labeler.tracking_job is not None:
+        return HTMLResponse(status_code=400, content="Error: Tracking already in progress")
 
+    if selected_class_id == -1:
+        return HTMLResponse(status_code=400, content="Error: No class selected")
 
-@router.get("/tracking/status", response_class=HTMLResponse)
-async def tracking_status(
-    request: Request, labeler: Labeler = Depends(get_labeler)
-) -> HTMLResponse:
-    if labeler.tracking_job is None:
-        return HTMLResponse(status_code=204)
+    with Session(engine) as session:
+        annotations = (
+            session.query(Annotation)
+            .filter(
+                Annotation.calibration_recording_id == labeler.calibration_recording.id,
+                Annotation.sim_room_class_id == selected_class_id,
+            )
+            .options(
+                joinedload(Annotation.point_labels), 
+            )
+            .all()
+        )
 
-    return await controls(request, labeler.current_frame_idx, labeler)
+        labeler.create_tracking_job(annotations)
 
-
-# def save_segmentation(frame_idx: int, seg_data: dict, output_dir: str) -> None:
-#     try:
-#         # Define the output file path. Adjust the path as needed.
-#         file_path = os.path.join(output_dir, f"{frame_idx:05d}.npz")
-#         np.savez_compressed(file_path, **seg_data)
-#         # Optionally, confirm the file was saved
-#     except Exception as e:
-#         logger.exception(f"Error saving segmentation for frame {frame_idx}: {e}")
-#     finally:
-#         # Free up memory.
-#         del seg_data
-
-
-# @router.post("/tracking", response_class=JSONResponse)
-# async def tracking(labeler: Labeler = Depends(get_labeler)) -> JSONResponse:
-#     with Session(engine) as session:
-#         annotations = session.query(Annotation).filter(
-#             Annotation.calibration_recording_id == labeler.calibration_recording.id
-#         ).all()
-
-#         video_predictor = load_sam2_video_predictor(Sam2Checkpoints.LARGE)
-#         inference_state = video_predictor.init_state(video_path=str(FRAMES_PATH), async_loading_frames=True)
-
-#         for annotation in annotations:
-#             point_labels = annotation.point_labels
-#             points = [(int(point_label.x), int(point_label.y)) for point_label in point_labels]
-#             labels = [point_label.label for point_label in point_labels]
-
-#             video_predictor.add_new_points(
-#                 inference_state=inference_state,
-#                 frame_idx=annotation.frame_idx,
-#                 obj_id=annotation.sim_room_class.id,
-#                 points=points,
-#                 labels=labels,
-#             )
-
-#         # Define output directory for segmentation results.
-#         output_dir = "./segmentation_results"
-#         # empty the directory
-#         if os.path.exists(output_dir):
-#             for file in os.listdir(output_dir):
-#                 os.remove(os.path.join(output_dir, file))
-#         os.makedirs(output_dir, exist_ok=True)
-#         logger.info(f"Segmentation output directory set to {output_dir}")
-
-#         # Use ThreadPoolExecutor to offload saving to disk.r
-#         futures = []
-#         with ProcessPoolExecutor() as executor:
-#             with torch.amp.autocast("cuda"):
-#                 for out_frame_idx, class_ids, out_mask_logits in video_predictor.propagate_in_video(inference_state):
-#                     seg_data = {}
-#                     for i, out_obj_id in enumerate(class_ids):
-#                         mask = (out_mask_logits[i] > 0.5).detach()
-#                         if mask.any():
-#                             seg_data[str(out_obj_id)] = mask.cpu().numpy()
-
-#                     future = executor.submit(save_segmentation, out_frame_idx, seg_data, output_dir)
-#                     futures.append(future)
-
-#     logger.info("Tracking complete")
-#     return JSONResponse(content={"status": "tracking complete"})
+    return await controls(
+        request, 
+        polling=False, 
+        frame_idx=labeler.current_frame_idx, 
+        labeler=labeler, 
+        selected_class_id=selected_class_id
+    )

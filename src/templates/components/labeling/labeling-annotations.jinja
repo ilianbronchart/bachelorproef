@@ -30,6 +30,18 @@ function seekToFrame(frameIndex) {
   window.dispatchEvent(customEvent);
 }
 
+function updateSelectedAnnotation(frameIndex) {
+  // remove selected class from all annotation-thumb
+  const annotationThumbs = document.querySelectorAll('.annotation-thumb');
+  annotationThumbs.forEach(thumb => thumb.classList.remove('selected'));
+
+  // add selected class to the clicked annotation-thumb
+  const annotationThumb = document.querySelector(`.annotation-thumb[data-frame="${frameIndex}"]`);
+  if (annotationThumb) {
+    annotationThumb.classList.add('selected');
+  }
+}
+
 function annotationDeleted() {
   event.detail.successful = true; // TODO: Currently after-request is broken so we use before-request
   // See: https://github.com/bigskysoftware/htmx/issues/3177
@@ -59,6 +71,11 @@ function scaleImage(img) {
   img.style.height = (naturalHeight * scale) + 'px';
   img.style.display = 'block';
 }
+
+window.addEventListener('labeling-seek', (event) => {
+  updateSelectedAnnotation(event.detail.frameIndex);
+});
+  
   </script>
   <style>
 .annotation-thumb {
@@ -80,7 +97,7 @@ function scaleImage(img) {
 
 .annotation-thumb.selected img {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-  outline: 2px solid #0d6efd;
+  outline: 3px solid #0d6efd;
 }
 
 .annotation-delete {

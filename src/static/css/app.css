@@ -6,15 +6,7 @@
   display: inline-block;
 }
 
-.htmx-request.spinner {
-  display: inline-block;
-}
-
 .htmx-request .htmx-request-hide {
-  display: none;
-}
-
-.htmx-request.htmx-request-hide {
   display: none;
 }
 
@@ -47,4 +39,9 @@ select[aria-controls="local-recordings-table"] {
   min-width: 40px;
   min-height: 40px;
   padding: 0;
+}
+
+.btn:active,
+.btn:focus {
+  box-shadow: none;
 }
