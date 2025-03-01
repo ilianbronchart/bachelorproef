@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 import cv2
+import numpy as np
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import HTMLResponse, JSONResponse
-import numpy as np
 from sqlalchemy.orm import Session, joinedload
 from src.api.dependencies import get_labeler, get_selected_class_id
 from src.api.models import (
@@ -104,17 +104,20 @@ async def controls(
         frame_count=labeler.frame_count,
         selected_class_id=selected_class_id,
     )
-    
+
     with Session(engine) as session:
-        sim_room_class: SimRoomClass = session.query(SimRoomClass).get(selected_class_id) 
+        sim_room_class: SimRoomClass = session.query(SimRoomClass).get(selected_class_id)
         if sim_room_class:
             context.tracks = labeler.get_tracks()
             context.selected_class_color = sim_room_class.color
 
-    if labeler.tracking_job is not None and labeler.tracking_job.class_id == selected_class_id:
+    if (
+        labeler.tracking_job is not None
+        and labeler.tracking_job.class_id == selected_class_id
+    ):
         context.tracking_progress = labeler.tracking_job.progress
         context.is_tracking = True
-    
+
     if not polling:
         labeler.seek(frame_idx)
         context.update_canvas = True
@@ -152,8 +155,6 @@ async def classes(
         )
 
 
-
-
 @router.get("/annotations", response_class=HTMLResponse)
 async def annotations(
     request: Request,
@@ -163,7 +164,7 @@ async def annotations(
     context = LabelingAnnotationsContext(request=request)
     with Session(engine) as session:
         cal_rec_id = labeler.calibration_recording.id
-        
+
         annotations = (
             session.query(Annotation)
             .filter(
@@ -181,23 +182,23 @@ async def annotations(
             frame_crop = labeler.get_frame(ann.frame_idx)[y1:y2, x1:x2]
             encoded_png = encode_to_png(frame_crop)
 
-            annotations_dicts.append(
-                {
-                    "id": ann.id,
-                    "frame_idx": ann.frame_idx,
-                    "frame_crop": encoded_png,
-                }
-            )
+            annotations_dicts.append({
+                "id": ann.id,
+                "frame_idx": ann.frame_idx,
+                "frame_crop": encoded_png,
+            })
 
         context.annotations = annotations_dicts
 
     return templates.TemplateResponse(Template.LABELING_ANNOTATIONS, context.to_dict())
+
 
 @dataclass
 class AnnotationPostBody:
     point: tuple[int, int]
     label: int
     delete_point: bool = False
+
 
 @router.post("/annotations", response_class=Response)
 async def post_annotation(
@@ -260,10 +261,10 @@ async def post_annotation(
 
         # update annotation mask and bounding box
         try:
-            labeler.predict_image(points, labels)
+            labeler.predict_image(annotation, points, labels)
         except ValueError:
             return Response(status_code=500, content="Error: Failed to predict image")
-        
+
         session.commit()
         return await current_frame(labeler)
 
@@ -285,11 +286,18 @@ async def delete_calibration_annotation(
         session.commit()
 
         return await annotations(request, labeler, sim_room_class_id)
-    
+
+
 @router.post("/tracking", response_class=HTMLResponse)
-async def tracking(request: Request, labeler: Labeler = Depends(get_labeler), selected_class_id: int = Depends(get_selected_class_id)) -> HTMLResponse:
+async def tracking(
+    request: Request,
+    labeler: Labeler = Depends(get_labeler),
+    selected_class_id: int = Depends(get_selected_class_id),
+) -> HTMLResponse:
     if labeler.tracking_job is not None:
-        return HTMLResponse(status_code=400, content="Error: Tracking already in progress")
+        return HTMLResponse(
+            status_code=400, content="Error: Tracking already in progress"
+        )
 
     if selected_class_id == -1:
         return HTMLResponse(status_code=400, content="Error: No class selected")
@@ -302,7 +310,7 @@ async def tracking(request: Request, labeler: Labeler = Depends(get_labeler), se
                 Annotation.sim_room_class_id == selected_class_id,
             )
             .options(
-                joinedload(Annotation.point_labels), 
+                joinedload(Annotation.point_labels),
             )
             .all()
         )
@@ -310,9 +318,9 @@ async def tracking(request: Request, labeler: Labeler = Depends(get_labeler), se
         labeler.create_tracking_job(annotations)
 
     return await controls(
-        request, 
-        polling=False, 
-        frame_idx=labeler.current_frame_idx, 
-        labeler=labeler, 
-        selected_class_id=selected_class_id
+        request,
+        polling=False,
+        frame_idx=labeler.current_frame_idx,
+        labeler=labeler,
+        selected_class_id=selected_class_id,
     )

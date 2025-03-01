@@ -12,7 +12,7 @@ from src.api.models.labeler import Labeler
 from src.config import Template, templates
 from src.db.db import Base, engine
 from src.db.models import Recording
-from src.db.models.calibration import Annotation, CalibrationRecording, PointLabel
+from src.db.models.calibration import CalibrationRecording
 
 
 @asynccontextmanager

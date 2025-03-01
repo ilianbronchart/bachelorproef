@@ -7,7 +7,7 @@ from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint, event
 from sqlalchemy.orm import Mapped, Session, joinedload, mapped_column, relationship
 from sqlalchemy_serializer import SerializerMixin
 
-from src.config import LABELING_RESULTS_PATH
+from src.config import LABELING_ANNOTATIONS_DIR, LABELING_RESULTS_PATH
 from src.db.db import Base, engine
 from src.utils import generate_pleasant_color
 
@@ -47,13 +47,32 @@ class SimRoomClass(Base, SerializerMixin):
         "Annotation", back_populates="sim_room_class", cascade="all, delete-orphan"
     )
 
+
 event.listens_for(SimRoomClass, "after_delete")
-def remove_sim_room_class_labeling_results(_mapper: Any, _connection: Any, target: SimRoomClass) -> None:
+def remove_sim_room_class_annotations(
+    _mapper: Any, _connection: Any, target: SimRoomClass
+) -> None:
+    with Session(engine) as session:
+        # Remove all annotations for the class
+        annotations = session.query(Annotation).filter(Annotation.sim_room_class_id == target.id)
+        for annotation in annotations:
+            if annotation.result_path.exists():
+                shutil.rmtree(annotation.result_path)
+
+        # Remove all tracking results for the class
+        for labeling_results in LABELING_RESULTS_PATH.iterdir():
+            tracking_results_path = labeling_results / target.id
+            if tracking_results_path.exists():
+                shutil.rmtree(tracking_results_path)
+
+
+def remove_sim_room_class_labeling_results(
+    _mapper: Any, _connection: Any, target: SimRoomClass
+) -> None:
     with Session(engine) as session:
         calibration_recordings = session.query(CalibrationRecording).all()
         for calibration_recording in calibration_recordings:
             shutil.rmtree(calibration_recording.labeling_results_path / str(target.id))
-
 
 
 # CalibrationRecording entity (links a Recording with a SimRoom for calibration/grounding)
@@ -76,10 +95,11 @@ class CalibrationRecording(Base, SerializerMixin):
 
     @property
     def labeling_results_path(self) -> Path:
-        return (
-            LABELING_RESULTS_PATH
-            / f"labeling_{self.id}_{self.sim_room_id}_{self.recording_uuid}"
-        )
+        return LABELING_RESULTS_PATH / str(self.id)
+
+    @property
+    def annotations_path(self) -> Path:
+        return self.labeling_results_path / LABELING_ANNOTATIONS_DIR
 
     @staticmethod
     def get_all() -> list["CalibrationRecording"]:
@@ -107,6 +127,7 @@ def create_labeling_results_path(
     _mapper: Any, _connection: Any, target: CalibrationRecording
 ) -> None:
     target.labeling_results_path.mkdir(parents=True, exist_ok=True)
+    target.annotations_path.mkdir(parents=True, exist_ok=True)
 
 
 @event.listens_for(CalibrationRecording, "after_delete")
@@ -148,6 +169,15 @@ class Annotation(Base, SerializerMixin):
         "PointLabel", back_populates="annotation", cascade="all, delete-orphan"
     )
 
+    @property
+    def result_path(self) -> Path:
+        return (
+            LABELING_RESULTS_PATH
+            / str(self.calibration_recording_id)
+            / LABELING_ANNOTATIONS_DIR
+            / f"{self.sim_room_class_id}_{self.frame_idx}.npz"
+        )
+
     def __init__(
         self,
         calibration_recording_id: int,
@@ -158,10 +188,6 @@ class Annotation(Base, SerializerMixin):
         self.sim_room_class_id = sim_room_class_id
         self.frame_idx = frame_idx
 
-    @property
-    def result_path(self) -> Path:
-        return self.calibration_recording.labeling_results_path / str(self.sim_room_class_id) / f"{self.frame_idx}.npz"
-
     @no_type_check
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -171,13 +197,13 @@ class Annotation(Base, SerializerMixin):
             "frame_idx": self.frame_idx,
             "point_labels": [label.to_dict() for label in self.point_labels],
         }
-    
+
+
 @event.listens_for(Annotation, "after_delete")
-def remove_annotation_result(
-    _mapper: Any, _connection: Any, target: Annotation
-) -> None:
+def remove_annotation_result(_mapper: Any, _connection: Any, target: Annotation) -> None:
     if target.result_path.exists():
         target.result_path.unlink()
+
 
 # PointLabel entity (stores (x, y) coordinates and a binary label)
 class PointLabel(Base, SerializerMixin):

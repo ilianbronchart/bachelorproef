@@ -5,7 +5,6 @@ from fastapi import Request as FastAPIRequest
 from src.config import Template
 from src.db import Recording
 from src.db.models import CalibrationRecording, SimRoom, SimRoomClass
-from src.db.models.calibration import Annotation
 
 if TYPE_CHECKING:
     from .app import App

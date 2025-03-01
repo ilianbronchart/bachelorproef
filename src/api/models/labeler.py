@@ -1,19 +1,23 @@
-import base64
-from dataclasses import dataclass
-from pathlib import Path
 import shutil
-import time
-from typing import Any, Generator
+import threading
+from collections.abc import Generator
+from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import ImageColor
 import torch
+from PIL import ImageColor
 from sam2.sam2_image_predictor import SAM2ImagePredictor
-from sam2.sam2_video_predictor import SAM2VideoPredictor
+from sqlalchemy.orm import Session
 from src.aliases import UInt8Array
 from src.api.models.context import LabelingContext, Request
-from src.config import FRAMES_PATH, RECORDINGS_PATH, Sam2Checkpoints
+from src.config import (
+    FRAMES_PATH,
+    LABELING_ANNOTATIONS_DIR,
+    RECORDINGS_PATH,
+    Sam2Checkpoints,
+)
+from src.db import engine
 from src.db.models.calibration import Annotation, CalibrationRecording, SimRoomClass
 from src.logic.inference.sam_2 import (
     load_sam2_predictor,
@@ -21,22 +25,19 @@ from src.logic.inference.sam_2 import (
     predict_sam2,
 )
 from src.utils import get_frame_from_dir
-import threading
-from sqlalchemy.orm import Session
-from src.db import engine
 from torchvision.ops import masks_to_boxes
 
 
 class TrackingJob:
-    GRACE_PERIOD: int = 25 # Number of frames to wait before considering a tracking loss
+    GRACE_PERIOD: int = 25  # Number of frames to wait before considering a tracking loss
     progress: float = 0.0
 
     def __init__(
-        self, 
-        annotations: list[Annotation], 
+        self,
+        annotations: list[Annotation],
         results_path: Path,
         frame_count: int,
-        class_id: int
+        class_id: int,
     ):
         self.annotations = sorted(annotations, key=lambda x: x.frame_idx)
         self.results_path = results_path
@@ -48,7 +49,7 @@ class TrackingJob:
         self.video_predictor = load_sam2_video_predictor(Sam2Checkpoints.LARGE)
         self.inference_state = self.video_predictor.init_state(
             video_path=str(FRAMES_PATH), async_loading_frames=True
-        ) # type: ignore[no-untyped-call]
+        )  # type: ignore[no-untyped-call]
 
         # Remove the results directory if it already exists
         if self.results_path.exists():
@@ -58,10 +59,12 @@ class TrackingJob:
         # Add the initial points to the video predictor
         for annotation in self.annotations:
             point_labels = annotation.point_labels
-            points = [(int(point_label.x), int(point_label.y)) for point_label in point_labels]
+            points = [
+                (int(point_label.x), int(point_label.y)) for point_label in point_labels
+            ]
             labels = [point_label.label for point_label in point_labels]
 
-            self.video_predictor.add_new_points( # type: ignore[no-untyped-call]
+            self.video_predictor.add_new_points(  # type: ignore[no-untyped-call]
                 inference_state=self.inference_state,
                 frame_idx=annotation.frame_idx,
                 obj_id=annotation.sim_room_class_id,
@@ -69,22 +72,30 @@ class TrackingJob:
                 labels=labels,
             )
 
-    def track_until_loss(self, start_frame_idx: int, reverse: bool = False) -> Generator[int, None, None]:
+    def track_until_loss(
+        self, start_frame_idx: int, reverse: bool = False
+    ) -> Generator[int, None, None]:
         tracking_loss = 0
         with torch.amp.autocast("cuda"):
-            for out_frame_idx, _, out_mask_logits in self.video_predictor.propagate_in_video(
+            for (
+                out_frame_idx,
+                _,
+                out_mask_logits,
+            ) in self.video_predictor.propagate_in_video(
                 inference_state=self.inference_state,
                 start_frame_idx=start_frame_idx,
-                reverse=reverse
+                reverse=reverse,
             ):
                 yield out_frame_idx
-                                
-                mask_torch = (out_mask_logits[0] > 0.5)
+
+                mask_torch = out_mask_logits[0] > 0.5
                 if mask_torch.any():
                     tracking_loss = 0
 
                     # calculate bounding box and final mask
-                    x1, y1, x2, y2 = masks_to_boxes(mask_torch)[0].cpu().numpy().astype(np.int32)
+                    x1, y1, x2, y2 = (
+                        masks_to_boxes(mask_torch)[0].cpu().numpy().astype(np.int32)
+                    )
                     mask = mask_torch.cpu().numpy().astype(np.uint8)
 
                     x1, x2 = min(x1, x2), max(x1, x2)
@@ -93,16 +104,15 @@ class TrackingJob:
 
                     file_path = self.results_path / f"{out_frame_idx}.npz"
                     np.savez_compressed(
-                        file_path, 
-                        mask=final_mask, 
-                        bbox=np.array([x1, y1, x2, y2]).astype(np.int32)
+                        file_path,
+                        mask=final_mask,
+                        bbox=np.array([x1, y1, x2, y2]).astype(np.int32),
                     )
                 else:
                     tracking_loss += 1
 
                 if tracking_loss >= self.GRACE_PERIOD:
                     break
-
 
     def run(self):
         self.initialize()
@@ -122,6 +132,7 @@ class TrackingJob:
                 self.progress = frame_idx / self.frame_count
                 if frame_idx in annotations_frame_idx:
                     last_tracked_annotation = annotations_frame_idx.index(frame_idx)
+
 
 class Labeler:
     current_frame: UInt8Array = get_frame_from_dir(0, FRAMES_PATH)
@@ -143,7 +154,9 @@ class Labeler:
 
     @property
     def current_class_results_path(self) -> Path:
-        return self.calibration_recording.labeling_results_path / str(self.selected_class_id)
+        return self.calibration_recording.labeling_results_path / str(
+            self.selected_class_id
+        )
 
     def get_frame(self, frame_idx: int) -> UInt8Array:
         return get_frame_from_dir(frame_idx, FRAMES_PATH)
@@ -167,26 +180,47 @@ class Labeler:
         frame = self.current_frame.copy()
 
         labeling_results_path = self.calibration_recording.labeling_results_path
-        class_ids = [int(x.name) for x in labeling_results_path.iterdir() if x.is_dir()]
+
+        tracked_class_ids = [
+            int(x.name)
+            for x in labeling_results_path.iterdir()
+            if x.is_dir() and x.name != LABELING_ANNOTATIONS_DIR
+        ]
 
         with Session(engine) as session:
-            sim_room_classes = session.query(SimRoomClass).filter(SimRoomClass.id.in_(class_ids)).all()
+            annotations = (
+                session.query(Annotation)
+                .filter(
+                    Annotation.calibration_recording_id == self.calibration_recording.id,
+                    Annotation.frame_idx == self.current_frame_idx
+                    )
+                .all()
+            )
+            annotation_class_ids = [annotation.sim_room_class_id for annotation in annotations]
 
-        results: list[tuple[SimRoomClass, UInt8Array, UInt8Array]] = [] 
+            sim_room_classes = (
+                session.query(SimRoomClass).filter(
+                    SimRoomClass.id.in_(tracked_class_ids),
+                    ~SimRoomClass.id.in_(annotation_class_ids),
+                ).all()
+            )
 
-        for sim_room_class in sim_room_classes:
-            class_id = sim_room_class.id
-            class_path = labeling_results_path / str(class_id)
-            if not class_path.exists():
-                continue
+            results: list[tuple[SimRoomClass, UInt8Array, UInt8Array]] = []
+            for ann in annotations:
+                file = np.load(ann.result_path)
+                results.append((ann.sim_room_class, file["mask"], file["bbox"]))
 
-            for result in class_path.glob("*.npz"):
-                frame_idx = int(result.stem)
-                if frame_idx != self.current_frame_idx:
-                    continue
+            for sim_room_class in sim_room_classes:
+                class_id = sim_room_class.id
+                class_path = labeling_results_path / str(class_id)
 
-                file = np.load(result)
-                results.append((sim_room_class, file["mask"], file["bbox"]))
+                for result in class_path.glob("*.npz"):
+                    frame_idx = int(result.stem)
+                    if frame_idx != self.current_frame_idx:
+                        continue
+
+                    file = np.load(result)
+                    results.append((sim_room_class, file["mask"], file["bbox"]))
 
         # Draw masks first
         for _, mask, bbox in results:
@@ -198,13 +232,15 @@ class Labeler:
 
         return frame
 
-    def draw_mask(self, frame: UInt8Array, mask: UInt8Array, bbox: UInt8Array) -> UInt8Array:
+    def draw_mask(
+        self, frame: UInt8Array, mask: UInt8Array, bbox: UInt8Array
+    ) -> UInt8Array:
         x1, y1, x2, y2 = bbox
 
         roi = frame[y1:y2, x1:x2].copy()
         white_overlay = np.full(roi.shape, 255, dtype=np.uint8)
         # Squeeze the mask to remove the extra dimension
-        binary_mask = (mask.squeeze(0) > 0)
+        binary_mask = mask.squeeze(0) > 0
 
         # Apply alpha blending (0.2) on the white overlay only at locations where the mask is present
         roi[binary_mask] = cv2.addWeighted(
@@ -212,8 +248,10 @@ class Labeler:
         )
         frame[y1:y2, x1:x2] = roi
         return frame
-    
-    def draw_bbox(self, frame: UInt8Array, bbox: UInt8Array, sim_room_class: SimRoomClass) -> UInt8Array:
+
+    def draw_bbox(
+        self, frame: UInt8Array, bbox: UInt8Array, sim_room_class: SimRoomClass
+    ) -> UInt8Array:
         x1, y1, x2, y2 = bbox
         color_rgb = ImageColor.getcolor(sim_room_class.color, "RGB")
         color_bgr = (color_rgb[2], color_rgb[1], color_rgb[0])  # type: ignore[index]
@@ -242,12 +280,7 @@ class Labeler:
 
         return frame
 
-        
-    def predict_image(
-        self, points: list[tuple[int, int]], labels: list[int]
-    ) -> None:
-        self.current_class_results_path.mkdir(parents=True, exist_ok=True)
-
+    def predict_image(self, annotation: Annotation, points: list[tuple[int, int]], labels: list[int]) -> None:
         mask, bbox = predict_sam2(
             predictor=self.image_predictor,
             points=points,
@@ -256,20 +289,18 @@ class Labeler:
 
         if mask is None:
             raise ValueError("Failed to predict mask")
-        
-        # save both the mask and the bbox to the results directory (in a single npz file)
-        file_path = self.current_class_results_path / f"{self.current_frame_idx}.npz"
-        np.savez_compressed(file_path, mask=mask, bbox=bbox)
+
+        np.savez_compressed(annotation.result_path, mask=mask, bbox=bbox)
 
     def create_tracking_job(self, annotations: list[Annotation]) -> None:
         if self.tracking_job is not None:
             raise ValueError("A tracking job is already in progress")
-        
+
         self.tracking_job = TrackingJob(
             annotations=annotations,
             results_path=self.current_class_results_path,
             frame_count=self.frame_count,
-            class_id=self.selected_class_id
+            class_id=self.selected_class_id,
         )
 
         def job_runner():
@@ -281,14 +312,14 @@ class Labeler:
     def get_tracks(self) -> list[tuple[int, int]]:
         if not self.current_class_results_path.exists():
             return []
-        
+
         # Gather and sort the frame indices from the filenames
         results = list(self.current_class_results_path.glob("*.npz"))
         results_frame_idx = sorted(int(result.stem) for result in results)
-        
+
         if not results_frame_idx:
             return []
-        
+
         tracks = []
         start = results_frame_idx[0]
         prev = start
@@ -306,6 +337,3 @@ class Labeler:
         # Add the final track
         tracks.append((start, prev))
         return tracks
-
-
-        
