@@ -124,3 +124,8 @@ https://arxiv.org/pdf/2411.18977
 (ctrl+f for release_old_frames())
 
 https://chatgpt.com/share/67b70726-59d8-800c-8690-58d486d1c4cd
+
+### Object tracking using BoostTrack
+
+https://github.com/vukasin-stanojevic/BoostTrack
+

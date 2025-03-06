@@ -55,7 +55,7 @@ def get_gaze_points(
 
 
 def match_frames_to_gaze(
-    num_frames: int, gaze_points: list[GazePoint], fps: float
+    frame_count: int, gaze_points: list[GazePoint], fps: float
 ) -> list[list[GazePoint]]:
     """
     Match video frames to their corresponding gaze points.
@@ -72,7 +72,7 @@ def match_frames_to_gaze(
     frame_gaze_mapping = []
     gaze_index = 0
 
-    for frame_num in range(num_frames):
+    for frame_num in range(frame_count):
         next_frame_timestamp = (frame_num + 1) / fps
         frame_gazes = []
 

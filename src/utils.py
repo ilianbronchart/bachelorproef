@@ -199,7 +199,7 @@ def generate_pleasant_color() -> str:
     return f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
 
 
-def iter_frames_dir(frames_path: Path) -> Generator[tuple[int, np.ndarray], None, None]:
+def iter_frames_dir(frames_path: Path) -> Generator[tuple[int, UInt8Array], None, None]:
     frames = [frame for frame in frames_path.iterdir() if ".jpg" in frame.suffix]
 
     if len(frames) == 0:
@@ -211,7 +211,7 @@ def iter_frames_dir(frames_path: Path) -> Generator[tuple[int, np.ndarray], None
         yield frame_idx, frame
 
 
-def extract_frames_to_dir(video_path: Path, frames_path: Path = FRAMES_PATH):
+def extract_frames_to_dir(video_path: Path, frames_path: Path = FRAMES_PATH) -> None:
     if not video_path.name.endswith(".mp4"):
         raise ValueError(f"Video file must be in MP4 format, got: {video_path.name}")
 
@@ -258,3 +258,4 @@ def encode_to_png(image: UInt8Array) -> str:
     if not ret:
         raise ValueError("Failed to encode image to PNG")
     return base64.b64encode(encoded_img.tobytes()).decode("utf-8")
+

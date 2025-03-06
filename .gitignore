@@ -167,7 +167,9 @@ data/*
 checkpoints/*
 notebooks/output
 *.mp4
-notebooks/reference_images/*
+notebooks/notebooks-old/reference_images
 database.db
 backup/
 segmentation_results/
+outputs/
+notebooks/tmp
