@@ -26,5 +26,91 @@
 %% Maak voor elke fase (behalve het literatuuronderzoek) een NIEUW HOOFDSTUK aan
 %% en geef het een gepaste titel.
 
-\lipsum[21-25]
+De bachelorproef zal worden uitgevoerd volgens een agile aanpak, waarbij iteratieve cycli (sprints) en overlappende fasen worden gebruikt om flexibiliteit en continue verbetering mogelijk te maken. 
+Deze aanpak zorgt ervoor dat verschillende onderdelen van het project parallel kunnen verlopen en snel kunnen worden aangepast op basis van tussentijdse bevindingen.
+Nieuwe taken worden doorheen de sprints toegevoegd aan een backlog binnen een Trello-bord, en worden doorheen de sprints opgepakt en afgerond.
+Het doel voor de PoC is om een user-flow te ontwikkelen die het mogelijk maakt om de volgende zaken uit te voeren:
+\begin{itemize}
+    \item 1. Het ophalen van eyetrackingdata van de Tobii Glasses
+    \item 2. Het definiëren / labelen van kritische objecten die geobserveerd moeten worden door de studenten.
+    \item 3. Het analyseren van van de data met objectdetectie-, segmentatie-, en image-embedding-modellen. 
+    Deze stap wordt hierna de data-architectuur genoemd.
+    \item 4. Het visualiseren van de resultaten van de analyse via een metriek die de blik-punten van de studenten koppelt aan de gedetecteerde objecten.
+\end{itemize}
+\par
+De voorkeur gaat naar het gebruik van voorgetrainde modellen om de nood aan hertrainen te minimaliseren en zo de gebruikerservaring te verbeteren. 
+Toch kan het zijn dat voorgetrainde modellen niet voldoen aan de specifieke noden van het project. 
+Daarom kan indien nodig de PoC uitgebreid worden met extra functionaliteiten zoals het finetunen van modellen met simulatiespecifieke data.
 
+\section{Tijdsplanning}
+
+De bachelorproef is gepland van 10 februari 2025 tot en met 23 mei 2025, met een totaal van 7 sprints van 2 weken.
+De activiteiten binnen elke sprint omvatten, in geen specifieke volgorde:
+\begin{itemize}
+    \item Literatuurstudie
+    \item Dataverzameling en labeling
+    \item Modelselectie en implementatie
+    \item Schrijven van Python Notebooks voor experimenten
+    \item Ontwikkelen van de data-architectuur binnen de PoC
+    \item Ontwikkelen van de user interface voor de PoC
+    \item Uitbreiding van de PoC met nieuwe functionaliteiten
+    \item Unit-testen schrijven voor de PoC
+    \item Meetings met de co-promotor voor feedback en verfijning van de oplossing
+    \item Documentatie van het proces en resultaten
+    \item Uitschrijven, aanpassen van het proefschrift
+\end{itemize}
+Toch zal de periode opgesplitst worden in de volgende sprints:
+
+\subsection{Sprint 1}
+\begin{itemize}
+    \item Relevante modellen zijn verzameld en uitgetest binnen een Python Notebook.
+    \item Er is huisgemaakte data verzameld via geleende Tobii Glasses uit het Zorglab.
+    \item Potentiële segmentatie- en detectiepipeline architecturen voor de PoC zijn uitgestippeld.
+    \item Er is een user interface binnen de PoC om opnames op te halen van de Tobii Glasses.
+\end{itemize}
+\subsection{Sprint 2}
+\begin{itemize}
+    \item Het literatuurstudie onderdeel van het proefschrift is uitgewerkt.
+    \item De abstract en inleiding van het proefschrift zijn geschreven.
+\end{itemize}
+\subsection{Sprint 3}
+\begin{itemize}
+    \item Er is een demo gegeven aan de co-promotor voor een kandidaat architectuur van de PoC.
+    \item De feedback van de co-promotor is verwerkt en gedocumenteerd.
+    \item Er is een metriek ontwikkeld voor het meten van waar een student naar heeft gekeken en voor hoe lang.
+    \item Er zijn verschillende data-architecturen geëvalueerd.
+\end{itemize}
+\subsection{Sprint 4}
+\begin{itemize}
+    \item Er bestaat een manier om belangrijke objecten te labelen binnen de PoC
+    \item De segmentatie- en detectiepipeline is geïntegreerd binnen de user interface van de PoC
+    \item Er is een onderzoeksmethodologie opgesteld voor het evalueren van de metrieken die berekend worden door de PoC.
+\end{itemize}
+\subsection{Sprint 5}
+\begin{itemize}
+    \item Er is data verzameld binnen het Zorglab van HOGENT volgens de opgestelde onderzoeksmethodologie.
+    \item De opgehaalde data is gelabeld.
+\end{itemize}
+\subsection{Sprint 6}
+\begin{itemize}
+    \item De vergelijking tussen verschillende data-architecturen is toegevoegd aan het proefschrift op basis van de data uit sprint 5.
+    \item De metrieken die berekend worden door de PoC zijn geëvalueerd.
+\end{itemize}
+\subsection{Sprint 7}
+\begin{itemize}
+    \item Er bestaat een visualisatieinterface binnen de PoC die de metrieken toont voor geselecteerde eyetracking opnames.
+    \item De conclusie en aanbevelingen van het proefschrift zijn geschreven.
+    \item Het proefschrift is nagelezen en aangepast.
+\end{itemize}    
+
+\section{Tools en Technologieën}
+
+\begin{itemize} 
+  \item \textbf{Programmeertaal en Frameworks}: Python, PyTorch, TensorFlow voor machine-learning modellering en implementatie. 
+  \item \textbf{Programmeerstack van de PoC}: FastAPI voor de backend, HTMX en Jinja2 voor de frontend.
+  \item \textbf{Data Verwerking en Visualisatie}: OpenCV voor videoverwerking, Matplotlib voor datavisualisatie. 
+  \item \textbf{Ontwikkelomgeving}: Visual Studio Code, Python Notebooks voor experimenten, Git voor versiebeheer. Poetry voor dependency management.
+  \item \textbf{GPU}: At-home Nvidia RTX 4090 en eventuele GPUs van HoGent.
+  \item \textbf{Eyetracking}: Tobii Eyetracking Glasses, en Tobii Pro Glasses 3 Controller App.
+  \item \textbf{Planning}: Trello voor projectmanagement.
+\end{itemize}
