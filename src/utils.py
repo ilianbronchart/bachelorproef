@@ -258,4 +258,3 @@ def encode_to_png(image: UInt8Array) -> str:
     if not ret:
         raise ValueError("Failed to encode image to PNG")
     return base64.b64encode(encoded_img.tobytes()).decode("utf-8")
-

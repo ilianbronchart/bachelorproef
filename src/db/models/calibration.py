@@ -47,14 +47,23 @@ class SimRoomClass(Base, SerializerMixin):
         "Annotation", back_populates="sim_room_class", cascade="all, delete-orphan"
     )
 
+    @staticmethod
+    def get_id_to_name_map() -> dict[int, str]:
+        with Session(engine) as session:
+            return {class_.id: class_.class_name for class_ in session.query(SimRoomClass).all()}
+
 
 event.listens_for(SimRoomClass, "after_delete")
+
+
 def remove_sim_room_class_annotations(
     _mapper: Any, _connection: Any, target: SimRoomClass
 ) -> None:
     with Session(engine) as session:
         # Remove all annotations for the class
-        annotations = session.query(Annotation).filter(Annotation.sim_room_class_id == target.id)
+        annotations = session.query(Annotation).filter(
+            Annotation.sim_room_class_id == target.id
+        )
         for annotation in annotations:
             if annotation.result_path.exists():
                 shutil.rmtree(annotation.result_path)
@@ -100,7 +109,11 @@ class CalibrationRecording(Base, SerializerMixin):
     @property
     def annotations_path(self) -> Path:
         return self.labeling_results_path / LABELING_ANNOTATIONS_DIR
-
+    
+    @property
+    def labeling_result_paths(self) -> list[Path]:
+        return [res for res in self.labeling_results_path.iterdir() if res.name != LABELING_ANNOTATIONS_DIR]
+    
     @staticmethod
     def get_all() -> list["CalibrationRecording"]:
         with Session(engine) as session:

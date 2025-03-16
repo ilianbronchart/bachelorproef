@@ -177,7 +177,7 @@ async def annotations(
         annotations_dicts = []
         for ann in annotations:
             file = np.load(ann.result_path)
-            x1, y1, x2, y2 = file["bbox"]
+            x1, y1, x2, y2 = file["box"]
 
             frame_crop = labeler.get_frame(ann.frame_idx)[y1:y2, x1:x2]
             encoded_png = encode_to_png(frame_crop)

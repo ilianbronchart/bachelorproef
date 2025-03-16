@@ -21,6 +21,10 @@ FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / "FastSAM-x.pt"
 # The amount of frames kept in memory for SAM2 video inference
 MAX_INFERENCE_STATE_FRAMES = 100
 
+# Gaze Segmentation parameters:
+TOBII_FOV_X = 95
+GAZE_FOVEA_FOV = 1
+
 
 @dataclass(frozen=True)
 class Sam2Checkpoints:

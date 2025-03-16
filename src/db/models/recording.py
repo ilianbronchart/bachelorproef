@@ -34,6 +34,14 @@ class Recording(Base):
     )
 
     @property
+    def video_path(self) -> Path:
+        return RECORDINGS_PATH / f"{self.uuid}.mp4"
+    
+    @property
+    def gaze_data_path(self) -> Path:
+        return RECORDINGS_PATH / f"{self.uuid}.tsv"
+
+    @property
     def formatted_created(self) -> str:
         return datetime.fromisoformat(str(self.created)).strftime("%d/%m/%y at %I:%M %p")
 
