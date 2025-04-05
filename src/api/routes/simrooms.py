@@ -31,9 +31,11 @@ async def simrooms(request: Request, sim_room_id: int | None = None) -> HTMLResp
                     status_code=404, content="Sim Room not found", headers=headers
                 )
 
-            context.calibration_recordings = (
-                context.selected_sim_room.calibration_recordings
+            calibration_recordings = context.selected_sim_room.calibration_recordings
+            calibration_recordings.sort(
+                key=lambda cr: cr.recording.created
             )
+            context.calibration_recordings = calibration_recordings
             context.classes = context.selected_sim_room.classes
 
         headers = {"HX-Push-Url": f"/simrooms/?sim_room_id={sim_room_id}"}

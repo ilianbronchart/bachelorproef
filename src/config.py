@@ -1,19 +1,25 @@
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
+import dotenv
 from fastapi.templating import Jinja2Templates
 
+# Load environment variables from .env file
+dotenv.load_dotenv(".env")
+
+SRC_PATH = Path(os.environ.get("SRC_PATH", "src"))
 DATA_PATH = Path("data/")
 RECORDINGS_PATH = DATA_PATH / "recordings"
 RECORDINGS_PATH.mkdir(exist_ok=True)
-FRAMES_PATH = DATA_PATH / "frames"  # used for storing frames extracted from videos
-FRAMES_PATH.mkdir(exist_ok=True)
-CHECKPOINTS_PATH = Path("checkpoints")
+CHECKPOINTS_PATH = Path(os.environ.get("CHECKPOINTS_PATH", "checkpoints"))
 CHECKPOINTS_PATH.mkdir(exist_ok=True)
 LABELING_RESULTS_PATH = DATA_PATH / "labeling_results"
 LABELING_RESULTS_PATH.mkdir(exist_ok=True)
 LABELING_ANNOTATIONS_DIR = "annotations"
+STATIC_FILES_PATH = SRC_PATH / "static"
+TEMPLATES_PATH = SRC_PATH / "templates"
 
 DEFAULT_GLASSES_HOSTNAME = "192.168.75.51"
 FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / "FastSAM-x.pt"
@@ -41,7 +47,7 @@ SAM_2_MODEL_CONFIGS = {
     Sam2Checkpoints.TINY: "sam2.1_hiera_t.yaml",
 }
 
-templates = Jinja2Templates(directory="src/templates")
+templates = Jinja2Templates(directory=str(TEMPLATES_PATH))
 
 
 @dataclass(frozen=True)

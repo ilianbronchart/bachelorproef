@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from src.aliases import UInt8Array
 from src.config import (
-    FRAMES_PATH,
     Sam2Checkpoints,
 )
 from src.db.models.calibration import Annotation
@@ -23,11 +22,13 @@ class TrackingJob:
     def __init__(
         self,
         annotations: list[Annotation],
+        frames_path: Path,
         results_path: Path,
         frame_count: int,
         class_id: int,
     ):
         self.annotations = sorted(annotations, key=lambda x: x.frame_idx)
+        self.frames_path = frames_path
         self.results_path = results_path
         self.frame_count = frame_count
         self.class_id = class_id
@@ -36,7 +37,7 @@ class TrackingJob:
         # Load the video predictor and initialize the inference state
         self.video_predictor = load_sam2_video_predictor(Sam2Checkpoints.LARGE)
         self.inference_state = self.video_predictor.init_state(
-            video_path=str(FRAMES_PATH), async_loading_frames=True
+            video_path=str(self.frames_path), async_loading_frames=True
         )  # type: ignore[no-untyped-call]
         self.img_std = self.inference_state["images"].img_std.cuda()
         self.img_mean = self.inference_state["images"].img_mean.cuda()

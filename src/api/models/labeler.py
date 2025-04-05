@@ -1,3 +1,4 @@
+import tempfile
 import threading
 from pathlib import Path
 
@@ -6,11 +7,11 @@ import numpy as np
 from PIL import ImageColor
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sqlalchemy.orm import Session
+
 from src.aliases import UInt8Array
 from src.api.jobs.labeler_tracking import TrackingJob
 from src.api.models.context import LabelingContext, Request
 from src.config import (
-    FRAMES_PATH,
     LABELING_ANNOTATIONS_DIR,
     RECORDINGS_PATH,
     Sam2Checkpoints,
@@ -21,21 +22,27 @@ from src.logic.inference.sam_2 import (
     load_sam2_predictor,
     predict_sam2,
 )
-from src.utils import get_frame_from_dir
+from src.utils import extract_frames_to_dir, get_frame_from_dir
 
 
 class Labeler:
-    current_frame: UInt8Array = get_frame_from_dir(0, FRAMES_PATH)
-    frame_count: int = len(list(FRAMES_PATH.glob("*.jpg")))
-    image_predictor: SAM2ImagePredictor = load_sam2_predictor(Sam2Checkpoints.LARGE)
     tracking_job: TrackingJob | None = None
-    current_frame_idx: int = -1
     selected_class_id: int = -1
 
     def __init__(self, calibration_recording: CalibrationRecording):
         self.calibration_recording: CalibrationRecording = calibration_recording
         self.video_path: Path = RECORDINGS_PATH / (
             calibration_recording.recording_uuid + ".mp4"
+        )
+
+        self.frames_path: Path = Path(tempfile.mkdtemp())
+        extract_frames_to_dir(video_path=self.video_path, frames_path=self.frames_path)
+        self.frame_count = len(list(self.frames_path.glob("*.jpg")))
+        self.current_frame = self.get_frame(0)
+        self.current_frame_idx = 0
+
+        self.image_predictor: SAM2ImagePredictor = load_sam2_predictor(
+            Sam2Checkpoints.LARGE
         )
 
     @property
@@ -49,7 +56,7 @@ class Labeler:
         )
 
     def get_frame(self, frame_idx: int) -> UInt8Array:
-        return get_frame_from_dir(frame_idx, FRAMES_PATH)
+        return get_frame_from_dir(frame_idx, self.frames_path)
 
     def get_labeling_context(self, request: Request) -> LabelingContext:
         return LabelingContext(
@@ -63,7 +70,7 @@ class Labeler:
             return
 
         self.current_frame_idx = frame_idx
-        self.current_frame = get_frame_from_dir(frame_idx, FRAMES_PATH)
+        self.current_frame = self.get_frame(frame_idx)
         self.image_predictor.set_image(self.current_frame)
 
     def get_overlay(self) -> np.ndarray:
@@ -82,17 +89,21 @@ class Labeler:
                 session.query(Annotation)
                 .filter(
                     Annotation.calibration_recording_id == self.calibration_recording.id,
-                    Annotation.frame_idx == self.current_frame_idx
-                    )
+                    Annotation.frame_idx == self.current_frame_idx,
+                )
                 .all()
             )
-            annotation_class_ids = [annotation.sim_room_class_id for annotation in annotations]
+            annotation_class_ids = [
+                annotation.sim_room_class_id for annotation in annotations
+            ]
 
             sim_room_classes = (
-                session.query(SimRoomClass).filter(
+                session.query(SimRoomClass)
+                .filter(
                     SimRoomClass.id.in_(tracked_class_ids),
                     ~SimRoomClass.id.in_(annotation_class_ids),
-                ).all()
+                )
+                .all()
             )
 
             results: list[tuple[SimRoomClass, UInt8Array, UInt8Array]] = []
@@ -170,7 +181,9 @@ class Labeler:
 
         return frame
 
-    def predict_image(self, annotation: Annotation, points: list[tuple[int, int]], labels: list[int]) -> None:
+    def predict_image(
+        self, annotation: Annotation, points: list[tuple[int, int]], labels: list[int]
+    ) -> None:
         mask, box = predict_sam2(
             predictor=self.image_predictor,
             points=points,

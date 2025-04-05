@@ -13,7 +13,6 @@ import numpy as np
 from fastapi import Request
 
 from src.aliases import UInt8Array
-from src.config import FRAMES_PATH
 
 
 async def download_file(url: str, target_path: Path) -> None:
@@ -211,7 +210,7 @@ def iter_frames_dir(frames_path: Path) -> Generator[tuple[int, UInt8Array], None
         yield frame_idx, frame
 
 
-def extract_frames_to_dir(video_path: Path, frames_path: Path = FRAMES_PATH) -> None:
+def extract_frames_to_dir(video_path: Path, frames_path: Path) -> None:
     if not video_path.name.endswith(".mp4"):
         raise ValueError(f"Video file must be in MP4 format, got: {video_path.name}")
 
@@ -244,7 +243,7 @@ def extract_frames_to_dir(video_path: Path, frames_path: Path = FRAMES_PATH) -> 
     )
 
 
-def get_frame_from_dir(frame_idx: int, frames_path: Path = FRAMES_PATH) -> UInt8Array:
+def get_frame_from_dir(frame_idx: int, frames_path: Path) -> UInt8Array:
     frame_path = frames_path / f"{frame_idx:05}.jpg"
     if not frame_path.exists():
         raise FileNotFoundError(f"Frame {frame_idx} not found in {frames_path}")
