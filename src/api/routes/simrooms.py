@@ -32,9 +32,7 @@ async def simrooms(request: Request, sim_room_id: int | None = None) -> HTMLResp
                 )
 
             calibration_recordings = context.selected_sim_room.calibration_recordings
-            calibration_recordings.sort(
-                key=lambda cr: cr.recording.created
-            )
+            calibration_recordings.sort(key=lambda cr: cr.recording.created)
             context.calibration_recordings = calibration_recordings
             context.classes = context.selected_sim_room.classes
 
