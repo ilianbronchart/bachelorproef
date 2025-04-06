@@ -6,8 +6,9 @@ import faiss
 import numpy as np
 import torch
 import torchvision.transforms as T
-from src.aliases import UInt8Array
 from transformers import AutoImageProcessor, AutoModel, BitImageProcessor
+
+from src.aliases import UInt8Array
 
 IMAGE_PROCESSOR: BitImageProcessor = AutoImageProcessor.from_pretrained(
     "facebook/dinov2-base"

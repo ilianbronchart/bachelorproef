@@ -62,6 +62,7 @@ def get_recording_path(cal_rec_id: int) -> Path:
 
         return cal_rec.recording.video_path
 
+
 def get_gaze_data_path(cal_rec_id: int) -> Path:
     """Get the path of the gaze data for a given calibration recording."""
     with Session(engine) as session:
@@ -73,6 +74,7 @@ def get_gaze_data_path(cal_rec_id: int) -> Path:
 
         return cal_rec.recording.gaze_data_path
 
+
 def recording_uuid_to_calibration_id(recording_uuid: str) -> int:
     """Get the calibration recording id from the recording uuid."""
     with Session(engine) as session:
@@ -82,6 +84,8 @@ def recording_uuid_to_calibration_id(recording_uuid: str) -> int:
             .first()
         )
         if not cal_rec:
-            raise ValueError(f"Calibration recording with uuid {recording_uuid} not found")
+            raise ValueError(
+                f"Calibration recording with uuid {recording_uuid} not found"
+            )
 
         return cal_rec.id
