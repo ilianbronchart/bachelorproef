@@ -210,13 +210,16 @@ def iter_frames_dir(frames_path: Path) -> Generator[tuple[int, UInt8Array], None
         yield frame_idx, frame
 
 
-def extract_frames_to_dir(video_path: Path, frames_path: Path) -> None:
+def extract_frames_to_dir(
+    video_path: Path, frames_path: Path, print_output: bool = False
+) -> None:
     if not video_path.name.endswith(".mp4"):
         raise ValueError(f"Video file must be in MP4 format, got: {video_path.name}")
 
-    # delete any existing frames
+    # Delete any existing frames
     for file in frames_path.iterdir():
         file.unlink()
+
     ffmpeg_path = shutil.which("ffmpeg")
     if ffmpeg_path is None:
         raise FileNotFoundError("ffmpeg executable not found in PATH")
@@ -225,7 +228,10 @@ def extract_frames_to_dir(video_path: Path, frames_path: Path) -> None:
     if not Path(ffmpeg_path).exists() or Path(ffmpeg_path).name != "ffmpeg":
         raise ValueError("Invalid ffmpeg executable path")
 
-    # Explicitly set shell=False for security and sanitize all inputs
+    # Conditionally redirect output based on the print_output argument
+    stdout = None if print_output else subprocess.DEVNULL
+    stderr = None if print_output else subprocess.DEVNULL
+
     # TODO: fix noqa here
     subprocess.run(  # noqa: S603
         [
@@ -239,6 +245,8 @@ def extract_frames_to_dir(video_path: Path, frames_path: Path) -> None:
             f"{frames_path!s}/%05d.jpg",
         ],
         check=True,
+        stdout=stdout,
+        stderr=stderr,
         shell=False,
     )
 
@@ -257,3 +265,88 @@ def encode_to_png(image: UInt8Array) -> str:
     if not ret:
         raise ValueError("Failed to encode image to PNG")
     return base64.b64encode(encoded_img.tobytes()).decode("utf-8")
+
+
+def hex_to_bgr(hex_color: str) -> tuple:
+    """Convert a hex color string to a BGR tuple for OpenCV."""
+    hex_color = hex_color.lstrip("#")
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+    return (b, g, r)
+
+
+def draw_annotation_on_frame(
+    frame_img: np.ndarray,
+    mask: np.ndarray,
+    box: tuple,
+    class_color_hex: str,
+    class_name: str,
+    alpha: float = 0.5,
+) -> np.ndarray:
+    """
+    Annotate a frame with a mask overlay, bounding box, and class name.
+
+    Parameters:
+      frame_img (np.ndarray): The original frame image in BGR format.
+      mask (np.ndarray): The mask corresponding to the bounding box region.
+                         Its shape should be (H, W) or (1, H, W).
+      box (tuple): A tuple (x1, y1, x2, y2) representing the bounding box.
+      class_color_hex (str): The class color in hex format (e.g. "#FF00AA").
+      class_name (str): The class name text.
+      alpha (float): The opacity for the white overlay (default 0.5).
+
+    Returns:
+      np.ndarray: The annotated frame image.
+    """
+    # Unpack bounding box coordinates
+    x1, y1, x2, y2 = box
+
+    # Squeeze mask if it has an extra dimension (e.g., shape (1, H, W) -> (H, W))
+    if mask.ndim == 3 and mask.shape[0] == 1:
+        mask = mask[0]
+    # Ensure mask is boolean
+    if mask.dtype != bool:
+        mask = mask.astype(bool)
+
+    class_color = hex_to_bgr(class_color_hex)
+
+    # Extract the ROI corresponding to the bounding box
+    roi = frame_img[y1:y2, x1:x2]
+
+    # Blend white (255,255,255) into the ROI where mask is True (50% opacity by default)
+    roi[mask] = (roi[mask].astype(float) * (1 - alpha) + 255 * alpha).astype(np.uint8)
+    # Update the frame with the modified ROI
+    frame_img[y1:y2, x1:x2] = roi
+
+    # Draw the bounding box using the converted BGR color
+    cv2.rectangle(frame_img, (x1, y1), (x2, y2), class_color, 2)
+
+    # Prepare the text for the class name
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.5
+    thickness = 1
+    text = class_name
+    text_size, _ = cv2.getTextSize(text, font, font_scale, thickness)
+    text_w, text_h = text_size
+
+    # Determine the text position: above the bounding box if there's room, otherwise below
+    text_top = y1 - text_h - 4 if y1 - text_h - 4 > 0 else y1 + text_h + 4
+
+    # Draw a filled rectangle as background for the text
+    cv2.rectangle(
+        frame_img, (x1, text_top), (x1 + text_w, text_top + text_h + 4), class_color, -1
+    )
+    # Put the class name text on top of the rectangle
+    cv2.putText(
+        frame_img,
+        text,
+        (x1, text_top + text_h + 2),
+        font,
+        font_scale,
+        (255, 255, 255),
+        thickness,
+        cv2.LINE_AA,
+    )
+
+    return frame_img

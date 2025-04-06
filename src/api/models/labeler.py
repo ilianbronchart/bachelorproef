@@ -201,6 +201,7 @@ class Labeler:
 
         self.tracking_job = TrackingJob(
             annotations=annotations,
+            frames_path=self.frames_path,
             results_path=self.current_class_results_path,
             frame_count=self.frame_count,
             class_id=self.selected_class_id,

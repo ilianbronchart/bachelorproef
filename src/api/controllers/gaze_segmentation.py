@@ -1,10 +1,39 @@
+import torch
+from src.config import VIEWED_RADIUS
 import json
 from pathlib import Path
-
 import numpy as np
 from src.logic.glasses.domain import GazeData, GazeDataType, GazePoint
 from src.utils import clamp
 
+def mask_was_viewed(
+    mask: torch.Tensor, gaze_position: tuple[float, float], viewed_radius: float = VIEWED_RADIUS
+) -> bool:
+    """
+    Check if the mask is at least partially within the viewed radius of the gaze point.
+    The mask is assumed to be at the original frame size.
+
+    Args:
+        mask: A tensor containing a single mask of shape (H, W)
+        gaze_position: Tuple (x, y) representing the gaze position.
+
+    Returns:
+        bool: True if part of the mask falls within the circular area defined by viewed_radius, False otherwise.
+    """
+    height, width = mask.shape
+    device = mask.device
+
+    # Create a coordinate grid for the mask.
+    y_coords = torch.arange(0, height, device=device).view(-1, 1).repeat(1, width)
+    x_coords = torch.arange(0, width, device=device).view(1, -1).repeat(height, 1)
+    dist_sq = (x_coords - gaze_position[0]) ** 2 + (y_coords - gaze_position[1]) ** 2
+
+    # Create the circular mask based on self.viewed_radius.
+    circular_mask = (dist_sq <= viewed_radius**2).float()
+
+    # Apply the circular mask to the input mask.
+    masked_mask = mask * circular_mask
+    return masked_mask.sum() > 0
 
 def parse_gazedata_file(file_path: Path) -> list[GazeData]:
     if not file_path.exists():
@@ -93,3 +122,34 @@ def match_frames_to_gaze(
         )
 
     return frame_gaze_mapping
+
+def get_gaze_point_per_frame(
+    gaze_data_path: Path, resolution: tuple[int, int], frame_count: int, fps: float
+) -> dict[int, GazePoint]:
+    """
+    Process gaze data and map frame indices to gaze points.
+    
+    Args:
+        gaze_data_path (Path): Path to the gaze data file.
+        resolution (tuple[int, int]): Video resolution as (height, width).
+        frame_count (int): Number of frames in the video.
+        fps (float): Frames per second of the video.
+        
+    Returns:
+        dict[int, GazePoint]: Dictionary mapping frame indices to their first valid gaze point.
+    """
+    gaze_data = parse_gazedata_file(gaze_data_path)
+    gaze_points = get_gaze_points(gaze_data, resolution)
+    frame_gaze_mapping = match_frames_to_gaze(
+        frame_count=frame_count,
+        gaze_points=gaze_points,
+        fps=fps
+    )
+    
+    gaze_point_per_frame = {
+        frame_idx: gaze_points[0]
+        for frame_idx, gaze_points in enumerate(frame_gaze_mapping)
+        if len(gaze_points) > 0
+    }
+    
+    return gaze_point_per_frame

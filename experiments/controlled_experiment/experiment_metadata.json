@@ -1,0 +1,426 @@
+{
+    "trial_recordings_metadata": {
+        "67b71a70-da64-467a-9fb6-91bc29265fd1": {
+            "number": 1,
+            "objects": [
+                [
+                    "naaldcontainer",
+                    3,
+                    16
+                ],
+                [
+                    "spuit",
+                    28,
+                    37
+                ],
+                [
+                    "keukenmes",
+                    42,
+                    50
+                ],
+                [
+                    "infuus",
+                    54,
+                    63
+                ],
+                [
+                    "stethoscoop",
+                    68,
+                    77
+                ]
+            ]
+        },
+        "32f02db7-adc0-4556-a2da-ed2ba60a58c9": {
+            "number": 2,
+            "objects": [
+                [
+                    "bol wol",
+                    5,
+                    14
+                ],
+                [
+                    "snoep",
+                    17,
+                    24
+                ],
+                [
+                    "nuchter",
+                    26,
+                    32
+                ],
+                [
+                    "fotokader",
+                    34,
+                    40
+                ],
+                [
+                    "iced tea",
+                    42,
+                    48.5
+                ]
+            ]
+        },
+        "b8eeecc0-06b1-47f7-acb5-89aab3c1724d": {
+            "number": 3,
+            "objects": [
+                [
+                    "bril",
+                    17,
+                    24
+                ],
+                [
+                    "scherm",
+                    26,
+                    31.5
+                ],
+                [
+                    "rollator",
+                    34,
+                    40.5
+                ],
+                [
+                    "ampulevloeistof",
+                    42,
+                    49
+                ],
+                [
+                    "ampulepoeder",
+                    51,
+                    57
+                ]
+            ]
+        },
+        "d50c5f3b-2822-4462-9880-5a8f0dd46bfb": {
+            "number": 4,
+            "objects": [
+                [
+                    "snoep",
+                    7,
+                    14
+                ],
+                [
+                    "naaldcontainer",
+                    18,
+                    26
+                ],
+                [
+                    "infuus",
+                    29,
+                    36
+                ],
+                [
+                    "bol wol",
+                    39,
+                    46
+                ],
+                [
+                    "rollator",
+                    49,
+                    54
+                ]
+            ]
+        },
+        "9fa3e3b8-ed94-4b06-ba49-e66e3997d710": {
+            "number": 5,
+            "objects": [
+                [
+                    "iced tea",
+                    6,
+                    12
+                ],
+                [
+                    "stethoscoop",
+                    15,
+                    20
+                ],
+                [
+                    "keukenmes",
+                    21,
+                    28
+                ],
+                [
+                    "fotokader",
+                    30,
+                    36
+                ],
+                [
+                    "spuit",
+                    39,
+                    45
+                ]
+            ]
+        },
+        "98128cdc-ffeb-40cb-9528-573e25028e87": {
+            "number": 6,
+            "objects": [
+                [
+                    "scherm",
+                    7,
+                    20
+                ],
+                [
+                    "ampulevloeistof",
+                    22,
+                    28
+                ],
+                [
+                    "ampulepoeder",
+                    31,
+                    38
+                ],
+                [
+                    "nuchter",
+                    41,
+                    47
+                ],
+                [
+                    "bril",
+                    49,
+                    56
+                ]
+            ]
+        },
+        "89b60530-e0e4-4f5d-9ee6-af85c8d99ff4": {
+            "number": 7,
+            "objects": [
+                [
+                    "nuchter",
+                    5,
+                    10.5
+                ],
+                [
+                    "stethoscoop",
+                    13,
+                    19
+                ],
+                [
+                    "scherm",
+                    19,
+                    27
+                ],
+                [
+                    "spuit",
+                    29,
+                    36
+                ],
+                [
+                    "ampulevloeistof",
+                    38,
+                    45
+                ]
+            ]
+        },
+        "2fe01600-c057-40ee-8434-4e9e0688ca2d": {
+            "number": 8,
+            "objects": [
+                [
+                    "naaldcontainer",
+                    11,
+                    26
+                ],
+                [
+                    "ampulepoeder",
+                    30,
+                    40
+                ],
+                [
+                    "bol wol",
+                    42,
+                    53
+                ],
+                [
+                    "rollator",
+                    56,
+                    65
+                ],
+                [
+                    "infuus",
+                    68,
+                    78
+                ]
+            ]
+        },
+        "67823ccd-a1f0-4cde-b954-3b9e5fe160c1": {
+            "number": 9,
+            "objects": [
+                [
+                    "keukenmes",
+                    4,
+                    12
+                ],
+                [
+                    "bril",
+                    15,
+                    24
+                ],
+                [
+                    "snoep",
+                    27,
+                    36
+                ],
+                [
+                    "iced tea",
+                    38,
+                    46
+                ],
+                [
+                    "fotokader",
+                    49,
+                    58
+                ]
+            ]
+        },
+        "b214c60b-7521-495b-a699-e223da0c77c1": {
+            "number": 10,
+            "objects": [
+                [
+                    "naaldcontainer",
+                    2,
+                    12
+                ],
+                [
+                    "ampulepoeder",
+                    16,
+                    24
+                ],
+                [
+                    "iced tea",
+                    27,
+                    35
+                ],
+                [
+                    "scherm",
+                    38,
+                    45
+                ],
+                [
+                    "keukenmes",
+                    47,
+                    55.5
+                ]
+            ]
+        },
+        "b8f453aa-5a12-4cbb-a0ec-20eb503f8797": {
+            "number": 11,
+            "objects": [
+                [
+                    "infuus",
+                    2,
+                    11
+                ],
+                [
+                    "nuchter",
+                    14,
+                    20
+                ],
+                [
+                    "spuit",
+                    22,
+                    29
+                ],
+                [
+                    "bril",
+                    32,
+                    39
+                ],
+                [
+                    "bol wol",
+                    41,
+                    48
+                ]
+            ]
+        },
+        "7ae61789-7a26-4c31-abef-4ab49a34abfd": {
+            "number": 12,
+            "objects": [
+                [
+                    "rollator",
+                    6,
+                    13
+                ],
+                [
+                    "fotokader",
+                    16,
+                    22
+                ],
+                [
+                    "stethoscoop",
+                    24,
+                    32
+                ],
+                [
+                    "snoep",
+                    33,
+                    40
+                ],
+                [
+                    "ampulevloeistof",
+                    43,
+                    49
+                ]
+            ]
+        },
+        "6f3e2ccf-51f6-4377-8b84-63a3c16928a8": {
+            "number": 13,
+            "objects": [
+                [
+                    "snoep",
+                    5,
+                    12
+                ],
+                [
+                    "bol wol",
+                    14,
+                    22
+                ],
+                [
+                    "infuus",
+                    25,
+                    36
+                ],
+                [
+                    "stethoscoop",
+                    39,
+                    46
+                ],
+                [
+                    "scherm",
+                    49,
+                    54
+                ]
+            ]
+        },
+        "5235be94-da01-43b5-8827-92a51d32ce30": {
+            "number": 12,
+            "objects": [
+                [
+                    "rollator",
+                    6,
+                    13
+                ],
+                [
+                    "fotokader",
+                    17,
+                    25
+                ],
+                [
+                    "ampulevloeistof",
+                    26,
+                    35
+                ],
+                [
+                    "stethoscoop",
+                    35,
+                    43
+                ],
+                [
+                    "snoep",
+                    44,
+                    52
+                ]
+            ]
+        }
+    },
+    "labeling_same_background_uuid": "d6fd0aed-b901-4863-bad8-7910dad693e0",
+    "labeling_diff_background_uuid": "73ce8a30-ccc6-4514-b978-f8b5844be16b"
+}
