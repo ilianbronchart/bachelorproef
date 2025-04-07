@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import cv2
 import numpy as np
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Form, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session, joinedload
 from src.api.dependencies import get_labeler, get_selected_class_id
@@ -17,6 +17,7 @@ from src.config import Template, templates
 from src.db import CalibrationRecording, engine
 from src.db.models import Annotation, PointLabel, SimRoomClass
 from src.utils import encode_to_png, is_hx_request
+from typing import Annotated
 
 router = APIRouter(prefix="/labeling")
 
@@ -323,4 +324,28 @@ async def tracking(
         frame_idx=labeler.current_frame_idx,
         labeler=labeler,
         selected_class_id=selected_class_id,
+    )
+
+@router.post("/settings", response_class=HTMLResponse)
+async def settings(
+    request: Request,
+    show_inactive_classes: Annotated[bool, Form()],
+    labeler: Labeler = Depends(get_labeler),
+) -> HTMLResponse:
+    labeler.show_inactive_classes = show_inactive_classes
+    context = labeler.get_labeling_context(request)
+
+    return templates.TemplateResponse(
+        Template.LABELING_SETTINGS, context=context.to_dict()
+    )
+
+@router.get("/settings", response_class=HTMLResponse)
+async def settings(
+    request: Request,
+    labeler: Labeler = Depends(get_labeler),
+) -> HTMLResponse:
+    context = labeler.get_labeling_context(request)
+
+    return templates.TemplateResponse(
+        Template.LABELING_SETTINGS, context=context.to_dict()
     )

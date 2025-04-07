@@ -72,6 +72,7 @@ class Template:
     LABELING_ANNOTATIONS: str = "components/labeling/labeling-annotations.jinja"
     LABELING_CANVAS: str = "components/labeling/labeling-canvas.jinja"
     LABELING_CONTROLS: str = "components/labeling/labeling-controls.jinja"
+    LABELING_SETTINGS: str = "components/labeling/labeling-settings.jinja"
 
 
 class EndpointFilter(logging.Filter):

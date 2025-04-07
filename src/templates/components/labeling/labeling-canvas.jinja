@@ -23,6 +23,7 @@ window.labelingCanvas = {
     window.addEventListener('classes-loaded', event => {
       this.selectedClassId = event.detail.selectedClassId;
     })
+    window.addEventListener('render-canvas', this.fetchCurrentFrame.bind(this));
   },
 
   getMousePos(event) {

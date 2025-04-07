@@ -1,0 +1,25 @@
+<div id="labeling-settings"
+     class="d-flex"
+     hx-on::after-settle="renderCanvas()">
+  <form hx-post="/labeling/settings"
+        hx-target="#labeling-settings"
+        hx-swap="outerHTML"
+        hx-trigger="change">
+    <!-- Hidden input ensures a value is sent when the checkbox is unchecked -->
+    <input type="hidden" name="show_inactive_classes" value="false">
+    <div class="form-check">
+      <input type="checkbox"
+             class="form-check-input"
+             id="show-inactive-classes"
+             name="show_inactive_classes"
+             value="true"
+             {% if show_inactive_classes %}checked{% endif %}>
+      <label class="form-check-label user-select-none" for="show-inactive-classes">Show inactive classes</label>
+    </div>
+  </form>
+</div>
+<script>
+function renderCanvas() {
+  window.dispatchEvent(new CustomEvent('render-canvas'));
+}
+</script>

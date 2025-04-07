@@ -12,7 +12,11 @@
            hx-trigger="classes-loaded from:window"
            hx-swap="outerHTML"></div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-3 d-flex flex-column gap-3">
+      <div id="labeling-settings"
+           hx-get="/labeling/settings"
+           hx-trigger="load"
+           hx-swap="outerHTML"></div>
       <div class="d-flex flex-column h-100"
            hx-get="/labeling/classes"
            hx-trigger="load"

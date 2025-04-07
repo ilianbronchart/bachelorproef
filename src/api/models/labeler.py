@@ -28,6 +28,7 @@ from src.utils import extract_frames_to_dir, get_frame_from_dir
 class Labeler:
     tracking_job: TrackingJob | None = None
     selected_class_id: int = -1
+    show_inactive_classes: bool = True
 
     def __init__(self, calibration_recording: CalibrationRecording):
         self.calibration_recording: CalibrationRecording = calibration_recording
@@ -63,6 +64,7 @@ class Labeler:
             request=request,
             sim_room_id=self.calibration_recording.sim_room_id,
             recording_uuid=self.calibration_recording.recording_uuid,
+            show_inactive_classes=self.show_inactive_classes,
         )
 
     def seek(self, frame_idx: int) -> None:
@@ -93,6 +95,7 @@ class Labeler:
                 )
                 .all()
             )
+
             annotation_class_ids = [
                 annotation.sim_room_class_id for annotation in annotations
             ]
@@ -108,10 +111,16 @@ class Labeler:
 
             results: list[tuple[SimRoomClass, UInt8Array, UInt8Array]] = []
             for ann in annotations:
+                if not self.show_inactive_classes and ann.sim_room_class_id != self.selected_class_id:
+                    continue
+
                 file = np.load(ann.result_path)
                 results.append((ann.sim_room_class, file["mask"], file["box"]))
 
             for sim_room_class in sim_room_classes:
+                if not self.show_inactive_classes and sim_room_class.id != self.selected_class_id:
+                    continue
+
                 class_id = sim_room_class.id
                 class_path = labeling_results_path / str(class_id)
 

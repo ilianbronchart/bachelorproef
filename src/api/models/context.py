@@ -75,6 +75,7 @@ class ClassListContext(BaseContext):
 class LabelingContext(BaseContext):
     sim_room_id: int
     recording_uuid: str
+    show_inactive_classes: bool
     content: str = Template.LABELER
 
 
@@ -100,3 +101,7 @@ class LabelingClassesContext(BaseContext):
     selected_class_id: int
     sim_room_id: int
     classes: list[SimRoomClass]
+
+@dataclass
+class LabelingSettingsContext(BaseContext):
+    show_inactive_classes: bool
