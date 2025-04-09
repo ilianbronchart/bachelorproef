@@ -6,11 +6,10 @@ from .context import (
     LabelingClassesContext,
     LabelingContext,
     LabelingControlsContext,
+    LabelingSettingsContext,
     RecordingsContext,
     Request,
     SimRoomsContext,
-    LabelingSettingsContext,
-    
 )
 from .labeler import Labeler
 
@@ -23,8 +22,8 @@ __all__ = [
     "LabelingClassesContext",
     "LabelingContext",
     "LabelingControlsContext",
+    "LabelingSettingsContext",
     "RecordingsContext",
     "Request",
     "SimRoomsContext",
-    "LabelingSettingsContext",
 ]

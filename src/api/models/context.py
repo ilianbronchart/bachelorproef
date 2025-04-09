@@ -102,6 +102,7 @@ class LabelingClassesContext(BaseContext):
     sim_room_id: int
     classes: list[SimRoomClass]
 
+
 @dataclass
 class LabelingSettingsContext(BaseContext):
     show_inactive_classes: bool

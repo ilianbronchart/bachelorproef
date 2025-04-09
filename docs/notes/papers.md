@@ -129,3 +129,6 @@ https://chatgpt.com/share/67b70726-59d8-800c-8690-58d486d1c4cd
 
 https://github.com/vukasin-stanojevic/BoostTrack
 
+### Spatially-Varying Blur Detection Based on Multiscale Fused and Sorted Transform Coefficients of Gradient Magnitudes
+
+https://arxiv.org/pdf/1703.07478.pdf

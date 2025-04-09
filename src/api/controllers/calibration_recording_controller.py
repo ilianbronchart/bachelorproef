@@ -89,3 +89,16 @@ def recording_uuid_to_calibration_id(recording_uuid: str) -> int:
             )
 
         return cal_rec.id
+
+
+def get_calibration_recording_by_uuid(
+    recording_uuid: str,
+) -> CalibrationRecording | None:
+    """Get the calibration recording by its uuid."""
+    with Session(engine) as session:
+        cal_rec: CalibrationRecording | None = (
+            session.query(CalibrationRecording)
+            .filter(CalibrationRecording.recording_uuid == recording_uuid)
+            .first()
+        )
+        return cal_rec

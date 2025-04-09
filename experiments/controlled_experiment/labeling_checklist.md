@@ -33,19 +33,19 @@ Recording 2:
 - [x] ampulepoeder  
 
 Recording 3:
-- [ ] naaldcontainer  
-- [ ] spuit  
-- [ ] keukenmes  
-- [ ] infuus  
-- [ ] stethoscoop  
-- [ ] bol wol  
-- [ ] snoep  
-- [ ] nuchter  
-- [ ] fotokader  
-- [ ] iced tea  
-- [ ] bril  
-- [ ] scherm  
-- [ ] rollator  
+- [x] naaldcontainer  
+- [x] spuit  
+- [x] keukenmes  
+- [x] infuus  
+- [x] stethoscoop  
+- [x] bol wol  
+- [x] snoep  
+- [x] nuchter  
+- [x] fotokader  
+- [x] iced tea  
+- [x] bril  
+- [x] scherm  
+- [x] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
 

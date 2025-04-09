@@ -47,6 +47,7 @@ torchvision = "0.20.1"
 decord = "^0.6.0"
 reportlab = "^4.3.1"
 dotenv = "^0.9.9"
+blur-detector = "^0.0.6"
 
 [build-system]
 requires = ["poetry-core"]

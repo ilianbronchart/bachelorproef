@@ -173,4 +173,4 @@ backup/
 segmentation_results/
 outputs/
 notebooks/tmp
-notebooks/analysis-pipeline/data/
+notebooks/notebooks-old/analysis-pipeline/data/

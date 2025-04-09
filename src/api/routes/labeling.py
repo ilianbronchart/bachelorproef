@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Annotated
 
 import cv2
 import numpy as np
@@ -17,7 +18,6 @@ from src.config import Template, templates
 from src.db import CalibrationRecording, engine
 from src.db.models import Annotation, PointLabel, SimRoomClass
 from src.utils import encode_to_png, is_hx_request
-from typing import Annotated
 
 router = APIRouter(prefix="/labeling")
 
@@ -326,6 +326,7 @@ async def tracking(
         selected_class_id=selected_class_id,
     )
 
+
 @router.post("/settings", response_class=HTMLResponse)
 async def settings(
     request: Request,
@@ -338,6 +339,7 @@ async def settings(
     return templates.TemplateResponse(
         Template.LABELING_SETTINGS, context=context.to_dict()
     )
+
 
 @router.get("/settings", response_class=HTMLResponse)
 async def settings(

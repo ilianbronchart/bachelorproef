@@ -111,14 +111,20 @@ class Labeler:
 
             results: list[tuple[SimRoomClass, UInt8Array, UInt8Array]] = []
             for ann in annotations:
-                if not self.show_inactive_classes and ann.sim_room_class_id != self.selected_class_id:
+                if (
+                    not self.show_inactive_classes
+                    and ann.sim_room_class_id != self.selected_class_id
+                ):
                     continue
 
                 file = np.load(ann.result_path)
                 results.append((ann.sim_room_class, file["mask"], file["box"]))
 
             for sim_room_class in sim_room_classes:
-                if not self.show_inactive_classes and sim_room_class.id != self.selected_class_id:
+                if (
+                    not self.show_inactive_classes
+                    and sim_room_class.id != self.selected_class_id
+                ):
                     continue
 
                 class_id = sim_room_class.id
