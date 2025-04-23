@@ -34,6 +34,7 @@ def get_sim_room_classes(sim_room_id: int) -> list[SimRoomClassResponse]:
             for sim_room_class in classes
         ]
 
+
 def get_all_sim_room_classes() -> list[SimRoomClassResponse]:
     """Get all classes for all simulation rooms."""
     with Session(engine) as session:

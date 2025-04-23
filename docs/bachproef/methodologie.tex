@@ -26,91 +26,128 @@
 %% Maak voor elke fase (behalve het literatuuronderzoek) een NIEUW HOOFDSTUK aan
 %% en geef het een gepaste titel.
 
-De bachelorproef zal worden uitgevoerd volgens een agile aanpak, waarbij iteratieve cycli (sprints) en overlappende fasen worden gebruikt om flexibiliteit en continue verbetering mogelijk te maken. 
-Deze aanpak zorgt ervoor dat verschillende onderdelen van het project parallel kunnen verlopen en snel kunnen worden aangepast op basis van tussentijdse bevindingen.
-Nieuwe taken worden doorheen de sprints toegevoegd aan een backlog binnen een Trello-bord, en worden doorheen de sprints opgepakt en afgerond.
-Het doel voor de PoC is om een user-flow te ontwikkelen die het mogelijk maakt om de volgende zaken uit te voeren:
-\begin{itemize}
-    \item 1. Het ophalen van eyetrackingdata van de Tobii Glasses
-    \item 2. Het definiëren / labelen van kritische objecten die geobserveerd moeten worden door de studenten.
-    \item 3. Het analyseren van van de data met objectdetectie-, segmentatie-, en image-embedding-modellen. 
-    Deze stap wordt hierna de data-architectuur genoemd.
-    \item 4. Het visualiseren van de resultaten van de analyse via een metriek die de blik-punten van de studenten koppelt aan de gedetecteerde objecten.
-\end{itemize}
-\par
-De voorkeur gaat naar het gebruik van voorgetrainde modellen om de nood aan hertrainen te minimaliseren en zo de gebruikerservaring te verbeteren. 
-Toch kan het zijn dat voorgetrainde modellen niet voldoen aan de specifieke noden van het project. 
-Daarom kan indien nodig de PoC uitgebreid worden met extra functionaliteiten zoals het finetunen van modellen met simulatiespecifieke data.
+Het onderzoek werd uitgevoerd in een iteratieve cyclus, waarbij de verschillende fasen van het project elkaar opvolgden en elkaar beïnvloedden.
+Deze sectie beschrijft in grote lijnen de verschillende fasen van het onderzoek, de doelstellingen en de gebruikte methodologieën.
 
-\section{Tijdsplanning}
+\section{Literatuurstudie}
 
-De bachelorproef is gepland van 10 februari 2025 tot en met 23 mei 2025, met een totaal van 7 sprints van 2 weken.
-De activiteiten binnen elke sprint omvatten, in geen specifieke volgorde:
-\begin{itemize}
-    \item Literatuurstudie
-    \item Dataverzameling en labeling
-    \item Modelselectie en implementatie
-    \item Schrijven van Python Notebooks voor experimenten
-    \item Ontwikkelen van de data-architectuur binnen de PoC
-    \item Ontwikkelen van de user interface voor de PoC
-    \item Uitbreiding van de PoC met nieuwe functionaliteiten
-    \item Unit-testen schrijven voor de PoC
-    \item Meetings met de co-promotor voor feedback en verfijning van de oplossing
-    \item Documentatie van het proces en resultaten
-    \item Uitschrijven, aanpassen van het proefschrift
-\end{itemize}
-Toch zal de periode opgesplitst worden in de volgende sprints:
+\section{Huisgemaakte Data}
 
-\subsection{Sprint 1}
+Voor het onderzoek en het uitwerken van de PoC software-applicatie, was het belangrijk om zicht te krijgen op de werking van de Eyetracker en de bijhorende software.
+Daarom werd deze ontleend uit het Zorglab van HoGent voor een periode van 3 weken. 
+Tijdens deze periode werden thuis verschillende opnames gemaakt in een woonkamer met diverse objecten, met de volgende specifieke doelstellingen:
 \begin{itemize}
-    \item Relevante modellen zijn verzameld en uitgetest binnen een Python Notebook.
-    \item Er is huisgemaakte data verzameld via geleende Tobii Glasses uit het Zorglab.
-    \item Potentiële segmentatie- en detectiepipeline architecturen voor de PoC zijn uitgestippeld.
-    \item Er is een user interface binnen de PoC om opnames op te halen van de Tobii Glasses.
+    \item Het leren werken met de Tobii Pro Glasses 3 en de bijhorende software.
+    \item Nagaan hoe men de eyetrackingdata kan exporteren naar een bruikbaar formaat via de WiFi-verbinding van de eyetracker.
+    \item Een dataset creëren die kan dienen als basis voor het uitwerken van de PoC.
 \end{itemize}
-\subsection{Sprint 2}
-\begin{itemize}
-    \item Het literatuurstudie onderdeel van het proefschrift is uitgewerkt.
-    \item De abstract en inleiding van het proefschrift zijn geschreven.
-\end{itemize}
-\subsection{Sprint 3}
-\begin{itemize}
-    \item Er is een demo gegeven aan de co-promotor voor een kandidaat architectuur van de PoC.
-    \item De feedback van de co-promotor is verwerkt en gedocumenteerd.
-    \item Er is een metriek ontwikkeld voor het meten van waar een student naar heeft gekeken en voor hoe lang.
-    \item Er zijn verschillende data-architecturen geëvalueerd.
-\end{itemize}
-\subsection{Sprint 4}
-\begin{itemize}
-    \item Er bestaat een manier om belangrijke objecten te labelen binnen de PoC
-    \item De segmentatie- en detectiepipeline is geïntegreerd binnen de user interface van de PoC
-    \item Er is een onderzoeksmethodologie opgesteld voor het evalueren van de metrieken die berekend worden door de PoC.
-\end{itemize}
-\subsection{Sprint 5}
-\begin{itemize}
-    \item Er is data verzameld binnen het Zorglab van HOGENT volgens de opgestelde onderzoeksmethodologie.
-    \item De opgehaalde data is gelabeld.
-\end{itemize}
-\subsection{Sprint 6}
-\begin{itemize}
-    \item De vergelijking tussen verschillende data-architecturen is toegevoegd aan het proefschrift op basis van de data uit sprint 5.
-    \item De metrieken die berekend worden door de PoC zijn geëvalueerd.
-\end{itemize}
-\subsection{Sprint 7}
-\begin{itemize}
-    \item Er bestaat een visualisatieinterface binnen de PoC die de metrieken toont voor geselecteerde eyetracking opnames.
-    \item De conclusie en aanbevelingen van het proefschrift zijn geschreven.
-    \item Het proefschrift is nagelezen en aangepast.
-\end{itemize}    
+Deze opnames werden niet gebruikt voor de uiteindelijke evaluatie van de PoC, aangezien de data afkomstig zijn van tests waarbij de onderzoeker zelf de eyetracker droeg.
+Hierdoor is er sprake van mogelijke bias, wat de objectiviteit van de data in het gedrang brengt.
 
-\section{Tools en Technologieën}
+\section{Proof of Concept Software Applicatie}
 
-\begin{itemize} 
-  \item \textbf{Programmeertaal en Frameworks}: Python, PyTorch, TensorFlow voor machine-learning modellering en implementatie. 
-  \item \textbf{Programmeerstack van de PoC}: FastAPI voor de backend, HTMX en Jinja2 voor de frontend.
-  \item \textbf{Data Verwerking en Visualisatie}: OpenCV voor videoverwerking, Matplotlib voor datavisualisatie. 
-  \item \textbf{Ontwikkelomgeving}: Visual Studio Code, Python Notebooks voor experimenten, Git voor versiebeheer. Poetry voor dependency management.
-  \item \textbf{GPU}: At-home Nvidia RTX 4090 en eventuele GPUs van HoGent.
-  \item \textbf{Eyetracking}: Tobii Eyetracking Glasses, en Tobii Pro Glasses 3 Controller App.
-  \item \textbf{Planning}: Trello voor projectmanagement.
+De PoC had als doel om aan te tonen dat het mogelijk is om na te gaan naar wat een participant kijkt en hoe lang deze elk object in het oog houdt.
+Hoewel het ging om een proof of concept (PoC), werd er toch nagedacht over bruikbaarheid van de applicatie in een productieomgeving.
+Vanuit die gedachte werden de volgende vereisten voor de applicatie opgesteld:
+\begin{itemize}
+    \item De applicatie moet gebruiksvriendelijk zijn en een eenvoudige interface hebben.
+    \item De gebruiker moet in staat zijn om de eyetrackingdata te importeren in de applicatie, zonder dat men de SD-kaart van de eyetracker moet verwijderen.
+    \item De gebruiker moet geïmporteerde data kunnen verwijderen uit de applicatie.
+    \item De gebruiker moet in staat zijn om verschillende simulatieruimten te definiëren en te beheren, elk met hun eigen objecten.
+    \item De gebruiker moet geïmporteerde opnames kunnen labelen met de objecten die zich in de ruimte bevinden, om een basis te creëren voor de analyse.
+    \item De labeling-tool moet semi-automatisch zijn: De gebruiker kan manueel op een object klikken, waarna de applicatie het object doorheen de video kan volgen.
+    \item De gebruiker moet in staat zijn om de eyetrackingdata te analyseren en de resultaten te visualiseren.
 \end{itemize}
+
+\subsection{Technische Specificaties}
+
+Voor de ontwikkeling van de PoC werd een lichtgewicht, modulaire softwarestack gekozen, afgestemd op de specifieke noden van het project. 
+De backend werd ontwikkeld in Python met behulp van \texttt{FastAPI}, terwijl de frontend werd opgebouwd met \texttt{HTMX}.
+Er werd bewust niet gekozen voor een zwaar frontend-framework zoals React of Vue, aangezien de vereiste gebruikersinteracties relatief eenvoudig waren. 
+Voor het dynamisch renderen van HTML-pagina’s en het beschikbaar maken van backend-data in de frontend werd gebruikgemaakt van de templating engine \texttt{Jinja2}.
+
+De database werd opgezet met SQLite in combinatie met SQLAlchemy als ORM (Object-Relational Mapping) om de gegevensstructuur te beheren. 
+Voor de communicatie met de Tobii Pro Glasses 3 werd gebruikgemaakt van de \texttt{g3pylib} software-development kit (SDK). 
+Poetry werd ingezet voor dependency management en het structureren van het Python-project.
+
+Om de codebase beheersbaar en betrouwbaar te maken, werd de applicatie volledig voorzien van type-hints die geverifieërd worden door de type-checker \texttt{mypy}. 
+Voor codekwaliteit en -stijl werd \texttt{ruff} ingezet als linter en formatter. 
+Hoewel het project als PoC werd opgezet, werd er dus ook sterk ingezet op duurzame en onderhoudsvriendelijke softwarepraktijken.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Component} & \textbf{Gebruikte technologie} \\
+\hline
+Programmeertaal & Python \\
+\hline
+Backend & FastAPI \\
+\hline
+Frontend & HTMX \\
+\hline
+Templating engine & Jinja2 \\
+\hline
+Database & SQLite met SQLAlchemy \\
+\hline
+Eyetracking SDK & \texttt{g3pylib} (Tobii Pro Glasses 3) \\
+\hline
+Dependency management & Poetry \\
+\hline
+Type checking & \texttt{mypy} \\
+\hline
+Linter / formatter & \texttt{ruff} \\
+\hline
+\end{tabular}
+\caption{Overzicht van de gebruikte softwarestack voor de PoC}
+\end{table}
+
+\section{Experiment in het Zorglab}
+
+Zoals eerder vermeld, werd de thuisopgenomen dataset niet gebruikt voor de evaluatie van de PoC. 
+Om een onbevooroordeelde dataset te verkrijgen en om de modaliteiten van de uitwerking te valideren (bijvoorbeeld: de afstand tussen de Eyetracker en het object en de aard van de objecten), werd er een gecontroleerd experiment opgezet in het Zorglab van HoGent.
+Het doel van dit experiment was om een dataset te creëren die als grond-waarheid diende voor de metrieken die de PoC berekent (bekeken objecten en tijdsduur).
+Op de campus werden studenten van diverse opleidingen gevraagd om deel te nemen aan het experiment.
+Hierbij ondertekende elke deelnemer een \textit{informed consent}-formulier, waarin uitleg gegeven werd over het experiment en de verwerking van de gegevens.
+
+\subsection{Opzet van het Experiment}
+
+Voorafgaand aan het experiment werden 15 verschillende objecten in de ruimte geplaatst, waarvan elke deelnemer er vijf diende te observeren.
+Er werd gezorgd voor een diverse selectie van objecten, zodat de beperkingen van het systeem konden worden geëvalueerd.
+Ook waren de objecten zo gekozen dat ze relevant waren binnen de context van echte simulaties. De concrete uitwerking hiervan wordt verder toegelicht in de sectie \ref{sec:TODO}.
+De instructies aan de deelnemers waren op een bepaalde plaats in de ruimte te staan, hun blik te richten op de objecten en vervolgens ernaar toe stappen.
+Dit werd voor elk van de vijf objecten herhaald.
+
+Daarnaast werden er twee afzonderlijke opnames gemaakt door de onderzoeker zelf met als doel het genereren van labelingdata voor het trainen van modellen.
+In deze opnames werd gedurende 30 seconden naar elk object gekeken vanuit verschillende invalshoeken.
+De eerste opname werd gemaakt met de objecten op dezelfde locatie als in het experiment met de deelnemers.
+In de tweede opname werden de objecten op een andere plaats gezet, om te kunnen nagaan of veranderingen in de achtergrond een invloed hebben op de herkenbaarheid of detectie van objecten in de analysefase.
+Deze extra data diende als grondlaag voor het labelen van de objecten en het valideren van de robuustheid van het systeem bij variërende omgevingsfactoren.
+
+\subsection{Data Labeling}
+
+De verzamelde data uit het experiment werd gelabeld met behulp van een semi-automatische labeling-tool die ontwikkeld werd binnen de PoC.
+Binnen elke opname werd er op elk object een aantal maal geklikt, waarna de applicatie het object doorheen de video volgde.
+Op deze manier kreeg elk object een segmentatie-masker binnen elke videoframe.
+Daarna werden deze segmentatie-maskers gefilterd op basis van de blikpunten van de deelnemer doorheen de video.
+
+Op die manier werd een dataset opgebouwd die voor elk frame informatie bevat over welke objecten effectief bekeken werden.
+Aan de hand van deze informatie kon er ook berekend worden hoelang een deelnemer naar elk object gekeken had.
+
+Ter controle van de labelingkwaliteit werd automatisch een video gegenereerd waarin per frame het segmentatiemasker, de bounding box, het objectlabel en het blikpunt visueel weergegeven werden.
+Deze video werd manueel nagekeken om mogelijke labelingfouten op te sporen en de betrouwbaarheid van de dataset te waarborgen.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{voorbeeld_labeling_validatie.png}
+  \caption[]{\label{fig:object-detection}Voorbeeld van een frame in een video voor labeling-validatie. Hier kijkt de deelnemer naar een scherm, waarbij het segmentatiemasker, de bounding box, het blikpunt en het objectlabel weergegeven worden.}
+\end{figure}
+
+
+\section{Analyse van de Experimentele Data}
+
+\subsection{Architectuur}
+
+\subsection{Analyse via een Vector Index}
+
+\subsection{Analyse via YOLOv11 Classificatie}

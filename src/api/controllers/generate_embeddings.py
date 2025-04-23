@@ -1,9 +1,5 @@
 import time
-from collections.abc import Generator
-from pathlib import Path
 
-import faiss
-import numpy as np
 import torch
 import torchvision.transforms as T
 from transformers import AutoImageProcessor, AutoModel, BitImageProcessor
@@ -37,11 +33,11 @@ def get_embeddings(
     """
     Generate embeddings for a list of image samples using the DINOv2 model in batches.
     Processes data batch by batch so that not all samples are loaded into memory simultaneously.
-    
+
     Args:
         samples (list[UInt8Array]): A list of image samples to process.
         batch_size (int, optional): The number of samples to process per batch.
-    
+
     Yields:
         tuple[torch.Tensor, int, int]:
             - torch.Tensor: The embeddings for the current batch (from the [CLS] token).
@@ -61,14 +57,14 @@ def get_embeddings(
                 transformation_chain(sample).squeeze(0)
                 for sample in current_batch_samples
             ]).cuda()
-            
+
             # Generate embeddings
             embeddings = dinov2(batch_tensor).last_hidden_state[:, 0]
             current_batch_size = embeddings.shape[0]
-            
+
             yield embeddings, batch_start_index, batch_start_index + current_batch_size
             batch_start_index += current_batch_size
-            
+
     if log_performance:
         sps = total_samples / (time.time() - start_time)
         print(f"Generated {total_samples} embeddings at {sps:.2f} samples per second")

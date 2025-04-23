@@ -278,8 +278,8 @@ def hex_to_bgr(hex_color: str) -> tuple:
 
 def draw_annotation_on_frame(
     frame_img: np.ndarray,
-    mask: np.ndarray,
-    box: tuple,
+    mask: np.ndarray | None,
+    box: tuple[int, int, int, int],
     class_color_hex: str,
     class_name: str,
     alpha: float = 0.5,
@@ -301,23 +301,23 @@ def draw_annotation_on_frame(
     """
     # Unpack bounding box coordinates
     x1, y1, x2, y2 = box
-
-    # Squeeze mask if it has an extra dimension (e.g., shape (1, H, W) -> (H, W))
-    if mask.ndim == 3 and mask.shape[0] == 1:
-        mask = mask[0]
-    # Ensure mask is boolean
-    if mask.dtype != bool:
-        mask = mask.astype(bool)
-
     class_color = hex_to_bgr(class_color_hex)
 
-    # Extract the ROI corresponding to the bounding box
-    roi = frame_img[y1:y2, x1:x2]
+    if mask is not None:
+        # Squeeze mask if it has an extra dimension (e.g., shape (1, H, W) -> (H, W))
+        if mask.ndim == 3 and mask.shape[0] == 1:
+            mask = mask[0]
+        # Ensure mask is boolean
+        if mask.dtype != bool:
+            mask = mask.astype(bool)
 
-    # Blend white (255,255,255) into the ROI where mask is True (50% opacity by default)
-    roi[mask] = (roi[mask].astype(float) * (1 - alpha) + 255 * alpha).astype(np.uint8)
-    # Update the frame with the modified ROI
-    frame_img[y1:y2, x1:x2] = roi
+        # Extract the ROI corresponding to the bounding box
+        roi = frame_img[y1:y2, x1:x2]
+
+        # Blend white (255,255,255) into the ROI where mask is True (50% opacity by default)
+        roi[mask] = (roi[mask].astype(float) * (1 - alpha) + 255 * alpha).astype(np.uint8)
+        # Update the frame with the modified ROI
+        frame_img[y1:y2, x1:x2] = roi
 
     # Draw the bounding box using the converted BGR color
     cv2.rectangle(frame_img, (x1, y1), (x2, y2), class_color, 2)

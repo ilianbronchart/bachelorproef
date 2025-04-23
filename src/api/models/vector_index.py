@@ -1,12 +1,13 @@
-import faiss
-from src.aliases import UInt8Array
-import torch
-import numpy as np
-from typing import Any
-from pathlib import Path
 import json
+from pathlib import Path
+from typing import Any
 
-class FAISSIndexWithMetadata():
+import faiss
+import numpy as np
+import torch
+
+
+class FAISSIndexWithMetadata:
     def __init__(self, dim: int):
         self.dim = dim
         self.index = faiss.IndexIDMap(faiss.IndexFlatL2(dim))
@@ -15,7 +16,7 @@ class FAISSIndexWithMetadata():
     def add(self, embeddings: torch.Tensor, metadata: list[dict[str, Any]]):
         if embeddings.shape[0] != len(metadata):
             raise ValueError("Number of embeddings must match number of metadata entries")
-        
+
         # check if metadata values are all json serializable by trying to dump them
         for entry in metadata:
             try:
@@ -37,20 +38,20 @@ class FAISSIndexWithMetadata():
     def write(self, index_path: Path):
         faiss.write_index(self.index, str(index_path))
         metadata_path = Path(index_path).parent / (index_path.stem + ".json")
-        with open(metadata_path, 'w') as f:
+        with open(metadata_path, "w") as f:
             json.dump(self.metadata, f)
 
     @classmethod
     def load(cls, index_path: Path):
         index: faiss.IndexIDMap = faiss.read_index(str(index_path))
         metadata_path = Path(index_path).parent / (index_path.stem + ".json")
-        with open(metadata_path, 'r') as f:
+        with open(metadata_path) as f:
             metadata = json.load(f)
         instance = cls(index.d)
         instance.index = index
         instance.metadata = metadata
         return instance
-    
+
     def search(self, embeddings: torch.Tensor, k: int):
         vectors = embeddings.detach().cpu().numpy()
         vectors = np.float32(vectors)
@@ -58,8 +59,16 @@ class FAISSIndexWithMetadata():
         distances, indices = self.index.search(vectors, k)
 
         return distances, indices
-    
+
     def get_metadata(self, i: int):
         if i < 0 or i >= self.index.ntotal:
             raise IndexError("Index out of bounds")
         return self.metadata[i]
+
+    def get_metadatas(self, indices: list[int]):
+        metadatas = []
+        for i in indices:
+            if i < 0 or i >= self.index.ntotal:
+                raise IndexError("Index out of bounds")
+            metadatas.append(self.metadata[i])
+        return metadatas

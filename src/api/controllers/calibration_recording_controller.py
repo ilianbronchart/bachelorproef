@@ -16,6 +16,14 @@ class AnnotatedClassResponse:
     annotation_paths: list[Path]
 
 
+@dataclass
+class SimRoomClassResponse:
+    id: int
+    sim_room_id: int
+    class_name: str
+    color: str
+
+
 def get_annotated_classes(cal_rec_id: int) -> list[AnnotatedClassResponse]:
     """Get all classes that have annotations for a given calibration recording."""
 
@@ -102,3 +110,21 @@ def get_calibration_recording_by_uuid(
             .first()
         )
         return cal_rec
+
+
+def get_class_by_id(class_id: int) -> SimRoomClassResponse:
+    """Get the class by its id."""
+    with Session(engine) as session:
+        sim_room_class = (
+            session.query(SimRoomClass).filter(SimRoomClass.id == class_id).first()
+        )
+
+        if not sim_room_class:
+            raise ValueError(f"Class with id {class_id} not found")
+
+        return SimRoomClassResponse(
+            id=sim_room_class.id,
+            sim_room_id=sim_room_class.sim_room_id,
+            class_name=sim_room_class.class_name,
+            color=sim_room_class.color,
+        )

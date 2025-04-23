@@ -1,3 +1,4 @@
+from pathlib import Path
 from src.config import UNKNOWN_CLASS_ID
 
 TRIAL_RECORDING_UUIDS = [
@@ -145,6 +146,7 @@ FULLY_LABELED_RECORDINGS = [
 ]
 
 MISSING_PREDICTION_CLASS_ID = -2
+MISSING_GROUND_TRUTH_ID = -3
 CLASS_ID_TO_NAME = {
     1: "naaldcontainer",
     2: "spuit",
@@ -162,8 +164,21 @@ CLASS_ID_TO_NAME = {
     14: "ampulevloeistof",
     15: "ampulepoeder",
     UNKNOWN_CLASS_ID: "unknown",
-    MISSING_PREDICTION_CLASS_ID: "missing prediction"
+    MISSING_PREDICTION_CLASS_ID: "missing prediction",
+    MISSING_GROUND_TRUTH_ID: "missing ground truth",
 }
 
 SORTED_CLASS_IDS = sorted(CLASS_ID_TO_NAME.keys())
 CLASS_NAMES = sorted(CLASS_ID_TO_NAME.values())
+
+# Data Paths
+LABELING_VALIDATION_VIDEOS_PATH = Path("data/labeling_validation_videos")
+GROUND_TRUTH_PATH = Path("data/ground_truth.csv")
+VECTOR_INDEXES_PATH = Path("data/vector_indexes")
+SAME_BACKGROUND_INDEXES_PATH = VECTOR_INDEXES_PATH / "same_background"
+DIFF_BACKGROUND_INDEXES_PATH = VECTOR_INDEXES_PATH / "diff_background"
+GAZE_SEGMENTATION_RESULTS_PATH = Path("data/gaze_segmentation_results")
+OBJECT_DATASETS_PATH = Path("data/object_datasets")
+FINAL_PREDICTIONS_PATH = Path("data/final_predictions")
+TRAINING_DATASETS_PATH = Path("data/training_datasets")
+YOLO_MODELS_PATH = Path("data/yolo_models")

@@ -174,3 +174,4 @@ segmentation_results/
 outputs/
 notebooks/tmp
 notebooks/notebooks-old/analysis-pipeline/data/
+runs/
