@@ -10,7 +10,7 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as F
 from src.config import GAZE_FOVEA_FOV, TOBII_FOV_X
-from src.logic.glasses.gaze import (
+from src.api.controllers.gaze_controller import (
     get_gaze_points,
     match_frames_to_gaze,
     parse_gazedata_file,

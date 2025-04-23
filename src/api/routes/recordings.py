@@ -1,4 +1,4 @@
-import src.logic.glasses as glasses
+import src.api.controllers.glasses_controller as glasses
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from src.api.models import RecordingsContext, Request

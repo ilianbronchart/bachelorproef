@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-import src.logic.glasses as glasses
+import src.api.controllers.glasses_controller as glasses
 from src.api.models import App, GlassesConnectionContext, Request
 from src.api.routes import labeling, recordings, simrooms
 from src.config import Template, templates

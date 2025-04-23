@@ -18,7 +18,7 @@ from src.config import (
 )
 from src.db import engine
 from src.db.models.calibration import Annotation, CalibrationRecording, SimRoomClass
-from src.logic.inference.sam_2 import (
+from src.api.controllers.sam2_controller import (
     load_sam2_predictor,
     predict_sam2,
 )

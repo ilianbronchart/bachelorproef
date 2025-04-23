@@ -6,7 +6,7 @@ import numpy as np
 from fastapi import APIRouter, Depends, Form, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session, joinedload
-from src.api.dependencies import get_labeler, get_selected_class_id
+from src.api.api_dependencies import get_labeler, get_selected_class_id
 from src.api.models import (
     Labeler,
     LabelingAnnotationsContext,

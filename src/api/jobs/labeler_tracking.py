@@ -9,7 +9,7 @@ from src.config import (
     Sam2Checkpoints,
 )
 from src.db.models.calibration import Annotation
-from src.logic.inference.sam_2 import (
+from src.api.controllers.sam2_controller import (
     load_sam2_video_predictor,
 )
 from torchvision.ops import masks_to_boxes
