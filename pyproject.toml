@@ -7,7 +7,6 @@ readme = "README.md"
 packages = [
     { include = "src" },
     { include = "dinov2", from="libs/dinov2" },
-    { include = "controlled_experiment", from="experiments" }
 ]
 
 
@@ -16,6 +15,7 @@ name = "torch-cu121"
 url = "https://download.pytorch.org/whl/cu121"
 priority = "explicit"
 
+# TODO: Separate dev and prod dependencies
 [tool.poetry.dependencies]
 python = "^3.10"
 tqdm = "^4.67.1"

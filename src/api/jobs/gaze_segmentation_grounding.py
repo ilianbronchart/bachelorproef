@@ -17,6 +17,7 @@ from src.utils import cv2_video_fps, cv2_video_frame_count, cv2_video_resolution
 from torchvision.ops import masks_to_boxes
 from torchvision.transforms import InterpolationMode
 from ultralytics import FastSAM
+from src.config import FAST_SAM_CHECKPOINT
 
 
 class GazeSegmentationJob:
@@ -27,7 +28,7 @@ class GazeSegmentationJob:
         results_path: Path,
         fovea_fov: float = GAZE_FOVEA_FOV,
         fov_x: float = TOBII_FOV_X,
-        checkpoint_path: str = "checkpoints/FastSAM-x.pt",
+        checkpoint_path: Path = FAST_SAM_CHECKPOINT,
         output_video_path: Path | None = None,
     ):
         self.video_path = video_path

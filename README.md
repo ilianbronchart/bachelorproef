@@ -49,3 +49,36 @@ cd .venv/lib/python3.10/site-packages/tensorrt
 ln -s /usr/lib/x86_64-linux-gnu/libnvinfer.so.10 libnvinfer.so.8
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.venv/lib/python3.10/site-packages/tensorrt
 ```
+
+## Running the application in docker:
+
+Install the nvidia container toolkit on the host machine:
+```
+sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+sudo systemctl restart docker
+```
+
+Download the tensorrt tar file by following the instructions [here](https://docs.nvidia.com/deeplearning/tensorrt/latest/installing-tensorrt/installing.html#download)
+Put the tar file in the libs folder.
+
+Run the following command to build the docker image:
+```bash
+just build
+```
+
+Run the following command to start the application in docker:
+```bash
+docker run eyetracking-app
+```
+
+Run the following command to start the application using the local src file:
+```bash
+docker run --rm -v "$(pwd)/src:/app/src" eyetracking-app
+```
+
+You can also run the application using an existing database file:
+```bash
+docker run --rm -v "$(pwd)/database.db:/app/database.db" eyetracking-app
+```
+
+
