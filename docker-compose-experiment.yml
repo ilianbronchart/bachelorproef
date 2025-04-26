@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eyetracking-app:latest
+    ports:
+      - "8000:8000"
+    gpus:
+      - driver: nvidia
+        count: all
+    volumes:
+      - ./src:/app/src:cached
+      - ./checkpoints:/app/checkpoints:cached
+      - ./controlled_experiment/database.db:/app/database.db
+      - ./controlled_experiment/data:/app/data:cached
+      # cache Poetry & pip downloads between container restarts
+      - poetry_cache:/root/.cache/pypoetry
+      - pip_cache:/root/.cache/pip
+    # start Uvicorn in reload mode, listening on all interfaces
+    command: >
+      poetry run uvicorn src.main:app
+        --reload
+        --host 0.0.0.0
+        --port 8000
+
+volumes:
+  poetry_cache:
+  pip_cache:

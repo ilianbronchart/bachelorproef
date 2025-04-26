@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-100">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,7 +41,7 @@
     <style>* { box-sizing: border-box; }</style>
     <script src="{{ url_for('static', path='/scripts/api.js') }}"></script>
   </head>
-  <body class="d-flex">
+  <body class="d-flex h-100">
     <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark"
          style="width: 280px;
                 min-height: 100vh">
@@ -50,7 +50,7 @@
         <svg class="bi me-2" width="40" height="32">
           <use xlink:href="#bootstrap"></use>
         </svg>
-        <span class="fs-4">Sidebar</span>
+        <span class="fs-4">Menu</span>
       </a>
       <hr>
       <ul class="nav nav-pills flex-column mb-auto">
@@ -86,7 +86,7 @@
     {% include "components/connection-status.jinja" %}
   </div>
   <div id="main-content"
-       class="flex-grow-1 p-3 mt-5"
+       class="flex-grow-1 overflow-auto p-3 mt-5"
        hx-ext="response-targets">
     {% if content %}
       {% include content %}
