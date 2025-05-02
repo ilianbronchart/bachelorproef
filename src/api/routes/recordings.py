@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from src.api.models import RecordingsContext, Request
 from src.config import Template, templates
-from src.db import Recording
+from src.api.models.db import Recording
 from src.utils import is_hx_request
 
 router = APIRouter(prefix="/recordings")

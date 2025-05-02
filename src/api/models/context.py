@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, no_type_check
 from fastapi import Request as FastAPIRequest
 
 from src.config import Template
-from src.db import Recording
+from src.api.models.db import Recording
 from src.api.models.db import CalibrationRecording, SimRoom, SimRoomClass
 
 if TYPE_CHECKING:

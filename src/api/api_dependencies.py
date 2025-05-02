@@ -2,7 +2,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.api.models import Labeler, Request
-from src.db import engine
+from src.api.db import engine
 from src.api.models.db.calibration import SimRoomClass
 
 

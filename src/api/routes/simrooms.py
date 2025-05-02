@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.api.models import Request, SimRoomsContext
 from src.api.models.context import ClassListContext
 from src.config import Template, templates
-from src.db import Recording, SimRoom, SimRoomClass
+from src.api.models.db import Recording, SimRoom, SimRoomClass
 from src.api.db import engine
 from src.api.models.db import CalibrationRecording
 from src.utils import is_hx_request

@@ -3,7 +3,7 @@ import asyncio
 from g3pylib import connect_to_glasses
 from g3pylib.recordings.recording import Recording as GlassesRecording
 from src.config import DEFAULT_GLASSES_HOSTNAME
-from src.db import Recording
+from src.api.models.db import Recording
 
 
 async def is_connected(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> bool:

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
-from src.db import engine
+from src.api.db import engine
 from src.api.models.db import SimRoomClass
 
 
