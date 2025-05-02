@@ -16,7 +16,7 @@ from src.api.models import (
 )
 from src.config import Template, templates
 from src.db import CalibrationRecording, engine
-from src.db.models import Annotation, PointLabel, SimRoomClass
+from src.api.models.db import Annotation, PointLabel, SimRoomClass
 from src.utils import encode_to_png, is_hx_request
 
 router = APIRouter(prefix="/labeling")

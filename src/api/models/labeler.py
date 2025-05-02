@@ -17,7 +17,7 @@ from src.config import (
     Sam2Checkpoints,
 )
 from src.db import engine
-from src.db.models.calibration import Annotation, CalibrationRecording, SimRoomClass
+from src.api.models.db.calibration import Annotation, CalibrationRecording, SimRoomClass
 from src.api.controllers.sam2_controller import (
     load_sam2_predictor,
     predict_sam2,

@@ -31,6 +31,8 @@ Deze sectie beschrijft in grote lijnen de verschillende fasen van het onderzoek,
 
 \section{Literatuurstudie}
 
+TODO
+
 \section{Huisgemaakte Data}
 
 Voor het onderzoek en het uitwerken van de PoC software-applicatie, was het belangrijk om zicht te krijgen op de werking van de Eyetracker en de bijhorende software.
@@ -46,108 +48,59 @@ Hierdoor is er sprake van mogelijke bias, wat de objectiviteit van de data in he
 
 \section{Proof of Concept Software Applicatie}
 
-De PoC had als doel om aan te tonen dat het mogelijk is om na te gaan naar wat een participant kijkt en hoe lang deze elk object in het oog houdt.
-Hoewel het ging om een proof of concept (PoC), werd er toch nagedacht over bruikbaarheid van de applicatie in een productieomgeving.
-Vanuit die gedachte werden de volgende vereisten voor de applicatie opgesteld:
-\begin{itemize}
-    \item De applicatie moet gebruiksvriendelijk zijn en een eenvoudige interface hebben.
-    \item De gebruiker moet in staat zijn om de eyetrackingdata te importeren in de applicatie, zonder dat men de SD-kaart van de eyetracker moet verwijderen.
-    \item De gebruiker moet geïmporteerde data kunnen verwijderen uit de applicatie.
-    \item De gebruiker moet in staat zijn om verschillende simulatieruimten te definiëren en te beheren, elk met hun eigen objecten.
-    \item De gebruiker moet geïmporteerde opnames kunnen labelen met de objecten die zich in de ruimte bevinden, om een basis te creëren voor de analyse.
-    \item De labeling-tool moet semi-automatisch zijn: De gebruiker kan manueel op een object klikken, waarna de applicatie het object doorheen de video kan volgen.
-    \item De gebruiker moet in staat zijn om de eyetrackingdata te analyseren en de resultaten te visualiseren.
-\end{itemize}
-
-\subsection{Technische Specificaties}
-
-Voor de ontwikkeling van de PoC werd een lichtgewicht, modulaire softwarestack gekozen, afgestemd op de specifieke noden van het project. 
-De backend werd ontwikkeld in Python met behulp van \texttt{FastAPI}, terwijl de frontend werd opgebouwd met \texttt{HTMX}.
-Er werd bewust niet gekozen voor een zwaar frontend-framework zoals React of Vue, aangezien de vereiste gebruikersinteracties relatief eenvoudig waren. 
-Voor het dynamisch renderen van HTML-pagina’s en het beschikbaar maken van backend-data in de frontend werd gebruikgemaakt van de templating engine \texttt{Jinja2}.
-
-De database werd opgezet met SQLite in combinatie met SQLAlchemy als ORM (Object-Relational Mapping) om de gegevensstructuur te beheren. 
-Voor de communicatie met de Tobii Pro Glasses 3 werd gebruikgemaakt van de \texttt{g3pylib} software-development kit (SDK). 
-Poetry werd ingezet voor dependency management en het structureren van het Python-project.
-
-Om de codebase beheersbaar en betrouwbaar te maken, werd de applicatie volledig voorzien van type-hints die geverifieërd worden door de type-checker \texttt{mypy}. 
-Voor codekwaliteit en -stijl werd \texttt{ruff} ingezet als linter en formatter. 
-Hoewel het project als PoC werd opgezet, werd er dus ook sterk ingezet op duurzame en onderhoudsvriendelijke softwarepraktijken.
-
-\begin{table}[H]
-\centering
-\begin{tabular}{|l|l|}
-\hline
-\textbf{Component} & \textbf{Gebruikte technologie} \\
-\hline
-Programmeertaal & Python \\
-\hline
-Backend & FastAPI \\
-\hline
-Frontend & HTMX \\
-\hline
-Templating engine & Jinja2 \\
-\hline
-Database & SQLite met SQLAlchemy \\
-\hline
-Eyetracking SDK & \texttt{g3pylib} (Tobii Pro Glasses 3) \\
-\hline
-Dependency management & Poetry \\
-\hline
-Type checking & \texttt{mypy} \\
-\hline
-Linter / formatter & \texttt{ruff} \\
-\hline
-\end{tabular}
-\caption{Overzicht van de gebruikte softwarestack voor de PoC}
-\end{table}
+De kern van dit onderzoek was de ontwikkeling van een Proof-of-Concept (PoC) softwareapplicatie. 
+Het hoofddoel van deze fase was het ontwerpen en implementeren van een werkend prototype dat de beoogde workflow ondersteunt: van het importeren van ruwe eyetracking-opnames tot het genereren van geannoteerde data die als basis kan dienen voor analyse. 
+De methodologie omvatte de selectie van een passende, moderne technologie-stack (o.a. Python, FastAPI, HTMX, SQLite) gericht op modulariteit en toekomstige uitbreidbaarheid. 
+Een significant onderdeel was het ontwerp en de implementatie van een semi-automatische labeling-tool, bedoeld om de efficiëntie van het annotatieproces te verhogen. 
+Er werd ingezet op goede software-ontwikkelpraktijken zoals type hinting en containerisatie (Docker) om de onderhoudbaarheid en reproduceerbaarheid te waarborgen. 
+De resulterende applicatie, inclusief de architectuur, componenten en technische keuzes, wordt uitvoerig beschreven in Hoofdstuk~\ref{ch:ontwikkeling}.
 
 \section{Experiment in het Zorglab}
 
 Zoals eerder vermeld, werd de thuisopgenomen dataset niet gebruikt voor de evaluatie van de PoC. 
-Om een onbevooroordeelde dataset te verkrijgen en om de modaliteiten van de uitwerking te valideren (bijvoorbeeld: de afstand tussen de Eyetracker en het object en de aard van de objecten), werd er een gecontroleerd experiment opgezet in het Zorglab van HoGent.
+Om een onbevooroordeelde dataset te verkrijgen en om de modaliteiten van de uitwerking te valideren (bijvoorbeeld: invloed van de afstand tussen de Eyetracker en het object, en de aard van de objecten), werd er een gecontroleerd experiment opgezet in het Zorglab van HoGent.
 Het doel van dit experiment was om een dataset te creëren die als grond-waarheid diende voor de metrieken die de PoC berekent (bekeken objecten en tijdsduur).
 Op de campus werden studenten van diverse opleidingen gevraagd om deel te nemen aan het experiment.
-Hierbij ondertekende elke deelnemer een \textit{informed consent}-formulier, waarin uitleg gegeven werd over het experiment en de verwerking van de gegevens.
+De 14 resulterende opnames werden daarna gelabeld via de labeling-tool van de PoC, met een kwaliteitscontrole om de betrouwbaarheid van de data te waarborgen.
+Voor een uitgebreide beschrijving van de opzet en uitvoering van het experiment, inclusief de gebruikte methodologieën, wordt verwezen naar Hoofdstuk~\ref{ch:experiment}.
 
-\subsection{Opzet van het Experiment}
+% \subsection{Opstelling van het Experiment}
 
-Voorafgaand aan het experiment werden 15 verschillende objecten in de ruimte geplaatst, waarvan elke deelnemer er vijf diende te observeren.
-Er werd gezorgd voor een diverse selectie van objecten, zodat de beperkingen van het systeem konden worden geëvalueerd.
-Ook waren de objecten zo gekozen dat ze relevant waren binnen de context van echte simulaties. De concrete uitwerking hiervan wordt verder toegelicht in de sectie \ref{sec:TODO}.
-De instructies aan de deelnemers waren op een bepaalde plaats in de ruimte te staan, hun blik te richten op de objecten en vervolgens ernaar toe stappen.
-Dit werd voor elk van de vijf objecten herhaald.
+% Voorafgaand aan het experiment werden 15 verschillende objecten in de ruimte geplaatst, waarvan elke deelnemer er vijf diende te observeren.
+% Er werd gezorgd voor een diverse selectie van objecten, zodat de beperkingen van het systeem konden worden geëvalueerd.
+% Ook waren de objecten zo gekozen dat ze relevant waren binnen de context van echte simulaties. De concrete uitwerking hiervan wordt verder toegelicht in de sectie \ref{sec:TODO}.
+% De instructies aan de deelnemers waren op een bepaalde plaats in de ruimte te staan, hun blik te richten op de objecten en vervolgens ernaar toe stappen.
+% Dit werd voor elk van de vijf objecten herhaald.
 
-Daarnaast werden er twee afzonderlijke opnames gemaakt door de onderzoeker zelf met als doel het genereren van labelingdata voor het trainen van modellen.
-In deze opnames werd gedurende 30 seconden naar elk object gekeken vanuit verschillende invalshoeken.
-De eerste opname werd gemaakt met de objecten op dezelfde locatie als in het experiment met de deelnemers.
-In de tweede opname werden de objecten op een andere plaats gezet, om te kunnen nagaan of veranderingen in de achtergrond een invloed hebben op de herkenbaarheid of detectie van objecten in de analysefase.
-Deze extra data diende als grondlaag voor het labelen van de objecten en het valideren van de robuustheid van het systeem bij variërende omgevingsfactoren.
+% Daarnaast werden er twee afzonderlijke opnames gemaakt door de onderzoeker zelf met als doel het genereren van labelingdata voor het trainen van modellen.
+% In deze opnames werd gedurende 30 seconden naar elk object gekeken vanuit verschillende invalshoeken.
+% De eerste opname werd gemaakt met de objecten op dezelfde locatie als in het experiment met de deelnemers.
+% In de tweede opname werden de objecten op een andere plaats gezet, om te kunnen nagaan of veranderingen in de achtergrond een invloed hebben op de herkenbaarheid of detectie van objecten in de analysefase.
+% Deze extra data diende als grondlaag voor het labelen van de objecten en het valideren van de robuustheid van het systeem bij variërende omgevingsfactoren.
 
-\subsection{Data Labeling}
+% \subsection{Data Labeling}
 
-De verzamelde data uit het experiment werd gelabeld met behulp van een semi-automatische labeling-tool die ontwikkeld werd binnen de PoC.
-Binnen elke opname werd er op elk object een aantal maal geklikt, waarna de applicatie het object doorheen de video volgde.
-Op deze manier kreeg elk object een segmentatie-masker binnen elke videoframe.
-Daarna werden deze segmentatie-maskers gefilterd op basis van de blikpunten van de deelnemer doorheen de video.
+% De verzamelde data uit het experiment werd gelabeld met behulp van een semi-automatische labeling-tool die ontwikkeld werd binnen de PoC.
+% Binnen elke opname werd er op elk object een aantal maal geklikt, waarna de applicatie het object doorheen de video volgde.
+% Op deze manier kreeg elk object een segmentatie-masker binnen elke videoframe.
+% Daarna werden deze segmentatie-maskers gefilterd op basis van de blikpunten van de deelnemer doorheen de video.
 
-Op die manier werd een dataset opgebouwd die voor elk frame informatie bevat over welke objecten effectief bekeken werden.
-Aan de hand van deze informatie kon er ook berekend worden hoelang een deelnemer naar elk object gekeken had.
+% Op die manier werd een dataset opgebouwd die voor elk frame informatie bevat over welke objecten effectief bekeken werden.
+% Aan de hand van deze informatie kon er ook berekend worden hoelang een deelnemer naar elk object gekeken had.
 
-Ter controle van de labelingkwaliteit werd automatisch een video gegenereerd waarin per frame het segmentatiemasker, de bounding box, het objectlabel en het blikpunt visueel weergegeven werden.
-Deze video werd manueel nagekeken om mogelijke labelingfouten op te sporen en de betrouwbaarheid van de dataset te waarborgen.
+% Ter controle van de labelingkwaliteit werd automatisch een video gegenereerd waarin per frame het segmentatiemasker, de bounding box, het objectlabel en het blikpunt visueel weergegeven werden.
+% Deze video werd manueel nagekeken om mogelijke labelingfouten op te sporen en de betrouwbaarheid van de dataset te waarborgen.
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.8\textwidth]{voorbeeld_labeling_validatie.png}
-  \caption[]{\label{fig:object-detection}Voorbeeld van een frame in een video voor labeling-validatie. Hier kijkt de deelnemer naar een scherm, waarbij het segmentatiemasker, de bounding box, het blikpunt en het objectlabel weergegeven worden.}
-\end{figure}
-
+% \begin{figure}[H]
+%   \centering
+%   \includegraphics[width=0.8\textwidth]{voorbeeld_labeling_validatie.png}
+%   \caption[]{\label{fig:object-detection}Voorbeeld van een frame in een video voor labeling-validatie. Hier kijkt de deelnemer naar een scherm, waarbij het segmentatiemasker, de bounding box, het blikpunt en het objectlabel weergegeven worden.}
+% \end{figure}
 
 \section{Analyse van de Experimentele Data}
 
-\subsection{Architectuur}
+Tenslotte werd de verzamelde data geanalyseerd met behulp van verschillende computer vision technieken.
+De focus lag op het evalueren van de betrouwbaarheid van de analyses, door ze te vergelijken met de handmatig gelabelde grondwaarheid die tijdens het experiment was verzameld.
+De resultaten van deze evaluatie worden gepresenteerd in Hoofdstuk~\ref{ch:analyse}.
 
-\subsection{Analyse via een Vector Index}
-
-\subsection{Analyse via YOLOv11 Classificatie}
+TODO: dit deel uitbreiden

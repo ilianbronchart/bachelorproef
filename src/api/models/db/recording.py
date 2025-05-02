@@ -10,7 +10,7 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from src.config import RECORDINGS_PATH
-from src.db.db import Base, engine
+from src.api.db import Base, engine
 from src.utils import download_file
 
 if TYPE_CHECKING:

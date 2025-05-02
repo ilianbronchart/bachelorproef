@@ -8,7 +8,7 @@ from src.aliases import UInt8Array
 from src.config import (
     Sam2Checkpoints,
 )
-from src.db.models.calibration import Annotation
+from src.api.models.db.calibration import Annotation
 from src.api.controllers.sam2_controller import (
     load_sam2_video_predictor,
 )

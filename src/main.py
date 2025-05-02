@@ -8,8 +8,8 @@ import src.api.controllers.glasses_controller as glasses
 from src.api.models import App, GlassesConnectionContext, Request
 from src.api.routes import labeling, recordings, simrooms
 from src.config import Template, templates
-from src.db.db import Base, engine
-from src.db.models import Recording
+from src.api.db import Base, engine
+from src.api.models.db import Recording
 
 
 @asynccontextmanager

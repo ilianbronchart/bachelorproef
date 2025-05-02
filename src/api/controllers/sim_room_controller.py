@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session
 
 from src.db import engine
-from src.db.models import SimRoomClass
+from src.api.models.db import SimRoomClass
 
 
 @dataclass

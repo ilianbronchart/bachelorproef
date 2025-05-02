@@ -5,8 +5,8 @@ from src.api.models import Request, SimRoomsContext
 from src.api.models.context import ClassListContext
 from src.config import Template, templates
 from src.db import Recording, SimRoom, SimRoomClass
-from src.db.db import engine
-from src.db.models import CalibrationRecording
+from src.api.db import engine
+from src.api.models.db import CalibrationRecording
 from src.utils import is_hx_request
 
 router = APIRouter(prefix="/simrooms")

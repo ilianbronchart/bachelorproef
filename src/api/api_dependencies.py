@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.api.models import Labeler, Request
 from src.db import engine
-from src.db.models.calibration import SimRoomClass
+from src.api.models.db.calibration import SimRoomClass
 
 
 def get_labeler(request: Request) -> Labeler | RedirectResponse:

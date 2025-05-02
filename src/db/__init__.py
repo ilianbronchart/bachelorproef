@@ -1,12 +1,12 @@
-from .db import Base, engine
-from .models.calibration import (
+from ..api.db import Base, engine
+from .db.calibration import (
     Annotation,
     CalibrationRecording,
     PointLabel,
     SimRoom,
     SimRoomClass,
 )
-from .models.recording import Recording
+from .db.recording import Recording
 
 __all__ = [
     "Annotation",

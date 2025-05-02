@@ -47,7 +47,7 @@ Historisch gezien steunde medische training op observatie en zelfrapportage om d
 Deze methoden hebben echter beperkingen door gebrek aan nauwkeurigheid in de betrouwbare rapportage van visuele aandacht en kijkgedrag van studenten.
 Recent onderzoek door \textcite{Alasdair2017} toont aan dat individuen over het algemeen weinig bewust zijn van hun eigen oogbewegingen, 
 waardoor zelfrapportage een onbetrouwbare maatstaf is om na te gaan of kritische elementen tijdens een simulatie effectief zijn waargenomen.
-\newline \par
+
 Eyetracking-technologie biedt daarentegen een objectieve methode om visuele aandacht en kijkgedrag in kaart te brengen. 
 % TODO: Niet duidelijk over wie het hier gaat ("mensen"?)
 % Mensen volgen en interpreteren instinctief de blikrichting omdat ogen veel informatie over aandacht, emotionele toestanden en cognitieve processen communiceren \autocite{Frischen2007}.
@@ -59,15 +59,15 @@ Eyetracking-technologie biedt daarentegen een objectieve methode om visuele aand
 Eyetrackers kunnen worden onderverdeeld in twee hoofdtypes: screen-based of mobile devices \autocite{PAUSZEK2023100031}.
 Screen-based eyetrackers worden gebruikt in omgevingen waar de gebruiker stationair blijft en naar een scherm kijkt, zoals een computermonitor .
 Mobile eyetrackers zijn draagbare toestellen waarmee gebruikers zich vrij kunnen bewegen terwijl hun kijkgedrag nog steeds wordt gevolgd.
-\newline \par
+
 In de context van medische training en simulatie, waarbij studenten vaak fysieke handelingen uitvoeren en zich door een ruimte verplaatsen, zijn mobile eyetrackers de meest geschikte optie.
 Hierbij zet de student de bril op en kan er na een initiële kalibratie vrij bewogen worden.
 Toch zijn er enkele nadelen verbonden aan mobile eyetrackers \autocite{PAUSZEK2023100031}. 
 Plotselinge bewegingen kunnen ervoor zorgen dat de bril verschuift waardoor de initiële kalibratie verstoord wordt.
 Daarnaast is het belangrijk om consistente belichting te hebben om nauwkeurige data te verkrijgen, wat in sommige omgevingen moeilijk kan zijn.
-Meer hierover in sectie \ref{best-practices}.
-\newline \par
-In het Zorglab van de HOGENT wordt specifiek gebruik gemaakt van de Tobii Pro Glasses 3\footnote{\url{https://www.tobii.com/products/eye-trackers/wearables/tobii-pro-glasses-3}}. 
+Meer hierover in addendum \ref{best-practices}.
+
+In het Zorglab van de HOGENT wordt specifiek gebruik gemaakt van de Tobii Pro Glasses 3 \autocite{tobii_pro_glasses_3}. 
 Dit apparaat is een mobiele eyetracker die een scene camera heeft die het beeld voor de gebruiker registreert, evenals vier eye cameras die de oogbewegingen van de gebruiker opnemen.
 
 \subsection{Analyse van eyetracking data}
@@ -76,32 +76,32 @@ Oogbewegingen kunnen breed worden onderverdeeld in verschillende types, waarbij 
 Fixaties zijn periodes waarin de ogen relatief stabiel blijven en zich richten op een specifiek visueel doel of gebied.
 Deze duren meestal tussen de 100 en 600 milliseconden, hoewel deze duur afhankelijk is van contextuele factoren.
 Tijdens fixaties wordt visuele informatie actief gecodeerd en verwerkt, wat ze belangrijk maakt voor cognitieve functies zoals objectherkenning, lezen en besluitvorming.
-\newline \par
+
 Saccades, daarentegen, zijn snelle oogbewegingen die plaatsvinden tussen fixaties.
 Deze duren meestal tussen de 20 en 80 milliseconden en dienen om de blik te herpositioneren naar een nieuw aandachtspunt.
 Tijdens een saccade wordt de verwerking van visuele informatie onderdrukt, een fenomeen dat bekendstaat als saccadic suppression, wat bewegingsonscherpte voorkomt en zorgt voor een vloeiende perceptie van de omgeving.
 In deze zin komen fixaties overeen met actieve informatieverwerking, terwijl saccades dienen om informatie op te zoeken door de blik naar relevante stimuli te verplaatsen.
-\newline \par
+
 De volgorde en het patroon van fixaties en saccades over tijd, scanpaths genoemd, geven inzicht in de dynamiek van visuele aandacht en cognitieve verwerking \autocite{PAUSZEK2023100031}.
-\newline \par
+
 Aangezien we geïnteresseerd zijn in welke objecten worden bekeken en hoe lang, richten we ons op het detecteren van het Aandachtsgebied (Area of Interest, AOI) tijdens fixaties gedurende de opname.
 Een AOI is een geselecteerd stimulusgebied, element of regio binnen het visuele veld dat relevant is voor de onderzoeker en dient als een filter waarmee eyetracking-metrieken kunnen worden berekend en gerapporteerd \autocite{PAUSZEK2023100031}.
 Een aantal concrete voorbeelden van AOI's in de context van het Zorglab zijn: een colafles op de nachtkast van een diabetespatiënt, een infuuspomp in een ziekenhuiskamer of een foto van een familielid op de kamer van een patiënt.
 % In figuur \ref{fig:voorbeeld-aoi} is een voorbeeld van een AOI te zien, in dit geval een fotokader binnen de simulatieruimte van het Zorglab.
-\newline \par
+
 
 \subsection{Bestaande oplossingen voor eyetracking data-analyse}
 
 Analyse van eyetracking data is een complex proces dat verschillende stappen omvat. Daarom zijn er verschillende bestaande softwarepakketten beschikbaar die deze stappen automatiseren en visualiseren.
-\newline \par
+
 Een van de meest gebruikte softwarepakketten is Tobii Pro Lab, die functies biedt voor het importeren, analyseren en visualiseren van eyetracking data.
-Deze software kan diverse metrieken\footnote{\url{https://connect.tobii.com/s/article/understanding-tobii-pro-lab-eye-tracking-metrics}} berekenen rond fixaties, 
-saccades en AOI's, en biedt een scala aan visualisaties\footnote{\url{https://connect.tobii.com/s/article/Visualizations-for-Tobii-Pro-Lab}} zoals heatmaps, en scanpaths.
+Deze software kan diverse metrieken \autocite{tobii_pro_lab_metrics} berekenen rond fixaties, 
+saccades en AOI's, en biedt een scala aan visualisaties \autocite{tobii_pro_lab_visualizations} zoals heatmaps, en scanpaths.
 Heatmaps tonen de dichtheid van fixaties op een bepaald gebied, terwijl scanpaths de volgorde van fixaties en saccades over tijd visualiseren.
 Echter is er binnen Tobii Pro Lab geen functionaliteit om automatisch AOI's te detecteren, waardoor men dit handmatig moet doen voor elke opname.
 Bovendien is het een commercieel product met een jaarlijkse licentie.
 De limitaties van Tobii Pro Lab zorgen ervoor dat het niet geschikt is voor de noden van het Zorglab.
-\newline \par
+
 Een ander softwarepakket dat vaak wordt gebruikt is iMotions, een alles-in-één platform voor het verzamelen, analyseren en visualiseren van biometrische data.
 Deze software wordt opgedeeld in verschillende modules, waaronder een eyetracking module en een `Automated AOI'\footnote{\url{https://imotions.com/products/imotions-lab/modules/automated-aoi/}} module.
 Bij iMotions kan de gebruiker klikken op een AOI om deze handmatig te definiëren, waarna de AOI automatisch gevolgd wordt in de rest van de opname.
@@ -127,8 +127,11 @@ De vooruitgang in deep learning heeft geleid tot een aanzienlijke verbetering in
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\textwidth]{objectdetection.png}
-  \caption[]{\label{fig:object-detection}Voorbeeld van objectdetectie van verschillende objecten in een afbeelding.}
-  \source{\url{https://djl.ai/examples/docs/object_detection.html}}
+  \caption[]{\label{fig:object-detection}
+  Voorbeeld van objectdetectie van verschillende objecten in een afbeelding. 
+  Hier worden een brede selectie aan objecten gedetecteerd, elk met een label, een bounding box en een bijbehorend masker (segmentatie).
+  De objecten in de afbeelding zijn deel van het experiment in het Zorglab die later in deze bachelorproef verder besproken wordt.
+  }
 \end{figure}
 
 \subsubsection{Van R-CNN naar Moderne Objectdetectiemodellen}
@@ -145,12 +148,12 @@ You Only Look Once (YOLO), geïntroduceerd door \textcite{Redmon2016}, was een b
 In plaats van afbeeldingen stap voor stap te analyseren zoals eerdere methoden (bijvoorbeeld Region-based Convolutional Neural Networks, R-CNN), verwerkt YOLO de gehele afbeelding tegelijkertijd in één analyse. 
 Dit zorgt ervoor dat YOLO zeer snel objecten kan herkennen in \textit{real-time}, wat het ideaal maakt voor toepassingen waarbij snelheid belangrijk is.
 Omdat YOLO de gehele afbeelding in één keer analyseert, wordt contextuele informatie zoals waar objecten zich bevinden tegenover elkaar, beter benut.
-\newline \par
+
 Toch heeft YOLO ook enkele nadelen. Het model heeft moeite met het detecteren van kleine en dicht opeengepakte objecten, wat kan leiden tot gemiste of overlappende detecties. 
 Volgens onderzoek van \textcite{Huang2024} presteert YOLOv8 minder goed bij het detecteren van objecten kleiner dan 8x8 pixels. 
 Dit komt doordat de standaard detectielaag van YOLO onvoldoende gedetailleerd is om kleine objecten nauwkeurig te detecteren. 
 Hoewel optimalisaties zoals het toevoegen van extra detectielagen voor kleinere objecten verbeteringen bieden, blijft YOLO gevoelig voor problemen zoals overlappende en gemiste detecties bij dicht op elkaar geplaatste objecten.
-\newline \par
+
 Over de jaren heen zijn er verschillende versies van YOLO uitgebracht, waarvan de meest recente YOLOv11 is \autocite{Khanam2024}.
 Deze modellen zijn beschikbaar via Ultralytics met een betaalde licentie\footnote{\url{https://www.ultralytics.com/license}} voor commercieel gebruik, maar zijn ook gratis beschikbaar voor open-source projecten en onderzoek.
 
@@ -166,7 +169,10 @@ Het verschil tussen deze vormen van segmentatie wordt geïllustreerd in figuur \
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\textwidth]{segmentation.png}
-  \caption[]{\label{fig:segmentation}Verschil tussen instance, semantic en panoptic segmentation \autocite{Kirillov2019}.}
+  \caption[]{\label{fig:segmentation}
+  Verschil tussen instance, semantic en panoptic segmentation \autocite{Kirillov2019}.
+  % TODO: add more info about the figure
+  }
 \end{figure}
 
 \subsection{Transformer-gebaseerde Objectdetectie}
@@ -176,14 +182,14 @@ Recentelijk zijn transformer-gebaseerde modellen in opkomst binnen Computer Visi
 \subsubsection{DETR}
 
 Een belangrijk voorbeeld hiervan is DETR (DEtection TRansformer), geïntroduceerd door \textcite{Carion2020}.
-\newline \par
+
 Transformer-gebaseerde modellen zijn interessant vanwege hun vermogen om aandacht (attention) te richten op belangrijke delen van een afbeelding. 
 Dit mechanisme stelt het model in staat om relaties tussen objecten en context beter te begrijpen.
 Anders dan traditionele modellen gebruikt DETR geen vooraf bepaalde ankerpunten of zogenaamde `region proposals', om objecten te detecteren. 
 In plaats daarvan behandelt DETR objectdetectie rechtstreeks als een voorspellingstaak, waarbij een afbeelding direct wordt verwerkt om objecten en hun locaties te identificeren.
 Het DETR-model bestaat uit twee onderdelen: een \textit{encoder} en een \textit{decoder}. De encoder analyseert eerst de hele afbeelding om belangrijke kenmerken te onderscheiden en de context van de afbeelding te begrijpen. 
 Vervolgens gebruikt de decoder specifieke `object queries' om de exacte locatie en de categorie van objecten te bepalen.
-\newline \par
+
 Een voordeel van DETR is dat het geen aparte stap nodig heeft om overlappende voorspellingen te verwijderen, hoewel dit soms in het beginstadium van voorspellingen wel nuttig kan zijn.
 Toch heeft DETR ook enkele beperkingen. Zo presteert het model minder goed bij het detecteren van zeer kleine objecten door beperkte resolutie. 
 Desondanks laat het model indrukwekkende resultaten zien in situaties die het tijdens training nog nooit heeft gezien, bijvoorbeeld wanneer er meerdere soortgelijke objecten in één afbeelding staan.
@@ -202,14 +208,14 @@ Deze innovaties zorgen ervoor dat DINO aanzienlijk beter presteert dan eerdere D
 
 In 2023 introduceerde \textcite{Liu2023} Grounding DINO, een uitbreiding op DINO gericht op \textit{open-set objectdetectie}. Dit houdt in dat het model objecten kan detecteren die tijdens de training niet expliciet zijn aangeleerd. 
 Grounding DINO integreert taalbegrip met visuele detectie, waardoor het mogelijk wordt om objecten op basis van natuurlijke taal te identificeren en te lokaliseren.
-\newline \par
+
 Visuele kenmerken uit een afbeelding worden gecombineerd met taalkundige informatie uit teksten, zoals categorieën of beschrijvende zinnen. 
 Dit gebeurt via een \textit{feature enhancer}, die beeld- en tekstinformatie samenbrengt, en een taalgestuurde query-selectiemethode, waarmee relevante beeldgebieden worden geselecteerd op basis van tekstuele input. 
 Vervolgens gebruikt het model een \textit{cross-modality decoder}, waarin informatie uit beide modaliteiten verder gecombineerd wordt voor nauwkeurigere detecties.
-\newline \par
+
 Het model wordt getraind op grootschalige datasets, bestaande uit foto's met bijbehorende beschrijvingen en labels. 
 Hierdoor leert Grounding DINO generaliseren naar nieuwe, niet eerder getoonde objecten. Dit stelt het model in staat om, zonder verdere training, objecten te herkennen uit tekstuele beschrijvingen die het nog nooit eerder heeft gezien.
-\newline \par
+
 Hoewel de resultaten van Grounding DINO veelbelovend zijn, is het model niet geschikt voor real-time toepassingen, of toepassingen waarbij heel veel afbeeldingen moeten worden verwerkt \autocite{Son2024}.
 Omdat het model gebaseerd is op een transformer-architectuur, en het veel klassen moet kunnen detecteren waardoor het een groot model is, presteert het meer dan 30 keer trager in vergelijking met YOLO modellen.
 
@@ -224,21 +230,21 @@ Toch willen we in deze sectie dieper ingaan op een aantal modellen die specifiek
 In 2023 introduceerde Meta het open-source Segment Anything Model (SAM), een model ontworpen om objecten in afbeeldingen te segmenteren op basis van gebruikersinput, ook wel prompts genoemd \autocite{Kirillov2023}. 
 Het doel van SAM is om flexibele en veelzijdige segmentatie mogelijk te maken, waarbij gebruikers eenvoudig kunnen aangeven welke delen van een afbeelding ze willen segmenteren via punten, 
 rechthoeken, maskers of zelfs korte tekstuele beschrijvingen. Dit wordt het `promptable segmentation'-principe genoemd.
-\newline \par
+
 SAM bestaat uit drie belangrijke onderdelen: een beeldencoder, een promptencoder en een masker-decoder. 
 De beeldencoder verwerkt de afbeelding één keer en creëert een zogenoemde image embedding, een compacte representatie van de afbeelding waarin belangrijke kenmerken zijn opgeslagen. 
 Vervolgens wordt de prompt (zoals een punt of rechthoek) verwerkt door de promptencoder en gecombineerd met de representatie uit de beeldencoder. 
 De masker-decoder gebruikt vervolgens deze gecombineerde informatie om het uiteindelijke masker te genereren dat het gewenste object nauwkeurig identificeert.
-\newline \par
+
 Een opvallend aspect van SAM is het vermogen om ambiguïteit te herkennen en daarmee om te gaan. 
 Wanneer één prompt meerdere mogelijke interpretaties heeft, bijvoorbeeld een punt dat zowel naar een persoon als een kledingstuk verwijst, kan SAM meerdere segmentatiemaskers genereren die elk een mogelijke interpretatie weergeven. 
 Vervolgens wordt voor elk masker een betrouwbaarheidswaarde berekend, waarmee het model aangeeft welk masker het meest waarschijnlijk overeenkomt met de intentie van de gebruiker.
-\newline \par
+
 De kracht van SAM ligt in zijn brede toepasbaarheid zonder dat verdere training vereist is (zero-shot generalisatie). 
 Dit betekent dat SAM in staat is om direct te worden ingezet voor nieuwe beelden en taken die het nog niet eerder heeft gezien, wat erg nuttig is voor interactieve toepassingen en snelle analyses.
 Hoewel SAM indrukwekkende resultaten levert en een grote stap vooruit betekent voor segmentatiemodellen, heeft het ook enkele beperkingen. 
 De belangrijkste is dat het model, hoewel snel genoeg voor interactieve toepassingen, minder geschikt is voor real-time toepassingen met zeer hoge snelheden zoals videostreaming, vanwege de benodigde rekencapaciteit voor de beeldverwerking.
-\newline \par
+
 Het jaar nadien werd een verbeterde versie van het model uitgebracht, SAM 2 \autocite{Ravi2024}. 
 SAM 2 voegt belangrijke verbeteringen toe, zoals een uitbreiding naar videosegmentatie met behulp van een geheugenmodule, waardoor het model eerdere prompts en segmentaties kan onthouden en toepassen op opeenvolgende videoframes. 
 Dit maakt SAM2 heel interessant voor de toepassingen binnen het Zorglab, waarbij het volgen van objecten doorheen de video een belangrijke rol kan spelen.
@@ -249,7 +255,7 @@ Daarnaast is SAM 2 ongeveer zes keer sneller bij het segmenteren van afbeeldinge
 Zou het kunnen dat SAM nog sneller kan? 
 Dat is precies wat \textcite{Zhao2023} zich afvroegen bij het ontwikkelen van FastSAM, een verbeterde versie van SAM die tot 50 keer sneller is dan het originele model, zonder veel in te boeten aan nauwkeurigheid.
 FastSAM bereikt dit door het segmentatieproces op te splitsen in twee opeenvolgende stappen: het segmenteren van alle objecten in een afbeelding en vervolgens het selecteren van specifieke objecten aan de hand van een gebruikersprompt.
-\newline \par
+
 In de eerste fase, genaamd \textit{all-instance segmentation}, maakt FastSAM gebruik van een CNN gebaseerd op het YOLOv8-seg model, een objectdetector met een speciale tak voor \textit{instance segmentation}. 
 De tweede fase, de \textit{prompt-guided selection}, gebruikt vervolgens de gegenereerde segmentatiemaskers uit de eerste fase en selecteert specifiek het gewenste gebied op basis van verschillende prompts. 
 Deze prompts kunnen bestaan uit punten (\textit{point prompts}), rechthoeken (\textit{box prompts}) of zelfs tekstuele beschrijvingen (\textit{text prompts}). 
@@ -257,7 +263,7 @@ Bij een punt-prompt wordt bijvoorbeeld gekeken welk segmentatiemasker het opgege
 Zo kunnen we bij eye-tracking data bijvoorbeeld een punt-prompt gebruiken op basis van de blikrichting van de gebruiker om objecten te selecteren uit een all-instance segmentatie.
 Merk op dat hier geen klassen worden toegewezen aan objecten, enkel de segmentatie van objecten wordt bepaald. 
 Daarom zullen segmentatiemodellen zoals FastSAM en SAM moeten worden gecombineerd met objectdetectiemodellen om na te gaan welke objecten er in de afbeelding aanwezig zijn.
-\newline \par
+
 FastSAM is beschikbaar in de Model Hub van Ultralytics\footnote{\url{https://docs.ultralytics.com/models/fast-sam/}} en kan gratis worden gebruikt voor open-source projecten en onderzoek.
 
 \subsection{Image Embedding}
@@ -267,7 +273,7 @@ Image embedding is een techniek waarbij afbeeldingen worden omgezet naar numerie
 Deze vectoren zijn eigenlijk een reeks getallen die belangrijke visuele kenmerken en eigenschappen van een afbeelding beschrijven. 
 Ze kunnen worden beschouwd als een compacte, numerieke `vingerafdruk' van een afbeelding, waarbij visueel vergelijkbare afbeeldingen corresponderen met vectoren die dicht bij elkaar liggen in de hoog-dimensionale ruimte.
 Enkele voorbeelden van de mogelijkheden van image embeddings zijn te zien in figuur \ref{fig:dinov2}.
-\newline \par
+
 Deze techniek is vooral interessant voor toepassingen waarbij men op een efficiënte manier wil bepalen om welk object het gaat, zonder hiervoor telkens nieuwe detectiemodellen te moeten trainen. 
 Wanneer een selectie van objecten via segmentatie (zoals met SAM) gedetecteerd wordt, kan een image embedding gebruikt worden om automatisch te bepalen om welk specifiek object het gaat. 
 Dit gebeurt door de gegenereerde vector van het gedetecteerde object te vergelijken met een vooraf opgebouwde database van bekende objecten. 
@@ -284,11 +290,11 @@ Dit betekent dat afbeeldingen niet alleen herkend kunnen worden op basis van vis
 DINOv2, geïntroduceerd in 2024 door \textcite{Oquab2024}, bouwt voort op eerdere modellen zoals DETR en DINO, met verbeteringen in nauwkeurigheid en toepasbaarheid zonder extra finetuning. 
 Net zoals eerdere embedding-modellen genereert DINOv2 numerieke representaties van afbeeldingen, maar onderscheidt zich door een sterk verbeterde generalisatiekracht. 
 Dit betekent dat het model beter in staat is om nieuwe objecten en situaties te herkennen zonder verdere training.
-\newline \par
+
 DINOv2 is gebaseerd op transformer-architecturen en maakt gebruik van self-supervised learning (SSL). 
 Hierbij leert het model zelfstandig relevante kenmerken van afbeeldingen zonder gebruik te maken van expliciete labels. 
 In tegenstelling tot veel eerdere modellen presteert DINOv2 zowel goed op algemene taken, zoals het herkennen van categorieën van objecten (auto's of vliegtuigen), als op taken waarbij het exacte exemplaar (een specifiek gebouw of schilderij) geïdentificeerd moet worden. 
-\newline \par
+
 Daarnaast biedt DINOv2 ook goede prestaties bij segmentatietaken. Door een eenvoudige lineaire laag aan het model toe te voegen, kunnen zeer goede segmentatiemaps worden gegenereerd zonder verdere optimalisatie of training van het volledige model. 
 Met name bij gebruik van zogenaamde multiscale augmentaties (waarbij het model de afbeelding op meerdere resoluties analyseert), 
 behaalt DINOv2 segmentatieprestaties die vergelijkbaar zijn met gespecialiseerde segmentatiemodellen zoals SAM en FastSAM.
@@ -302,14 +308,14 @@ behaalt DINOv2 segmentatieprestaties die vergelijkbaar zijn met gespecialiseerde
 \section{Eyetracking en Computer Vision}
 
 Ten slotte is het interessant om stil te staan bij recente implementaties van Computer Vision in combinatie met eyetracking-technologie.
-\newline \par
+
 In 2023 onderzochten \textcite{CederinBremberg2023} de mogelijkheden van bestaande computer vision modellen om automatisch te detecteren welke objecten een gebruiker bekijkt tijdens een eyetracking-sessie.
 Net zoals deze bachelorproef gebruikten ze de Tobii Pro Glasses 3, wat hun onderzoek interessant maakt als referentie voor het omgaan met de eyetracking data van deze specifieke bril.
 Een probleem bij hoofd-gemonteerde eyetrackers is dat er vaak bewegingsruis aanwezig is, zeker als het hoofd van de gebruiker veel beweegt. Dit maakt het toepassen van computer vision modellen moeilijker.
 In hun onderzoek vergeleken ze twee ruisreductiemodellen, namelijk Restormer en DeblurGAN-v2, om de kwaliteit van de eyetracking data te verbeteren. Ze concludeerden dat DeblurGAN-v2 betere resultaten opleverde dan Restormer.
 Ook onderzochten ze de prestatieverschillen tussen YOLOv8 en DINO modellen op de eyetracking data. Uit hun resultaten blijkt dat DINO beter presteert dan YOLOv8 in elk testscenario. Ze concludeerden echter ook dat 
 DINO modellen een langere rekentijd nodig hebben dan de YOLO modellen.
-\newline \par
+
 SAM werd ook onderzocht in combinatie met eyetracking data door \textcite{Wang2023} in hun applicatie genaamd `GazeSAM'. Dit onderzoek richtte zich op het segmenteren van de objecten waarnaar de gebruiker kijkt tijdens een eyetracking-sessie.
 Een belangrijk onderschijd tussen de context van dit onderzoek en deze bachelorproef is dat er gebruik gemaakt werd van screen-based eyetracking, waarbij de gebruiker naar een computerscherm keek in plaats van een fysieke omgeving.
 De blikrichting van de gebruiker werd gebruikt als basis voor een punt-prompt, waarmee SAM de objecten in de afbeelding kon segmenteren. Het bleek dat SAM soms moeilijkheden had met het segmenteren van medische afbeeldingen, omdat 

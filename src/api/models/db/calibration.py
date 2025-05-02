@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, Session, joinedload, mapped_column, relations
 from sqlalchemy_serializer import SerializerMixin
 
 from src.config import LABELING_ANNOTATIONS_DIR, LABELING_RESULTS_PATH
-from src.db.db import Base, engine
+from src.api.db import Base, engine
 from src.utils import generate_pleasant_color
 
 from .recording import Recording
