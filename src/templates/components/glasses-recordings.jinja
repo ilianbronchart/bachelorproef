@@ -65,7 +65,7 @@
               <td class="text-center">
                 <button class="btn btn-primary pt-1 px-2"
                         hx-trigger="click"
-                        hx-get="/recordings/glasses/{{ recording.uuid }}/download"
+                        hx-get="/recordings/glasses/{{ recording.id }}/download"
                         hx-indicator="find .spinner, find .bi"
                         hx-target="#local-recordings"
                         hx-target-4xx="#glasses-recordings-error"

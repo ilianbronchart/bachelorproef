@@ -9,14 +9,11 @@ from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sqlalchemy.orm import Session
 
 from src.aliases import UInt8Array
-from src.api.controllers.sam2_controller import (
-    load_sam2_predictor,
-    predict_sam2,
-)
 from src.api.db import engine
 from src.api.jobs.labeler_tracking import TrackingJob
 from src.api.models.context import LabelingContext, Request
-from src.api.models.db.calibration import Annotation, CalibrationRecording, SimRoomClass
+from src.api.models.db import Annotation, CalibrationRecording, SimRoomClass
+from src.api.services import sam2_service
 from src.config import (
     LABELING_ANNOTATIONS_DIR,
     RECORDINGS_PATH,
@@ -33,7 +30,7 @@ class Labeler:
     def __init__(self, calibration_recording: CalibrationRecording):
         self.calibration_recording: CalibrationRecording = calibration_recording
         self.video_path: Path = RECORDINGS_PATH / (
-            calibration_recording.recording_uuid + ".mp4"
+            calibration_recording.recording_id + ".mp4"
         )
 
         self.frames_path: Path = Path(tempfile.mkdtemp())
@@ -42,7 +39,7 @@ class Labeler:
         self.current_frame = self.get_frame(0)
         self.current_frame_idx = 0
 
-        self.image_predictor: SAM2ImagePredictor = load_sam2_predictor(
+        self.image_predictor: SAM2ImagePredictor = sam2_service.load_predictor(
             Sam2Checkpoints.LARGE
         )
 
@@ -63,7 +60,7 @@ class Labeler:
         return LabelingContext(
             request=request,
             sim_room_id=self.calibration_recording.sim_room_id,
-            recording_uuid=self.calibration_recording.recording_uuid,
+            recording_id=self.calibration_recording.recording_id,
             show_inactive_classes=self.show_inactive_classes,
         )
 
@@ -199,7 +196,7 @@ class Labeler:
     def predict_image(
         self, annotation: Annotation, points: list[tuple[int, int]], labels: list[int]
     ) -> None:
-        mask, box = predict_sam2(
+        mask, box = sam2_service.predict(
             predictor=self.image_predictor,
             points=points,
             points_labels=labels,

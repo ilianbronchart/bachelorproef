@@ -5,10 +5,8 @@ from pathlib import Path
 import numpy as np
 import torch
 from src.aliases import UInt8Array
-from src.api.controllers.sam2_controller import (
-    load_sam2_video_predictor,
-)
-from src.api.models.db.calibration import Annotation
+from src.api.models.db import Annotation
+from src.api.services import sam2_service
 from src.config import (
     Sam2Checkpoints,
 )
@@ -35,7 +33,7 @@ class TrackingJob:
 
     def initialize(self):
         # Load the video predictor and initialize the inference state
-        self.video_predictor = load_sam2_video_predictor(Sam2Checkpoints.LARGE)
+        self.video_predictor = sam2_service.load_video_predictor(Sam2Checkpoints.LARGE)
         self.inference_state = self.video_predictor.init_state(
             video_path=str(self.frames_path), async_loading_frames=True
         )  # type: ignore[no-untyped-call]

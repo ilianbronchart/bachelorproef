@@ -2,6 +2,7 @@ services:
   app:
     environment:
       - DEBUG_MODE=true
+      - PYTHONUNBUFFERED=1 # make sure logs are printed to the console
     build:
       context: .
       dockerfile: Dockerfile

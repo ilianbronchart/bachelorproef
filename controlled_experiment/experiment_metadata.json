@@ -421,6 +421,6 @@
             ]
         }
     },
-    "labeling_same_background_uuid": "d6fd0aed-b901-4863-bad8-7910dad693e0",
-    "labeling_diff_background_uuid": "73ce8a30-ccc6-4514-b978-f8b5844be16b"
+    "labeling_same_background_id": "d6fd0aed-b901-4863-bad8-7910dad693e0",
+    "labeling_diff_background_id": "73ce8a30-ccc6-4514-b978-f8b5844be16b"
 }

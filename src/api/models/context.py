@@ -1,9 +1,13 @@
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, no_type_check
+from typing import TYPE_CHECKING, Any
 
 from fastapi import Request as FastAPIRequest
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-from src.api.models.db import CalibrationRecording, Recording, SimRoom, SimRoomClass
+from src.api.models.pydantic import (
+    RecordingDTO,
+    SimRoomClassDTO,
+    SimRoomDTO,
+)
 from src.config import Template
 
 if TYPE_CHECKING:
@@ -18,84 +22,73 @@ class Request(FastAPIRequest):
         return self._app
 
 
-@dataclass
-class BaseContext:
-    request: Request
+class BaseContext(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def to_dict(self, ignore: tuple[str] = ("request",)) -> dict[str, Any]:
-        dict_ = {k: v for k, v in self.__dict__.items() if k not in ignore}
-        dict_["request"] = self.request
-        return dict_
+    # Make request a private attribute (won't be serialized in `.dict()`)
+    _request: Request = PrivateAttr()
+
+    def __init__(self, **data):
+        request = data.pop("_request", None)
+        super().__init__(**data)
+        self._request = request
+
+    def model_dump(self, **kwargs):
+        base = super().model_dump(**kwargs)
+        base["request"] = self._request
+        return base
 
 
-@dataclass
+class GlassesConnectionContext(BaseContext):
+    glasses_connected: bool
+    battery_level: float
+
+
 class RecordingsContext(BaseContext):
-    recordings: list[Recording] = field(default_factory=list)
+    recordings: list[RecordingDTO] = Field(default_factory=list)
     glasses_connected: bool = False
     failed_connection: bool = False
     content: str = Template.RECORDINGS
 
 
-@dataclass
 class SimRoomsContext(BaseContext):
-    recordings: list[Recording] = field(default_factory=list)
-    sim_rooms: list[SimRoom] = field(default_factory=list)
-    selected_sim_room: SimRoom | None = None
-    calibration_recordings: list[CalibrationRecording] = field(default_factory=list)
-    classes: list[SimRoomClass] = field(default_factory=list)
+    recordings: list[RecordingDTO] = Field(default_factory=list)
+    sim_rooms: list[SimRoomDTO] = Field(default_factory=list)
+    selected_sim_room: SimRoomDTO | None = None
     content: str = Template.SIMROOMS
 
-    @no_type_check
-    def to_dict(self) -> dict[str, Any]:
-        dict_ = super().to_dict(ignore=["classes"])
-        dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
-        return dict_
 
-
-@dataclass
 class ClassListContext(BaseContext):
-    selected_sim_room: SimRoom
-    classes: list[SimRoomClass]
-
-    @no_type_check
-    def to_dict(self) -> dict[str, Any]:
-        dict_ = super().to_dict(ignore=["classes"])
-        dict_["classes"] = [cls_.to_dict() for cls_ in self.classes]
-        return dict_
+    selected_sim_room: SimRoomDTO
 
 
-@dataclass
 class LabelingContext(BaseContext):
     sim_room_id: int
-    recording_uuid: str
+    recording_id: str
     show_inactive_classes: bool
     content: str = Template.LABELER
 
 
-@dataclass
 class LabelingAnnotationsContext(BaseContext):
-    annotations: dict[str, Any] = field(default_factory=dict)
+    annotations: dict[str, Any] = Field(default_factory=dict)
 
 
-@dataclass
 class LabelingControlsContext(BaseContext):
     frame_count: int
     current_frame_idx: int
     selected_class_id: int
     selected_class_color: str = "#000000"
-    tracks: list[tuple[int, int]] = field(default_factory=list)
+    tracks: list[tuple[int, int]] = Field(default_factory=list)
     tracking_progress: float = 0.0
     is_tracking: bool = False
     update_canvas: bool = False
 
 
-@dataclass
 class LabelingClassesContext(BaseContext):
     selected_class_id: int
     sim_room_id: int
-    classes: list[SimRoomClass]
+    classes: list[SimRoomClassDTO]
 
 
-@dataclass
 class LabelingSettingsContext(BaseContext):
     show_inactive_classes: bool

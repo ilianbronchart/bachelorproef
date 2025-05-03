@@ -7,26 +7,25 @@ from sqlalchemy.orm import Session
 
 from src.api.db import Base, engine
 from src.api.models import App, Request
-from src.api.models.pydantic_context import GlassesConnectionContext
-from src.api.routes import recordings
+from src.api.models.context import GlassesConnectionContext
+from src.api.routes import recordings_route, simrooms_route
 from src.api.services import glasses_service, recordings_service
 from src.config import Template, templates
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
-    # Base.metadata.drop_all(bind=engine, tables=[PointLabel.__table__])
-    # Base.metadata.drop_all(bind=engine, tables=[Annotation.__table__])
-    Base.metadata.create_all(bind=engine)
     with Session(engine) as session:
         recordings_service.clean_recordings(session)
+
+    Base.metadata.create_all(bind=engine)
     yield
 
 
 app = App(lifespan=lifespan)  # type: ignore[no-untyped-call]
-app.include_router(recordings.router)
+app.include_router(recordings_route.router)
+app.include_router(simrooms_route.router)
 # app.include_router(labeling.router)
-# app.include_router(simrooms.router)
 
 
 @app.get("/", response_class=HTMLResponse)

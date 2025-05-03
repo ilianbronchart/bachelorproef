@@ -2,14 +2,9 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from src.api.exceptions import NotFoundError
 from src.api.models.pydantic import RecordingDTO
 from src.api.repositories import recordings_repo
 from src.config import RECORDINGS_PATH
-
-
-def delete(db: Session, recording_id: str) -> list[RecordingDTO]:
-    recordings_repo.delete(db, recording_id)
 
 
 def get(db: Session, recording_id: str) -> RecordingDTO:
@@ -39,10 +34,10 @@ def clean_recordings(db: Session, recordings_path: Path = RECORDINGS_PATH) -> No
     recordings = get_all(db)
     for recording in recordings:
         if not (recording.video_path.exists() and recording.gaze_data_path.exists()):
-            delete(db, recording.uuid)
+            recordings_repo.delete(db, recording.id)
 
-    # Delete files whose stem is not a valid recording uuid
-    valid_uuids = {str(recording.uuid) for recording in recordings}
+    # Delete files whose stem is not a valid recording id
+    valid_ids = {str(recording.id) for recording in recordings}
     for file in recordings_path.iterdir():
-        if file.is_file() and file.stem not in valid_uuids:
+        if file.is_file() and file.stem not in valid_ids:
             file.unlink()

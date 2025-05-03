@@ -1,0 +1,181 @@
+import shutil
+from pathlib import Path
+
+from sqlalchemy.orm import Session
+from src.api.exceptions import NotFoundError
+from src.api.models.db import (
+    Annotation,
+    CalibrationRecording,
+    Recording,
+    SimRoom,
+    SimRoomClass,
+)
+from src.api.models.pydantic import SimRoomClassDTO, SimRoomDTO
+from src.config import LABELING_RESULTS_PATH
+
+
+def get_simroom(db: Session, id: str) -> SimRoomDTO:
+    """Get a recording by its ID"""
+    sim_room = db.query(SimRoom).filter(SimRoom.id == id).first()
+    if sim_room is None:
+        raise NotFoundError(f"SimRoom with id {id} not found")
+    return SimRoomDTO.from_orm(sim_room)
+
+
+def get_all_simrooms(db: Session) -> list[SimRoomDTO]:
+    """Get all sim rooms"""
+    sim_rooms = db.query(SimRoom).all()
+    return [SimRoomDTO.from_orm(sim_room) for sim_room in sim_rooms]
+
+
+def create_simroom(
+    db: Session,
+    name: str,
+) -> SimRoomDTO:
+    """Create a new sim room"""
+    sim_room = SimRoom(name=name)
+    db.add(sim_room)
+    db.flush()
+    db.refresh(sim_room)
+    return SimRoomDTO.from_orm(sim_room)
+
+
+def delete_simroom(db: Session, id: str) -> None:
+    """Delete a sim room"""
+    sim_room = db.query(SimRoom).filter(SimRoom.id == id).first()
+    if sim_room is None:
+        raise NotFoundError(f"SimRoom with id {id} not found")
+
+    db.delete(sim_room)
+
+
+def create_simroom_class(
+    db: Session, sim_room_id: int, class_name: str
+) -> SimRoomClassDTO:
+    """Create a new sim room class"""
+    simroom_class = SimRoomClass(class_name=class_name, sim_room_id=sim_room_id)
+    db.add(simroom_class)
+    db.flush()
+    db.refresh(simroom_class)
+    return SimRoomClassDTO.from_orm(simroom_class)
+
+
+def delete_simroom_class(db: Session, class_id: int) -> None:
+    """Delete a sim room class"""
+    simroom_class = db.query(SimRoomClass).filter(SimRoomClass.id == class_id).first()
+    if simroom_class is None:
+        raise NotFoundError(f"SimRoomClass with id {class_id} not found")
+
+    # Remove all annotations for the class
+    annotations = db.query(Annotation).filter(Annotation.sim_room_class_id == class_id)
+    for annotation in annotations:
+        if annotation.result_path.exists():
+            shutil.rmtree(annotation.result_path)
+
+    # For the labeling results of each calibration recording
+    # remove the results for the class id
+    for labeling_results in LABELING_RESULTS_PATH.iterdir():
+        tracking_results_path: Path = labeling_results / class_id
+        if tracking_results_path.exists():
+            shutil.rmtree(tracking_results_path)
+
+    db.delete(simroom_class)
+
+
+def get_calibration_recording(
+    db: Session, calibration_id: int
+) -> CalibrationRecording | None:
+    """Get a calibration recording by its ID"""
+    calibration_recording = (
+        db.query(CalibrationRecording)
+        .filter(CalibrationRecording.id == calibration_id)
+        .first()
+    )
+    if calibration_recording is None:
+        raise NotFoundError(f"CalibrationRecording with id {calibration_id} not found")
+    return calibration_recording
+
+
+def get_calibration_recording(
+    db: Session, sim_room_id: int, recording_id: str
+) -> CalibrationRecording | None:
+    """Get a calibration recording by its ID"""
+    calibration_recording = (
+        db.query(CalibrationRecording)
+        .filter(
+            CalibrationRecording.sim_room_id == sim_room_id,
+            CalibrationRecording.recording_id == recording_id,
+        )
+        .first()
+    )
+    if calibration_recording is None:
+        raise NotFoundError(
+            f"CalibrationRecording with sim_room_id {sim_room_id} and recording_id {recording_id} not found"
+        )
+    return calibration_recording
+
+
+def add_calibration_recording(db: Session, sim_room_id: int, recording_id: str) -> None:
+    """Add a calibration recording to a sim room"""
+    sim_room = db.query(SimRoom).filter(SimRoom.id == sim_room_id).first()
+    if sim_room is None:
+        raise NotFoundError(f"SimRoom with id {sim_room_id} not found")
+
+    recording = db.query(Recording).filter(Recording.id == recording_id).first()
+    if recording is None:
+        raise NotFoundError(f"Recording with id {recording_id} not found")
+
+    calibration_recording = CalibrationRecording(
+        sim_room_id=sim_room_id,
+        recording_id=recording_id,
+    )
+    db.add(calibration_recording)
+    db.flush()
+    db.refresh(calibration_recording)
+
+    # Create the labeling results paths
+    calibration_recording.labeling_results_path.mkdir(parents=True, exist_ok=True)
+    calibration_recording.annotations_path.mkdir(parents=True, exist_ok=True)
+
+
+def delete_calibration_recording(db: Session, calibration_id: int) -> None:
+    """Delete a calibration recording"""
+    calibration_recording = (
+        db.query(CalibrationRecording)
+        .filter(CalibrationRecording.id == calibration_id)
+        .first()
+    )
+    if calibration_recording is None:
+        raise NotFoundError(f"CalibrationRecording with id {calibration_id} not found")
+
+    # Remove labeling results for the calibration recording
+    if calibration_recording.labeling_results_path.exists():
+        shutil.rmtree(calibration_recording.labeling_results_path)
+
+    db.delete(calibration_recording)
+
+
+def get_simroom_class(db: Session, class_id: int) -> SimRoomClassDTO:
+    """Get a sim room class by its ID"""
+    simroom_class = db.query(SimRoomClass).filter(SimRoomClass.id == class_id).first()
+    if simroom_class is None:
+        raise NotFoundError(f"SimRoomClass with id {class_id} not found")
+    return SimRoomClassDTO.from_orm(simroom_class)
+
+
+def get_simroom_classes(db: Session, sim_room_id: int) -> list[SimRoomClassDTO]:
+    """Get all classes for a sim room"""
+    sim_room = db.query(SimRoom).filter(SimRoom.id == sim_room_id).first()
+    if sim_room is None:
+        raise NotFoundError(f"SimRoom with id {sim_room_id} not found")
+
+    classes = db.query(SimRoomClass).filter(SimRoomClass.sim_room_id == sim_room_id).all()
+    return [SimRoomClassDTO.from_orm(class_) for class_ in classes]
+
+
+def get_simroom_classes_by_ids(
+    db: Session, class_ids: list[int]
+) -> list[SimRoomClassDTO]:
+    """Get all classes for a sim room"""
+    classes = db.query(SimRoomClass).filter(SimRoomClass.id.in_(class_ids)).all()
+    return [SimRoomClassDTO.from_orm(class_) for class_ in classes]

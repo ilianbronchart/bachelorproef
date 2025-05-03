@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import torch
 import torchvision.transforms.functional as F
-from src.api.controllers.gaze_controller import (
+from src.api.services.gaze_service import (
     get_gaze_points,
     match_frames_to_gaze,
     parse_gazedata_file,
