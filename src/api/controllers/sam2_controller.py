@@ -5,9 +5,10 @@ import torch
 from sam2.build_sam import build_sam2, build_sam2_video_predictor
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.sam2_video_predictor import SAM2VideoPredictor
+from torchvision.ops import masks_to_boxes
+
 from src.aliases import Int32Array, UInt8Array
 from src.config import MAX_INFERENCE_STATE_FRAMES, SAM_2_MODEL_CONFIGS
-from torchvision.ops import masks_to_boxes
 
 
 def load_sam2_predictor(checkpoint_path: Path) -> SAM2ImagePredictor:

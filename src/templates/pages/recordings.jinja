@@ -8,4 +8,12 @@
   <h2>Recordings on Tobii Glasses</h2>
   <hr>
   {% include "components/glasses-recordings.jinja" %}
+  <script>
+  $(document).ready(function() {
+    registerRecordingsTable('#local-recordings-table');
+  }); 
+  $(document).ready(function() {
+    registerRecordingsTable('#glasses-recordings-table');
+  }); 
+  </script>
 </div>

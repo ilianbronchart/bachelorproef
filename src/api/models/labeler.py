@@ -9,18 +9,18 @@ from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sqlalchemy.orm import Session
 
 from src.aliases import UInt8Array
+from src.api.controllers.sam2_controller import (
+    load_sam2_predictor,
+    predict_sam2,
+)
+from src.api.db import engine
 from src.api.jobs.labeler_tracking import TrackingJob
 from src.api.models.context import LabelingContext, Request
+from src.api.models.db.calibration import Annotation, CalibrationRecording, SimRoomClass
 from src.config import (
     LABELING_ANNOTATIONS_DIR,
     RECORDINGS_PATH,
     Sam2Checkpoints,
-)
-from src.api.db import engine
-from src.api.models.db.calibration import Annotation, CalibrationRecording, SimRoomClass
-from src.api.controllers.sam2_controller import (
-    load_sam2_predictor,
-    predict_sam2,
 )
 from src.utils import extract_frames_to_dir, get_frame_from_dir
 

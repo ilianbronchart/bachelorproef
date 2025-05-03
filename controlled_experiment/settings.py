@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from src.config import UNKNOWN_CLASS_ID
 
 TRIAL_RECORDING_UUIDS = [

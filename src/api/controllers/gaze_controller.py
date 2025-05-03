@@ -4,8 +4,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from src.config import VIEWED_RADIUS
 from src.api.models.gaze import GazeData, GazeDataType, GazePoint
+from src.config import VIEWED_RADIUS
 from src.utils import clamp
 
 

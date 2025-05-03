@@ -3,13 +3,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
 
-import src.api.controllers.glasses_controller as glasses
-from src.api.models import App, GlassesConnectionContext, Request
-from src.api.routes import labeling, recordings, simrooms
-from src.config import Template, templates
 from src.api.db import Base, engine
-from src.api.models.db import Recording
+from src.api.models import App, Request
+from src.api.models.pydantic_context import GlassesConnectionContext
+from src.api.routes import recordings
+from src.api.services import glasses_service, recordings_service
+from src.config import Template, templates
 
 
 @asynccontextmanager
@@ -17,14 +18,15 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     # Base.metadata.drop_all(bind=engine, tables=[PointLabel.__table__])
     # Base.metadata.drop_all(bind=engine, tables=[Annotation.__table__])
     Base.metadata.create_all(bind=engine)
-    Recording.clean_recordings()
+    with Session(engine) as session:
+        recordings_service.clean_recordings(session)
     yield
 
 
 app = App(lifespan=lifespan)  # type: ignore[no-untyped-call]
 app.include_router(recordings.router)
-app.include_router(labeling.router)
-app.include_router(simrooms.router)
+# app.include_router(labeling.router)
+# app.include_router(simrooms.router)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -36,8 +38,8 @@ async def root(request: Request) -> HTMLResponse:
 async def glasses_connection(request: Request) -> HTMLResponse:
     """Retrieve connection details for the glasses"""
     context = GlassesConnectionContext(
-        request=request,
-        glasses_connected=await glasses.is_connected(),
-        battery_level=await glasses.get_battery_level(),
+        _request=request,
+        glasses_connected=await glasses_service.is_connected(),
+        battery_level=await glasses_service.get_battery_level(),
     )
-    return templates.TemplateResponse(Template.CONNECTION_STATUS, context.to_dict())
+    return templates.TemplateResponse(Template.CONNECTION_STATUS, context.model_dump())

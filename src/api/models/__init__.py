@@ -1,7 +1,6 @@
 from .app import App
 from .context import (
     BaseContext,
-    GlassesConnectionContext,
     LabelingAnnotationsContext,
     LabelingClassesContext,
     LabelingContext,
@@ -16,7 +15,6 @@ from .labeler import Labeler
 __all__ = [
     "App",
     "BaseContext",
-    "GlassesConnectionContext",
     "Labeler",
     "LabelingAnnotationsContext",
     "LabelingClassesContext",

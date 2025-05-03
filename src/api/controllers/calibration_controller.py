@@ -4,7 +4,10 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from src.api.db import engine
-from src.api.models.db import CalibrationRecording, SimRoomClass, Annotation, PointLabel, SimRoom
+from src.api.models.db import (
+    CalibrationRecording,
+    SimRoomClass,
+)
 
 
 @dataclass

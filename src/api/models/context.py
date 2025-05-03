@@ -3,9 +3,8 @@ from typing import TYPE_CHECKING, Any, no_type_check
 
 from fastapi import Request as FastAPIRequest
 
+from src.api.models.db import CalibrationRecording, Recording, SimRoom, SimRoomClass
 from src.config import Template
-from src.api.models.db import Recording
-from src.api.models.db import CalibrationRecording, SimRoom, SimRoomClass
 
 if TYPE_CHECKING:
     from .app import App
@@ -27,12 +26,6 @@ class BaseContext:
         dict_ = {k: v for k, v in self.__dict__.items() if k not in ignore}
         dict_["request"] = self.request
         return dict_
-
-
-@dataclass
-class GlassesConnectionContext(BaseContext):
-    glasses_connected: bool
-    battery_level: float
 
 
 @dataclass

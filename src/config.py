@@ -3,7 +3,6 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-import dotenv
 from fastapi.templating import Jinja2Templates
 
 SRC_PATH = Path("src")
@@ -20,11 +19,10 @@ STATIC_FILES_PATH = SRC_PATH / "static"
 TEMPLATES_PATH = SRC_PATH / "templates"
 DEFAULT_GLASSES_HOSTNAME = "192.168.75.51"
 FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / "FastSAM-x.pt"
+DEBUG_MODE = os.environ.get("DEBUG_MODE", "false").lower() == "true"
 
 if not os.path.exists(FAST_SAM_CHECKPOINT):
-    raise FileNotFoundError(
-        f"FastSAM checkpoint not found at {FAST_SAM_CHECKPOINT}."
-    )
+    raise FileNotFoundError(f"FastSAM checkpoint not found at {FAST_SAM_CHECKPOINT}.")
 
 # The amount of frames kept in memory for SAM2 video inference
 MAX_INFERENCE_STATE_FRAMES = 100
@@ -44,6 +42,7 @@ class Sam2Checkpoints:
     LARGE: Path = CHECKPOINTS_PATH / "sam2.1_hiera_large.pt"
     SMALL: Path = CHECKPOINTS_PATH / "sam2.1_hiera_small.pt"
     TINY: Path = CHECKPOINTS_PATH / "sam2.1_hiera_tiny.pt"
+
 
 for checkpoint in Sam2Checkpoints.__dict__.values():
     if isinstance(checkpoint, Path) and not checkpoint.exists():

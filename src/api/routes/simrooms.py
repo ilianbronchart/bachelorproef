@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Form
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
+
+from src.api.db import engine
 from src.api.models import Request, SimRoomsContext
 from src.api.models.context import ClassListContext
+from src.api.models.db import CalibrationRecording, Recording, SimRoom, SimRoomClass
 from src.config import Template, templates
-from src.api.models.db import Recording, SimRoom, SimRoomClass
-from src.api.db import engine
-from src.api.models.db import CalibrationRecording
 from src.utils import is_hx_request
 
 router = APIRouter(prefix="/simrooms")

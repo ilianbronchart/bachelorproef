@@ -6,7 +6,9 @@ import numpy as np
 from fastapi import APIRouter, Depends, Form, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session, joinedload
+
 from src.api.api_dependencies import get_labeler, get_selected_class_id
+from src.api.db import engine
 from src.api.models import (
     Labeler,
     LabelingAnnotationsContext,
@@ -14,9 +16,8 @@ from src.api.models import (
     LabelingControlsContext,
     Request,
 )
+from src.api.models.db import Annotation, CalibrationRecording, PointLabel, SimRoomClass
 from src.config import Template, templates
-from src.api.db import engine
-from src.api.models.db import Annotation, PointLabel, SimRoomClass, CalibrationRecording
 from src.utils import encode_to_png, is_hx_request
 
 router = APIRouter(prefix="/labeling")

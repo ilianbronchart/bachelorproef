@@ -7,17 +7,16 @@ import cv2
 import numpy as np
 import torch
 import torchvision.transforms.functional as F
-from src.config import GAZE_FOVEA_FOV, TOBII_FOV_X
 from src.api.controllers.gaze_controller import (
     get_gaze_points,
     match_frames_to_gaze,
     parse_gazedata_file,
 )
+from src.config import FAST_SAM_CHECKPOINT, GAZE_FOVEA_FOV, TOBII_FOV_X
 from src.utils import cv2_video_fps, cv2_video_frame_count, cv2_video_resolution
 from torchvision.ops import masks_to_boxes
 from torchvision.transforms import InterpolationMode
 from ultralytics import FastSAM
-from src.config import FAST_SAM_CHECKPOINT
 
 
 class GazeSegmentationJob:
