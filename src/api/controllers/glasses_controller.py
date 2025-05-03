@@ -5,6 +5,7 @@ from g3pylib.recordings.recording import Recording as GlassesRecording
 from src.config import DEFAULT_GLASSES_HOSTNAME
 from src.api.models.db import Recording
 
+# TODO: add env variable for mocking glasses
 
 async def is_connected(glasses_hostname: str = DEFAULT_GLASSES_HOSTNAME) -> bool:
     return True

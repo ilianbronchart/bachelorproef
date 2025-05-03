@@ -6,24 +6,20 @@ from pathlib import Path
 import dotenv
 from fastapi.templating import Jinja2Templates
 
-# Load environment variables from .env file
-dotenv.load_dotenv(".env")
-
-SRC_PATH = Path(os.environ.get("SRC_PATH", "src"))
+SRC_PATH = Path("src")
 DATA_PATH = Path("data/")
 DATA_PATH.mkdir(exist_ok=True)
 RECORDINGS_PATH = DATA_PATH / "recordings"
 RECORDINGS_PATH.mkdir(exist_ok=True)
-CHECKPOINTS_PATH = Path(os.environ.get("CHECKPOINTS_PATH", "checkpoints"))
+CHECKPOINTS_PATH = Path("checkpoints")
 CHECKPOINTS_PATH.mkdir(exist_ok=True)
 LABELING_RESULTS_PATH = DATA_PATH / "labeling_results"
 LABELING_RESULTS_PATH.mkdir(exist_ok=True)
 LABELING_ANNOTATIONS_DIR = "annotations"
 STATIC_FILES_PATH = SRC_PATH / "static"
 TEMPLATES_PATH = SRC_PATH / "templates"
-
 DEFAULT_GLASSES_HOSTNAME = "192.168.75.51"
-FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / os.environ.get("FAST_SAM_CHECKPOINT", "FastSAM-x.pt")
+FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / "FastSAM-x.pt"
 
 if not os.path.exists(FAST_SAM_CHECKPOINT):
     raise FileNotFoundError(

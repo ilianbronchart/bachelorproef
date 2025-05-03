@@ -38,3 +38,14 @@ def get_selected_class_id(request: Request) -> int | RedirectResponse:
             return -1
 
         return labeler.selected_class_id
+
+def get_db():
+    db = Session(engine)
+    try:
+        yield db
+        db.commit()
+    except:
+        db.rollback()
+        raise
+    finally:
+        db.close()
