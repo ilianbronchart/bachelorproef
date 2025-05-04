@@ -14,7 +14,7 @@ router = APIRouter(prefix="/recordings")
 
 @router.get("/")
 async def recordings(request: Request) -> HTMLResponse:
-    context = RecordingsContext(_request=request)
+    context = RecordingsContext(request=request)
     if is_hx_request(request):
         return templates.TemplateResponse(Template.RECORDINGS, context.model_dump())
     return templates.TemplateResponse(Template.INDEX, context.model_dump())
@@ -26,7 +26,7 @@ async def local_recordings(
 ) -> HTMLResponse:
     """Retrieve metadata for all recordings in the local directory"""
     recordings = recordings_service.get_all(db)
-    context = RecordingsContext(_request=request, recordings=recordings)
+    context = RecordingsContext(request=request, recordings=recordings)
 
     if is_hx_request(request):
         return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context.model_dump())
@@ -40,7 +40,7 @@ async def delete_local_recording(
     """Delete a recording from the local directory"""
     recordings_repo.delete(db, recording_id)
     recordings = recordings_service.get_all(db)
-    context = RecordingsContext(_request=request, recordings=recordings)
+    context = RecordingsContext(request=request, recordings=recordings)
     return templates.TemplateResponse(Template.LOCAL_RECORDINGS, context.model_dump())
 
 
@@ -48,7 +48,7 @@ async def delete_local_recording(
 async def glasses_recordings(request: Request) -> HTMLResponse:
     """Retrieve metadata for all recordings on the glasses"""
     glasses_connected = await glasses_service.is_connected()
-    context = RecordingsContext(_request=request, glasses_connected=glasses_connected)
+    context = RecordingsContext(request=request, glasses_connected=glasses_connected)
 
     if not context.glasses_connected:
         context.failed_connection = True
@@ -71,7 +71,7 @@ async def download_recording(
 ) -> HTMLResponse:
     """Download a recording from the glasses"""
     glasses_connected = await glasses_service.is_connected()
-    context = RecordingsContext(_request=request, glasses_connected=glasses_connected)
+    context = RecordingsContext(request=request, glasses_connected=glasses_connected)
 
     if not context.glasses_connected:
         context.failed_connection = True

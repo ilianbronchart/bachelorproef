@@ -41,9 +41,14 @@ async def start_labeling(
     calibration_id: int,
     db: Session = Depends(get_db),
 ) -> Response:
-    labeler = labeling_service.load(db, calibration_id)
-    labeling_context = get_labeling_context(request, labeler).model_dump()
+    cal_rec = simrooms_service.get_calibration_recording(
+        db=db,
+        calibration_id=calibration_id,
+    )
+    labeler = Labeler(cal_rec=cal_rec)
+    request.app.labeler = labeler
 
+    labeling_context = get_labeling_context(request, labeler).model_dump()
     if is_hx_request(request):
         return templates.TemplateResponse(Template.LABELER, labeling_context)
     return templates.TemplateResponse(Template.INDEX, labeling_context)
@@ -130,7 +135,7 @@ async def classes(
     if selected_class_id is None:
         selected_class_id = classes[0].id if classes else None
 
-    labeler.set_selected_class_id(selected_class_id)
+    labeler.set_selected_class_id(db, selected_class_id)
 
     context = LabelingClassesContext(
         request=request,
@@ -181,6 +186,7 @@ async def post_annotation(
 
     annotations_service.create_or_update_annotation(
         db=db,
+        frame=labeler.current_frame,
         image_predictor=labeler.image_predictor,
         point=body.point,
         label=body.label,
@@ -190,15 +196,15 @@ async def post_annotation(
         delete_point=body.delete_point,
     )
 
-    return await current_frame()
+    return await current_frame(db, labeler)
 
 
 @router.delete("/annotations/{annotation_id}", response_class=HTMLResponse)
 async def delete_calibration_annotation(
-    request: Request, annotation_id: int, db: Session = Depends(get_db)
+    request: Request, annotation_id: int, db: Session = Depends(get_db), labeler: Labeler = Depends(require_labeler)
 ) -> HTMLResponse:
     annotations_repo.delete_annotation(db, annotation_id)
-    return await annotations(request, db)
+    return await annotations(request, db, labeler)
 
 
 @router.post("/tracking", response_class=HTMLResponse)
@@ -220,7 +226,7 @@ async def tracking(
     )
     labeler.start_tracking(annotations)
 
-    return await timeline(request, polling=False, db=db)
+    return await timeline(request, polling=False, db=db, labeler=labeler)
 
 
 @router.post("/settings", response_class=HTMLResponse)

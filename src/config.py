@@ -14,7 +14,6 @@ CHECKPOINTS_PATH = Path("checkpoints")
 CHECKPOINTS_PATH.mkdir(exist_ok=True)
 LABELING_RESULTS_PATH = DATA_PATH / "labeling_results"
 LABELING_RESULTS_PATH.mkdir(exist_ok=True)
-LABELING_ANNOTATIONS_DIR = "annotations"
 STATIC_FILES_PATH = SRC_PATH / "static"
 TEMPLATES_PATH = SRC_PATH / "templates"
 DEFAULT_GLASSES_HOSTNAME = "192.168.75.51"

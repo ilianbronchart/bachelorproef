@@ -13,7 +13,7 @@ from torchvision.ops import masks_to_boxes
 from src.aliases import UInt8Array
 from src.api.models.pydantic import AnnotationDTO, CalibrationRecordingDTO
 from src.api.repositories import annotations_repo, simrooms_repo
-from src.api.services import sam2_service, simrooms_service
+from src.api.services import annotations_service, sam2_service, simrooms_service
 from src.api.utils import image_utils
 from src.config import (
     Sam2Checkpoints,
@@ -151,21 +151,23 @@ class Labeler:
         )
 
         self._frame_count = len(list(self._frames_path.glob("*.jpg")))
-        self._current_frame_idx = 0
         self._image_predictor: SAM2ImagePredictor = sam2_service.load_predictor(
             Sam2Checkpoints.LARGE
         )
-        self._current_frame = get_frame_from_dir(
+
+        self._current_frame_idx: int = 0
+        self._current_frame: UInt8Array = get_frame_from_dir(
             self._current_frame_idx, self._frames_path
         )
+        self._image_predictor.set_image(self._current_frame)
 
     @property
     def results_path(self) -> Path:
-        return self._cal_rec.labeling_results_path
+        return self._cal_rec.tracking_results_path
 
     @property
     def current_class_results_path(self) -> Path:
-        return self._cal_rec.labeling_results_path / str(self.selected_class_id)
+        return self._cal_rec.tracking_results_path / str(self.selected_class_id)
 
     @property
     def simroom_id(self) -> int:
@@ -182,6 +184,10 @@ class Labeler:
     @property
     def current_frame_idx(self) -> int:
         return self._current_frame_idx
+    
+    @property
+    def current_frame(self) -> UInt8Array:
+        return self._current_frame
 
     @property
     def frame_count(self) -> int:
@@ -246,9 +252,14 @@ class Labeler:
 
     def _get_overlay_draw_data(
         self, db: Session
-    ) -> list[tuple[str, str, UInt8Array, UInt8Array]]:
+    ) -> tuple[
+        list[str], 
+        list[str], 
+        list[UInt8Array], 
+        list[tuple[int, int, int, int]]
+    ]:
         # Get all the annotations for the current frame
-        current_frame_annotations = annotations_repo.get_annotations_by_frame_idx(
+        current_frame_annotations = annotations_service.get_annotations_by_frame_idx(
             db=db,
             calibration_id=self.calibration_id,
             frame_idx=self.current_frame_idx,
@@ -275,17 +286,17 @@ class Labeler:
             tracked_classes = [cls_ for cls_ in tracked_classes if cls_.id != active_id]
 
         # Information needed to draw the overlay (class name, color, mask, box)
-        results_to_draw: list[tuple[str, str, UInt8Array, UInt8Array]] = []
+        class_names = []
+        colors = []
+        masks = []
+        boxes = []
 
         # Add current frame annotations
         for ann in current_frame_annotations:
-            file = np.load(ann.result_path)
-            results_to_draw.append((
-                ann.simroom_class.class_name,
-                ann.simroom_class.color,
-                file["mask"],
-                file["box"],
-            ))
+            class_names.append(ann.simroom_class.class_name)
+            colors.append(ann.simroom_class.color)
+            masks.append(image_utils.decode_from_base64(ann.mask_base64))
+            boxes.append(ann.box)
 
         # Add tracking results for current frame
         for cls_ in tracked_classes:
@@ -296,26 +307,24 @@ class Labeler:
                 continue
 
             file = np.load(result_path)
-            results_to_draw.append((
-                cls_.class_name,
-                cls_.color,
-                file["mask"],
-                file["box"],
-            ))
+            class_names.append(cls_.class_name)
+            colors.append(cls_.color)
+            masks.append(file["mask"].squeeze(0))
+            boxes.append(tuple(list(file["box"])))
 
-        return results_to_draw
+        return class_names, colors, masks, boxes
 
     def get_current_frame_overlay(self, db: Session) -> UInt8Array:
-        results_to_draw = self._get_overlay_draw_data(db)
+        class_names, colors, masks, boxes = self._get_overlay_draw_data(db)
 
         # Draw masks first to avoid overlapping
         frame = self._current_frame.copy()
-        for _, _, mask, box in results_to_draw:
-            image_utils.draw_mask(frame, mask, box)
+        for i in range(len(masks)):
+            image_utils.draw_mask(frame, masks[i], boxes[i])
 
         # Draw bounding boxes
-        for class_name, color, _, box in results_to_draw:
-            image_utils.draw_box(frame, box, class_name, color)
+        for i in range(len(masks)):
+            image_utils.draw_box(frame, boxes[i], class_names[i], colors[i])
 
         return frame
 
@@ -333,25 +342,3 @@ class Labeler:
             self.tracking_job = None
 
         threading.Thread(target=job_runner).start()
-
-
-labeler = None
-
-
-def load(
-    db: Session,
-    calibration_id: int,
-) -> Labeler:
-    global labeler
-    cal_rec = simrooms_service.get_calibration_recording(
-        db=db,
-        calibration_id=calibration_id,
-    )
-    if labeler is None:
-        labeler = Labeler(cal_rec)
-    return labeler
-
-
-def unload() -> None:
-    global labeler
-    pass  # TODO: Implement unload labeler

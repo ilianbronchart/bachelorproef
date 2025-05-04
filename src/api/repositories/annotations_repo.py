@@ -77,6 +77,7 @@ def create_annotation(
     frame_idx: int,
     simroom_class_id: int,
     mask_base64: str,
+    frame_crop_base64: str,
     box_json: str,
 ) -> Annotation:
     annotation = Annotation(
@@ -84,6 +85,7 @@ def create_annotation(
         frame_idx=frame_idx,
         simroom_class_id=simroom_class_id,
         mask_base64=mask_base64,
+        frame_crop_base64=frame_crop_base64,
         box_json=box_json,
     )
     db.add(annotation)
@@ -99,7 +101,7 @@ def delete_annotation(db: Session, annotation_id: int):
     db.delete(annotation)
 
 
-def delete_point(db: Session, id: int):
+def delete_point_label(db: Session, id: int):
     point = db.query(PointLabel).filter(PointLabel.id == id).first()
     if not point:
         raise NotFoundError(f"Point with id {id} not found")
@@ -112,7 +114,7 @@ def create_point_labels(
     points: list[tuple[int, int]],
     labels: list[int],
 ) -> PointLabel:
-    for x, y, label in zip(points, labels, strict=False):
+    for (x, y), label in zip(points, labels, strict=False):
         point_label = PointLabel(
             annotation_id=annotation_id,
             x=x,
@@ -122,15 +124,15 @@ def create_point_labels(
         db.add(point_label)
 
 
-def get_tracks(class_labeling_results_path: Path) -> list[tuple[int, int]]:
+def get_tracks(class_tracking_results_path: Path) -> list[tuple[int, int]]:
     """
     Get all tracks for the given class labeling results path.
     Returns a list of tuples, where each tuple contains the start and end frame index of a track.
     """
-    if not class_labeling_results_path.exists():
+    if not class_tracking_results_path.exists():
         return []
 
-    results = list(class_labeling_results_path.glob("*.npz"))
+    results = list(class_tracking_results_path.glob("*.npz"))
     results_frame_idx = sorted(int(result.stem) for result in results)
 
     if not results_frame_idx:

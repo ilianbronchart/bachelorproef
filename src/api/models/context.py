@@ -30,7 +30,7 @@ class BaseContext(BaseModel):
     _request: Request = PrivateAttr()
 
     def __init__(self, **data):
-        request = data.pop("_request", None)
+        request = data.pop("request", None)
         super().__init__(**data)
         self._request = request
 

@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session
 
 from src.api.db import engine
 from src.api.exceptions import LabelingServiceNotAvailableError
-from src.api.services.labeling_service import Labeler, labeler
+from src.api.models import Request
+from src.api.services.labeling_service import Labeler
 
 
 def get_db():
@@ -17,7 +18,7 @@ def get_db():
         db.close()
 
 
-def require_labeler() -> Labeler:
-    if labeler is None:
+def require_labeler(request: Request) -> Labeler:
+    if request.app.labeler is None:
         raise LabelingServiceNotAvailableError()
-    return labeler
+    return request.app.labeler

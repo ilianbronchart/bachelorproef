@@ -2,15 +2,19 @@ import base64
 import json
 import math
 
+import numpy as np
+
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sqlalchemy.orm import Session
 
+from src.aliases import UInt8Array
 from src.api.exceptions import NotFoundError
 from src.api.models.db import Annotation, PointLabel
 from src.api.models.pydantic import AnnotationDTO, PointLabelDTO
 from src.api.repositories import annotations_repo
 from src.api.services import sam2_service
-
+from src.api.utils import image_utils
+from src.config import DATA_PATH
 
 class PointLabelWithClassID(PointLabelDTO):
     class_id: int
@@ -49,6 +53,17 @@ def get_annotations_by_class_id(
     return [AnnotationDTO.from_orm(annotation) for annotation in annotations]
 
 
+def get_annotations_by_frame_idx(
+    db: Session, calibration_id: int, frame_idx: int
+) -> list[AnnotationDTO]:
+    annotations = annotations_repo.get_annotations_by_frame_idx(
+        db=db,
+        calibration_id=calibration_id,
+        frame_idx=frame_idx,
+    )
+
+    return [AnnotationDTO.from_orm(annotation) for annotation in annotations]
+
 def _find_closest_point_label(
     annotation: Annotation, point: tuple[int, int], max_distance: int = 1
 ) -> PointLabel:
@@ -60,7 +75,7 @@ def _find_closest_point_label(
     closest_point_label = None
     min_distance = float("inf")
     for point_label in points_labels:
-        distance = math.sqrt((point.x - x) ** 2 + (point.y - y) ** 2)
+        distance = math.sqrt((point_label.x - x) ** 2 + (point_label.y - y) ** 2)
         if distance < min_distance:
             min_distance = distance
             closest_point_label = point_label
@@ -73,6 +88,7 @@ def _find_closest_point_label(
 
 def create_or_update_annotation(
     db: Session,
+    frame: UInt8Array,
     image_predictor: SAM2ImagePredictor,
     point: tuple[int, int],
     label: int,
@@ -105,13 +121,24 @@ def create_or_update_annotation(
                 f"Found no point to delete for frame {frame_idx}"
                 f"and class {class_id} at x={x}, y={y}"
             )
-        annotations_repo.delete_point(db=db, id=closest_point.id)
+        annotations_repo.delete_point_label(db=db, id=closest_point.id)
+        
+        db.flush()
+        db.refresh(annotation)
+
+        if len(annotation.point_labels) == 0:
+            annotations_repo.delete_annotation(db=db, annotation_id=annotation.id)
+            return
 
     # If there's an annotation, retrieve its points and labels and delete it
     if annotation is not None:
-        points = [(pl.x, pl.y) for pl in annotation.point_labels] + [(x, y)]
-        labels = [pl.label for pl in annotation.point_labels] + [label]
+        points = [(pl.x, pl.y) for pl in annotation.point_labels]
+        labels = [pl.label for pl in annotation.point_labels]
         annotations_repo.delete_annotation(db=db, annotation_id=annotation.id)
+        db.flush()
+        if not delete_point:
+            points.append((x, y))
+            labels.append(label)
     else:
         # If no annotation exists, create a new one with the point and label
         points = [(x, y)]
@@ -123,14 +150,18 @@ def create_or_update_annotation(
         points=points,
         points_labels=labels,
     )
+    mask = np.squeeze(mask)
+    x1, y1, x2, y2 = box
+    frame_crop = frame[y1:y2, x1:x2]
 
     annotation = annotations_repo.create_annotation(
         db=db,
         calibration_id=calibration_id,
         frame_idx=frame_idx,
         simroom_class_id=class_id,
-        mask_base64=base64.b64encode(mask).decode("utf-8"),
-        box_json=json.dumps(box),
+        mask_base64=image_utils.encode_to_png(mask),
+        frame_crop_base64=image_utils.encode_to_png(frame_crop),
+        box_json=json.dumps([int(x1), int(y1), int(x2), int(y2)]),
     )
     annotations_repo.create_point_labels(
         db=db, annotation_id=annotation.id, points=points, labels=labels

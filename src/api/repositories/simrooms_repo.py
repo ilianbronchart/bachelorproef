@@ -66,16 +66,10 @@ def delete_simroom_class(db: Session, class_id: int) -> None:
     if simroom_class is None:
         raise NotFoundError(f"SimRoomClass with id {class_id} not found")
 
-    # Remove all annotations for the class
-    annotations = db.query(Annotation).filter(Annotation.simroom_class_id == class_id)
-    for annotation in annotations:
-        if annotation.result_path.exists():
-            shutil.rmtree(annotation.result_path)
-
-    # For the labeling results of each calibration recording
+    # For the tracking results of each calibration recording
     # remove the results for the class id
     for labeling_results in LABELING_RESULTS_PATH.iterdir():
-        tracking_results_path: Path = labeling_results / class_id
+        tracking_results_path: Path = labeling_results / str(class_id)
         if tracking_results_path.exists():
             shutil.rmtree(tracking_results_path)
 
@@ -136,8 +130,7 @@ def add_calibration_recording(db: Session, simroom_id: int, recording_id: str) -
     db.refresh(calibration_recording)
 
     # Create the labeling results paths
-    calibration_recording.labeling_results_path.mkdir(parents=True, exist_ok=True)
-    calibration_recording.annotations_path.mkdir(parents=True, exist_ok=True)
+    calibration_recording.tracking_results_path.mkdir(parents=True, exist_ok=True)
 
 
 def delete_calibration_recording(db: Session, calibration_id: int) -> None:
@@ -151,8 +144,8 @@ def delete_calibration_recording(db: Session, calibration_id: int) -> None:
         raise NotFoundError(f"CalibrationRecording with id {calibration_id} not found")
 
     # Remove labeling results for the calibration recording
-    if calibration_recording.labeling_results_path.exists():
-        shutil.rmtree(calibration_recording.labeling_results_path)
+    if calibration_recording.tracking_results_path.exists():
+        shutil.rmtree(calibration_recording.tracking_results_path)
 
     db.delete(calibration_recording)
 

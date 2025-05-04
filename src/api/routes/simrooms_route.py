@@ -20,7 +20,7 @@ async def simrooms(
     recordings = recordings_service.get_all(db)
     sim_rooms = simrooms_repo.get_all_simrooms(db)
     context = SimRoomsContext(
-        _request=request, recordings=recordings, sim_rooms=sim_rooms
+        request=request, recordings=recordings, sim_rooms=sim_rooms
     )
 
     if simroom_id:
@@ -71,7 +71,7 @@ async def simroom_classes(
 ) -> HTMLResponse:
     sim_room = simrooms_repo.get_simroom(db, simroom_id)
     context = ClassListContext(
-        _request=request,
+        request=request,
         selected_sim_room=sim_room,
     )
     return templates.TemplateResponse(Template.CLASS_LIST, context.model_dump())
@@ -92,7 +92,7 @@ async def add_simroom_class(
     sim_room = simrooms_repo.get_simroom(db, simroom_id)
 
     context = ClassListContext(
-        _request=request,
+        request=request,
         selected_sim_room=sim_room,
     )
     return templates.TemplateResponse(Template.CLASS_LIST, context.model_dump())
@@ -105,7 +105,7 @@ async def delete_simroom_class(
     simrooms_repo.delete_simroom_class(db, class_id)
     sim_room = simrooms_repo.get_simroom(db, simroom_id)
     context = ClassListContext(
-        _request=request,
+        request=request,
         selected_sim_room=sim_room,
     )
     return templates.TemplateResponse(Template.CLASS_LIST, context.model_dump())

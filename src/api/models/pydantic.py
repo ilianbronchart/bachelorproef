@@ -109,9 +109,11 @@ class AnnotationDTO(BaseDTO):
     calibration_id: int
     simroom_class_id: int
     frame_idx: int
+    simroom_class: "SimRoomClassDTO"
     point_labels: list[PointLabelDTO]
     mask_base64: str
-    box_json: tuple[int, int, int, int]
+    frame_crop_base64: str
+    box: tuple[int, int, int, int]
 
     @classmethod
     def from_orm(cls, annotation: DBAnnotation) -> "AnnotationDTO":
@@ -120,12 +122,14 @@ class AnnotationDTO(BaseDTO):
             calibration_id=annotation.calibration_id,
             simroom_class_id=annotation.simroom_class_id,
             frame_idx=annotation.frame_idx,
+            simroom_class=SimRoomClassDTO.from_orm(annotation.simroom_class),
             point_labels=[
                 PointLabelDTO.from_orm(point_label)
                 for point_label in annotation.point_labels
             ],
             mask_base64=annotation.mask_base64,
-            box_json=tuple(json.loads(annotation.box_json)),
+            frame_crop_base64=annotation.frame_crop_base64,
+            box=tuple(json.loads(annotation.box_json)),
         )
 
 
@@ -136,8 +140,7 @@ class CalibrationRecordingDTO(BaseDTO):
     recording: RecordingDTO
     annotations: list[AnnotationDTO]
     video_path: Path
-    labeling_results_path: Path
-    annotations_path: Path
+    tracking_results_path: Path
     tracking_result_paths: list[Path]
 
     @classmethod
@@ -154,8 +157,7 @@ class CalibrationRecordingDTO(BaseDTO):
                 for annotation in calibration_recording.annotations
             ],
             video_path=calibration_recording.video_path,
-            labeling_results_path=calibration_recording.labeling_results_path,
-            annotations_path=calibration_recording.annotations_path,
+            tracking_results_path=calibration_recording.tracking_results_path,
             tracking_result_paths=calibration_recording.tracking_result_paths,
         )
 
