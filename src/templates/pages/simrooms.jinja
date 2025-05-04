@@ -60,7 +60,7 @@
             {% set li_classes = li_classes + " selected" %}
           {% endif %}
           <li class="{{ li_classes }}"
-              hx-get="/simrooms?sim_room_id={{ sim_room.id }}"
+              hx-get="/simrooms?simroom_id={{ sim_room.id }}"
               hx-target="#main-content">
             {{ sim_room.name }}
             <button class="btn btn-sm btn-danger"
@@ -218,9 +218,9 @@ form + .list-group {
     // If no item is selected but we have a sim room ID in the URL, select that one
     if (!selectedLi) {
       const urlParams = new URLSearchParams(window.location.search);
-      const simRoomId = urlParams.get('sim_room_id');
+      const simRoomId = urlParams.get('simroom_id');
       if (simRoomId) {
-        selectedLi = list.querySelector(`li[hx-get*="sim_room_id=${simRoomId}"]`);
+        selectedLi = list.querySelector(`li[hx-get*="simroom_id=${simRoomId}"]`);
       }
     }
 
@@ -236,10 +236,10 @@ form + .list-group {
       if (selectedLi) {
         const href = selectedLi.getAttribute('hx-get');
         const url = new URL(href, window.location.origin);
-        const simRoomId = url.searchParams.get('sim_room_id');
+        const simRoomId = url.searchParams.get('simroom_id');
         if (simRoomId) {
           const newUrl = new URL(window.location.href);
-          newUrl.searchParams.set('sim_room_id', simRoomId);
+          newUrl.searchParams.set('simroom_id', simRoomId);
           window.history.replaceState({}, '', newUrl);
         }
       }

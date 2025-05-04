@@ -50,10 +50,10 @@ def delete_simroom(db: Session, id: str) -> None:
 
 
 def create_simroom_class(
-    db: Session, sim_room_id: int, class_name: str
+    db: Session, simroom_id: int, class_name: str
 ) -> SimRoomClassDTO:
     """Create a new sim room class"""
-    simroom_class = SimRoomClass(class_name=class_name, sim_room_id=sim_room_id)
+    simroom_class = SimRoomClass(class_name=class_name, simroom_id=simroom_id)
     db.add(simroom_class)
     db.flush()
     db.refresh(simroom_class)
@@ -67,7 +67,7 @@ def delete_simroom_class(db: Session, class_id: int) -> None:
         raise NotFoundError(f"SimRoomClass with id {class_id} not found")
 
     # Remove all annotations for the class
-    annotations = db.query(Annotation).filter(Annotation.sim_room_class_id == class_id)
+    annotations = db.query(Annotation).filter(Annotation.simroom_class_id == class_id)
     for annotation in annotations:
         if annotation.result_path.exists():
             shutil.rmtree(annotation.result_path)
@@ -85,7 +85,7 @@ def delete_simroom_class(db: Session, class_id: int) -> None:
 def get_calibration_recording(
     db: Session,
     calibration_id: int = None,
-    sim_room_id: int = None,
+    simroom_id: int = None,
     recording_id: str = None,
 ) -> CalibrationRecording | None:
     if calibration_id is not None:
@@ -99,36 +99,36 @@ def get_calibration_recording(
                 f"CalibrationRecording with id {calibration_id} not found"
             )
         return calibration_recording
-    elif sim_room_id is not None and recording_id is not None:
+    elif simroom_id is not None and recording_id is not None:
         calibration_recording = (
             db.query(CalibrationRecording)
             .filter(
-                CalibrationRecording.sim_room_id == sim_room_id,
+                CalibrationRecording.simroom_id == simroom_id,
                 CalibrationRecording.recording_id == recording_id,
             )
             .first()
         )
         if calibration_recording is None:
             raise NotFoundError(
-                f"CalibrationRecording with sim_room_id {sim_room_id} and recording_id {recording_id} not found"
+                f"CalibrationRecording with simroom_id {simroom_id} and recording_id {recording_id} not found"
             )
         return calibration_recording
     else:
         raise ValueError("Invalid arguments for get_calibration_recording")
 
 
-def add_calibration_recording(db: Session, sim_room_id: int, recording_id: str) -> None:
+def add_calibration_recording(db: Session, simroom_id: int, recording_id: str) -> None:
     """Add a calibration recording to a sim room"""
-    sim_room = db.query(SimRoom).filter(SimRoom.id == sim_room_id).first()
+    sim_room = db.query(SimRoom).filter(SimRoom.id == simroom_id).first()
     if sim_room is None:
-        raise NotFoundError(f"SimRoom with id {sim_room_id} not found")
+        raise NotFoundError(f"SimRoom with id {simroom_id} not found")
 
     recording = db.query(Recording).filter(Recording.id == recording_id).first()
     if recording is None:
         raise NotFoundError(f"Recording with id {recording_id} not found")
 
     calibration_recording = CalibrationRecording(
-        sim_room_id=sim_room_id,
+        simroom_id=simroom_id,
         recording_id=recording_id,
     )
     db.add(calibration_recording)
@@ -165,13 +165,13 @@ def get_simroom_class(db: Session, class_id: int) -> SimRoomClassDTO:
     return SimRoomClassDTO.from_orm(simroom_class)
 
 
-def get_simroom_classes(db: Session, sim_room_id: int) -> list[SimRoomClass]:
+def get_simroom_classes(db: Session, simroom_id: int) -> list[SimRoomClass]:
     """Get all classes for a sim room"""
-    sim_room = db.query(SimRoom).filter(SimRoom.id == sim_room_id).first()
+    sim_room = db.query(SimRoom).filter(SimRoom.id == simroom_id).first()
     if sim_room is None:
-        raise NotFoundError(f"SimRoom with id {sim_room_id} not found")
+        raise NotFoundError(f"SimRoom with id {simroom_id} not found")
 
-    classes = db.query(SimRoomClass).filter(SimRoomClass.sim_room_id == sim_room_id).all()
+    classes = db.query(SimRoomClass).filter(SimRoomClass.simroom_id == simroom_id).all()
     return classes
 
 

@@ -10,7 +10,7 @@
         <img class="annotation-thumb-img"
              width="0"
              height="0"
-             src="data:image/png;base64,{{ ann.frame_crop }}"
+             src="data:image/png;base64,{{ ann.mask_base64 }}"
              alt="Annotation for frame {{ ann.frame_idx }}"
              hx-on:click="seekToFrame({{ ann.frame_idx }})">
         <!-- Delete button sends a DELETE request and updates the annotation list -->

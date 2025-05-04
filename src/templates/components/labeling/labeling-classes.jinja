@@ -4,7 +4,7 @@
      hx-trigger="classes-changed from:window"
      hx-get="/labeling/classes"
      hx-swap="outerHTML">
-  <form hx-post="/simrooms/{{ sim_room_id }}/classes/add"
+  <form hx-post="/simrooms/{{ simroom_id }}/classes/add"
         hx-swap="none"
         autocomplete="off"
         hx-on::after-request="classesChanged()">
@@ -44,7 +44,7 @@
         </div>
         <button class="btn btn-sm btn-danger"
                 hx-confirm="Are you sure? This will delete all annotations linked to this class."
-                hx-delete="/simrooms/{{ sim_room_id }}/classes/{{ class.id }}"
+                hx-delete="/simrooms/{{ simroom_id }}/classes/{{ class.id }}"
                 hx-trigger="click consume"
                 hx-swap="none"
                 hx-stop-propagation="true"

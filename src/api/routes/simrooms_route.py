@@ -15,7 +15,7 @@ router = APIRouter(prefix="/simrooms")
 
 @router.get("/", response_class=HTMLResponse)
 async def simrooms(
-    request: Request, sim_room_id: int | None = None, db: Session = Depends(get_db)
+    request: Request, simroom_id: int | None = None, db: Session = Depends(get_db)
 ) -> HTMLResponse:
     recordings = recordings_service.get_all(db)
     sim_rooms = simrooms_repo.get_all_simrooms(db)
@@ -23,9 +23,9 @@ async def simrooms(
         _request=request, recordings=recordings, sim_rooms=sim_rooms
     )
 
-    if sim_room_id:
+    if simroom_id:
         try:
-            sim_room = simrooms_repo.get_simroom(db, sim_room_id)
+            sim_room = simrooms_repo.get_simroom(db, simroom_id)
         except NotFoundError:
             headers = {"HX-Push-Url": "/simrooms"}
             return HTMLResponse(
@@ -35,7 +35,7 @@ async def simrooms(
         sim_room.calibration_recordings.sort(key=lambda cr: cr.recording.created)
         context.selected_sim_room = sim_room
 
-    headers = {"HX-Push-Url": f"/simrooms/?sim_room_id={sim_room_id}"}
+    headers = {"HX-Push-Url": f"/simrooms/?simroom_id={simroom_id}"}
     if is_hx_request(request):
         return templates.TemplateResponse(
             Template.SIMROOMS, context.model_dump(), headers=headers
@@ -50,26 +50,26 @@ async def add_sim_room(
     request: Request, name: str = Form(...), db: Session = Depends(get_db)
 ) -> HTMLResponse:
     sim_room = simrooms_repo.create_simroom(db, name=name)
-    response = await simrooms(request, sim_room_id=sim_room.id, db=db)
+    response = await simrooms(request, simroom_id=sim_room.id, db=db)
     response.headers["HX-Push-Url"] = "/simrooms"
     return response
 
 
-@router.delete("/{sim_room_id}", response_class=HTMLResponse)
+@router.delete("/{simroom_id}", response_class=HTMLResponse)
 async def delete_sim_room(
-    request: Request, sim_room_id: int, db: Session = Depends(get_db)
+    request: Request, simroom_id: int, db: Session = Depends(get_db)
 ) -> HTMLResponse:
-    simrooms_repo.delete_simroom(db, sim_room_id)
+    simrooms_repo.delete_simroom(db, simroom_id)
     response = await simrooms(request, db=db)
     response.headers["HX-Push-Url"] = "/simrooms"
     return response
 
 
-@router.get("/{sim_room_id}/classes", response_class=HTMLResponse)
-async def sim_room_classes(
-    request: Request, sim_room_id: int, db: Session = Depends(get_db)
+@router.get("/{simroom_id}/classes", response_class=HTMLResponse)
+async def simroom_classes(
+    request: Request, simroom_id: int, db: Session = Depends(get_db)
 ) -> HTMLResponse:
-    sim_room = simrooms_repo.get_simroom(db, sim_room_id)
+    sim_room = simrooms_repo.get_simroom(db, simroom_id)
     context = ClassListContext(
         _request=request,
         selected_sim_room=sim_room,
@@ -77,19 +77,19 @@ async def sim_room_classes(
     return templates.TemplateResponse(Template.CLASS_LIST, context.model_dump())
 
 
-@router.post("/{sim_room_id}/classes/add", response_class=HTMLResponse)
-async def add_sim_room_class(
+@router.post("/{simroom_id}/classes/add", response_class=HTMLResponse)
+async def add_simroom_class(
     request: Request,
-    sim_room_id: int,
+    simroom_id: int,
     class_name: str = Form(...),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     simrooms_repo.create_simroom_class(
         db,
-        sim_room_id=sim_room_id,
+        simroom_id=simroom_id,
         class_name=class_name,
     )
-    sim_room = simrooms_repo.get_simroom(db, sim_room_id)
+    sim_room = simrooms_repo.get_simroom(db, simroom_id)
 
     context = ClassListContext(
         _request=request,
@@ -98,12 +98,12 @@ async def add_sim_room_class(
     return templates.TemplateResponse(Template.CLASS_LIST, context.model_dump())
 
 
-@router.delete("/{sim_room_id}/classes/{class_id}", response_class=HTMLResponse)
-async def delete_sim_room_class(
-    request: Request, sim_room_id: int, class_id: int, db: Session = Depends(get_db)
+@router.delete("/{simroom_id}/classes/{class_id}", response_class=HTMLResponse)
+async def delete_simroom_class(
+    request: Request, simroom_id: int, class_id: int, db: Session = Depends(get_db)
 ) -> HTMLResponse:
     simrooms_repo.delete_simroom_class(db, class_id)
-    sim_room = simrooms_repo.get_simroom(db, sim_room_id)
+    sim_room = simrooms_repo.get_simroom(db, simroom_id)
     context = ClassListContext(
         _request=request,
         selected_sim_room=sim_room,
@@ -111,24 +111,24 @@ async def delete_sim_room_class(
     return templates.TemplateResponse(Template.CLASS_LIST, context.model_dump())
 
 
-@router.post("/{sim_room_id}/calibration_recordings", response_class=HTMLResponse)
+@router.post("/{simroom_id}/calibration_recordings", response_class=HTMLResponse)
 async def add_calibration_recording(
     request: Request,
-    sim_room_id: int,
+    simroom_id: int,
     recording_id: str = Form(...),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     simrooms_repo.add_calibration_recording(
-        db, sim_room_id=sim_room_id, recording_id=recording_id
+        db, simroom_id=simroom_id, recording_id=recording_id
     )
-    return await simrooms(request, sim_room_id=sim_room_id, db=db)
+    return await simrooms(request, simroom_id=simroom_id, db=db)
 
 
 @router.delete(
-    "/{sim_room_id}/calibration_recordings/{calibration_id}", response_class=HTMLResponse
+    "/{simroom_id}/calibration_recordings/{calibration_id}", response_class=HTMLResponse
 )
 async def delete_calibration_recording(
-    request: Request, sim_room_id: int, calibration_id: int, db: Session = Depends(get_db)
+    request: Request, simroom_id: int, calibration_id: int, db: Session = Depends(get_db)
 ) -> HTMLResponse:
     simrooms_repo.delete_calibration_recording(db, calibration_id)
-    return await simrooms(request, sim_room_id=sim_room_id, db=db)
+    return await simrooms(request, simroom_id=simroom_id, db=db)

@@ -52,13 +52,13 @@ class SimRoomClass(Base, SerializerMixin):
     serialize_rules = ["-annotations", "-sim_room"]
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    sim_room_id: Mapped[int] = mapped_column(Integer, ForeignKey("sim_rooms.id"))
+    simroom_id: Mapped[int] = mapped_column(Integer, ForeignKey("sim_rooms.id"))
     class_name: Mapped[str] = mapped_column(String)
     color: Mapped[str] = mapped_column(String, default=generate_pleasant_color)
 
     sim_room: Mapped["SimRoom"] = relationship("SimRoom", back_populates="classes")
     annotations: Mapped[list["Annotation"]] = relationship(
-        "Annotation", back_populates="sim_room_class", cascade="all, delete-orphan"
+        "Annotation", back_populates="simroom_class", cascade="all, delete-orphan"
     )
 
 
@@ -66,7 +66,7 @@ class CalibrationRecording(Base, SerializerMixin):
     __tablename__ = "calibration_recordings"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    sim_room_id: Mapped[int] = mapped_column(Integer, ForeignKey("sim_rooms.id"))
+    simroom_id: Mapped[int] = mapped_column(Integer, ForeignKey("sim_rooms.id"))
     recording_id: Mapped[str] = mapped_column(String, ForeignKey("recordings.id"))
 
     sim_room: Mapped["SimRoom"] = relationship(
@@ -104,26 +104,28 @@ class Annotation(Base, SerializerMixin):
     __tablename__ = "annotations"
     __table_args__ = (
         UniqueConstraint(
-            "calibration_recording_id",
+            "calibration_id",
             "frame_idx",
-            "sim_room_class_id",
+            "simroom_class_id",
             name="_calibration_frame_class_uc",
             sqlite_on_conflict="ROLLBACK",
         ),
     )
-    serialize_rules = ["-point_labels", "-calibration_recording", "-sim_room_class"]
+    serialize_rules = ["-point_labels", "-calibration_recording", "-simroom_class"]
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    calibration_recording_id: Mapped[int] = mapped_column(
+    calibration_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("calibration_recordings.id")
     )
-    sim_room_class_id: Mapped[int] = mapped_column(Integer, ForeignKey("classes.id"))
+    simroom_class_id: Mapped[int] = mapped_column(Integer, ForeignKey("classes.id"))
     frame_idx: Mapped[int] = mapped_column(Integer, nullable=False)
+    mask_base64: Mapped[str] = mapped_column(String, nullable=True)
+    box_json: Mapped[str] = mapped_column(String, nullable=True)
 
     calibration_recording: Mapped["CalibrationRecording"] = relationship(
         "CalibrationRecording", back_populates="annotations"
     )
-    sim_room_class: Mapped["SimRoomClass"] = relationship(
+    simroom_class: Mapped["SimRoomClass"] = relationship(
         "SimRoomClass", back_populates="annotations"
     )
     point_labels: Mapped[list["PointLabel"]] = relationship(
@@ -134,9 +136,9 @@ class Annotation(Base, SerializerMixin):
     def result_path(self) -> Path:
         return (
             LABELING_RESULTS_PATH
-            / str(self.calibration_recording_id)
+            / str(self.calibration_id)
             / LABELING_ANNOTATIONS_DIR
-            / f"{self.sim_room_class_id}_{self.frame_idx}.npz"
+            / f"{self.simroom_class_id}_{self.frame_idx}.npz"
         )
 
 

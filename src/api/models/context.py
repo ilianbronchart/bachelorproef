@@ -4,6 +4,7 @@ from fastapi import Request as FastAPIRequest
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from src.api.models.pydantic import (
+    AnnotationDTO,
     RecordingDTO,
     SimRoomClassDTO,
     SimRoomDTO,
@@ -63,20 +64,14 @@ class ClassListContext(BaseContext):
 
 
 class LabelingContext(BaseContext):
-    sim_room_id: int
+    simroom_id: int
     recording_id: str
     show_inactive_classes: bool
     content: str = Template.LABELER
 
 
-class LabelingAnnotation(BaseModel):
-    id: int
-    frame_idx: int
-    frame_crop: str
-
-
 class LabelingAnnotationsContext(BaseContext):
-    annotations: list[LabelingAnnotation]
+    annotations: list[AnnotationDTO]
 
 
 class LabelingTimelineContext(BaseContext):
@@ -92,7 +87,7 @@ class LabelingTimelineContext(BaseContext):
 
 class LabelingClassesContext(BaseContext):
     selected_class_id: int
-    sim_room_id: int
+    simroom_id: int
     classes: list[SimRoomClassDTO]
 
 

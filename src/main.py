@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from src.api.db import Base, engine
 from src.api.models import App, Request
 from src.api.models.context import GlassesConnectionContext
-from src.api.routes import recordings_route, simrooms_route
+from src.api.routes import labeling_route, recordings_route, simrooms_route
 from src.api.services import glasses_service, recordings_service
 from src.config import Template, templates
 
@@ -25,7 +25,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 app = App(lifespan=lifespan)  # type: ignore[no-untyped-call]
 app.include_router(recordings_route.router)
 app.include_router(simrooms_route.router)
-# app.include_router(labeling.router)
+app.include_router(labeling_route.router)
 
 
 @app.get("/", response_class=HTMLResponse)

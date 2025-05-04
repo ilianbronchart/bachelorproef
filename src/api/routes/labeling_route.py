@@ -5,12 +5,20 @@ from fastapi import APIRouter, Depends, Form, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
-from src.api.dependencies import get_db
+from src.api.dependencies import get_db, require_labeler
+from src.api.exceptions import NoClassSelectedError, TrackingJobAlreadyRunningError
 from src.api.models import (
     Request,
 )
+from src.api.models.context import (
+    LabelingAnnotationsContext,
+    LabelingClassesContext,
+    LabelingContext,
+    LabelingTimelineContext,
+)
 from src.api.repositories import annotations_repo
-from src.api.services import labeler_service
+from src.api.services import annotations_service, labeling_service, simrooms_service
+from src.api.services.labeling_service import Labeler
 from src.api.utils import image_utils
 from src.config import Template, templates
 from src.utils import is_hx_request
@@ -18,12 +26,23 @@ from src.utils import is_hx_request
 router = APIRouter(prefix="/labeling")
 
 
+def get_labeling_context(request: Request, labeler: Labeler) -> LabelingContext:
+    return LabelingContext(
+        request=request,
+        simroom_id=labeler.simroom_id,
+        recording_id=labeler.recording_id,
+        show_inactive_classes=labeler.show_inactive_classes,
+    )
+
+
 @router.post("/", response_class=Response)
 async def start_labeling(
-    request: Request, calibration_id: int, db: Session = Depends(get_db)
+    request: Request,
+    calibration_id: int,
+    db: Session = Depends(get_db),
 ) -> Response:
-    labeler_service.load(db, calibration_id)
-    labeling_context = labeler_service.get_labeling_context(request).model_dump()
+    labeler = labeling_service.load(db, calibration_id)
+    labeling_context = get_labeling_context(request, labeler).model_dump()
 
     if is_hx_request(request):
         return templates.TemplateResponse(Template.LABELER, labeling_context)
@@ -31,23 +50,32 @@ async def start_labeling(
 
 
 @router.get("/", response_class=HTMLResponse)
-async def labeling(request: Request) -> HTMLResponse:
-    labeling_context = labeler_service.get_labeling_context(request).model_dump()
+async def labeling(
+    request: Request, labeler: Labeler = Depends(require_labeler)
+) -> HTMLResponse:
+    labeling_context = get_labeling_context(request, labeler).model_dump()
     if is_hx_request(request):
         return templates.TemplateResponse(Template.LABELER, labeling_context)
     return templates.TemplateResponse(Template.INDEX, labeling_context)
 
 
 @router.get("/point_labels", response_class=JSONResponse)
-async def point_labels(db: Session = Depends(get_db)) -> JSONResponse:
-    labeler_service.get_point_labels(db)
-    point_labels = labeler_service.get_point_labels(db)
+async def point_labels(
+    db: Session = Depends(get_db), labeler: Labeler = Depends(require_labeler)
+) -> JSONResponse:
+    point_labels = annotations_service.get_point_labels(
+        db=db,
+        calibration_id=labeler.calibration_id,
+        frame_idx=labeler.current_frame_idx,
+    )
     return JSONResponse(content=[pl.model_dump() for pl in point_labels])
 
 
 @router.get("/current_frame", response_class=Response)
-async def current_frame() -> Response:
-    frame = labeler_service.get_current_frame_overlay()
+async def current_frame(
+    db: Session = Depends(get_db), labeler: Labeler = Depends(require_labeler)
+) -> Response:
+    frame = labeler.get_current_frame_overlay(db=db)
     bytes = image_utils.encode_to_png_bytes(frame)
     return Response(content=bytes, media_type="image/png")
 
@@ -58,22 +86,59 @@ async def timeline(
     polling: bool,
     frame_idx: int | None = None,
     db: Session = Depends(get_db),
+    labeler: Labeler = Depends(require_labeler),
 ) -> HTMLResponse:
-    timeline_context = labeler_service.get_timeline_context(
-        request, db, polling, frame_idx
+    frame_idx = labeler.current_frame_idx if frame_idx is None else frame_idx
+    selected_class_id = labeler.selected_class_id
+
+    context = LabelingTimelineContext(
+        request=request,
+        current_frame_idx=frame_idx,
+        frame_count=labeler.frame_count,
+        selected_class_id=selected_class_id,
     )
+
+    if labeler.has_selected_class:
+        simroom_class = simrooms_service.get_simroom_class(
+            db=db, class_id=selected_class_id
+        )
+        context.tracks = annotations_repo.get_tracks(labeler.current_class_results_path)
+        context.selected_class_color = simroom_class.color
+
+    if labeler.is_tracking_current_class:
+        context.tracking_progress = labeler.tracking_progress
+        context.is_tracking = True
+
+    if not polling:
+        labeler.seek(frame_idx)
+        context.update_canvas = True
+
     return templates.TemplateResponse(
-        Template.LABELING_TIMELINE, context=timeline_context.model_dump()
+        Template.LABELING_TIMELINE, context=context.model_dump()
     )
 
 
 @router.get("/classes", response_class=HTMLResponse)
 async def classes(
     request: Request,
-    selected_class_id: int = -1,
+    selected_class_id: int | None = None,
     db: Session = Depends(get_db),
+    labeler: Labeler = Depends(require_labeler),
 ) -> HTMLResponse:
-    context = labeler_service.get_classes_context(request, db, selected_class_id)
+    classes = simrooms_service.get_simroom_classes(db=db, simroom_id=labeler.simroom_id)
+
+    if selected_class_id is None:
+        selected_class_id = classes[0].id if classes else None
+
+    labeler.set_selected_class_id(selected_class_id)
+
+    context = LabelingClassesContext(
+        request=request,
+        selected_class_id=selected_class_id,
+        simroom_id=labeler.simroom_id,
+        classes=classes,
+    )
+
     return templates.TemplateResponse(
         Template.LABELING_CLASSES, context=context.model_dump()
     )
@@ -83,8 +148,18 @@ async def classes(
 async def annotations(
     request: Request,
     db: Session = Depends(get_db),
+    labeler: Labeler = Depends(require_labeler),
 ) -> HTMLResponse:
-    context = labeler_service.get_annotations_context(request, db)
+    annotations = annotations_service.get_annotations_by_class_id(
+        db=db,
+        calibration_id=labeler.calibration_id,
+        class_id=labeler.selected_class_id,
+    )
+    context = LabelingAnnotationsContext(
+        request=request,
+        annotations=annotations,
+    )
+
     return templates.TemplateResponse(Template.LABELING_ANNOTATIONS, context.model_dump())
 
 
@@ -99,8 +174,22 @@ class AnnotationPostBody:
 async def post_annotation(
     body: AnnotationPostBody,
     db: Session = Depends(get_db),
+    labeler: Labeler = Depends(require_labeler),
 ) -> Response:
-    labeler_service.post_annotation(db, body.point, body.label, body.delete_point)
+    if not labeler.has_selected_class:
+        raise NoClassSelectedError()
+
+    annotations_service.create_or_update_annotation(
+        db=db,
+        image_predictor=labeler.image_predictor,
+        point=body.point,
+        label=body.label,
+        class_id=labeler.selected_class_id,
+        frame_idx=labeler.current_frame_idx,
+        calibration_id=labeler.calibration_id,
+        delete_point=body.delete_point,
+    )
+
     return await current_frame()
 
 
@@ -116,8 +205,21 @@ async def delete_calibration_annotation(
 async def tracking(
     request: Request,
     db: Session = Depends(get_db),
+    labeler: Labeler = Depends(require_labeler),
 ) -> HTMLResponse:
-    labeler_service.start_tracking(db)
+    if labeler.is_tracking:
+        raise TrackingJobAlreadyRunningError()
+
+    if not labeler.has_selected_class:
+        raise NoClassSelectedError()
+
+    annotations = annotations_service.get_annotations_by_class_id(
+        db=db,
+        calibration_id=labeler.calibration_id,
+        class_id=labeler.selected_class_id,
+    )
+    labeler.start_tracking(annotations)
+
     return await timeline(request, polling=False, db=db)
 
 
@@ -125,11 +227,10 @@ async def tracking(
 async def settings(
     request: Request,
     show_inactive_classes: Annotated[bool, Form()],
+    labeler: Labeler = Depends(require_labeler),
 ) -> HTMLResponse:
-    labeler_service.post_settings(
-        show_inactive_classes=show_inactive_classes,
-    )
-    context = labeler_service.get_labeling_context(request)
+    labeler.set_show_inactive_classes(show_inactive_classes)
+    context = get_labeling_context(request, labeler)
     return templates.TemplateResponse(
         Template.LABELING_SETTINGS, context=context.model_dump()
     )
@@ -138,8 +239,9 @@ async def settings(
 @router.get("/settings", response_class=HTMLResponse)
 async def settings(
     request: Request,
+    labeler: Labeler = Depends(require_labeler),
 ) -> HTMLResponse:
-    context = labeler_service.get_labeling_context(request)
+    context = get_labeling_context(request, labeler)
     return templates.TemplateResponse(
         Template.LABELING_SETTINGS, context=context.model_dump()
     )

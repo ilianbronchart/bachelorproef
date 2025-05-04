@@ -7,13 +7,13 @@ from src.api.models.db import Annotation, PointLabel
 
 def get_annotations_by_frame_idx(
     db: Session,
-    calibration_recording_id: int,
+    calibration_id: int,
     frame_idx: int,
 ) -> list[Annotation]:
     annotations = (
         db.query(Annotation)
         .filter(
-            Annotation.calibration_recording_id == calibration_recording_id,
+            Annotation.calibration_id == calibration_id,
             Annotation.frame_idx == frame_idx,
         )
         .all()
@@ -23,16 +23,16 @@ def get_annotations_by_frame_idx(
 
 def get_annotation_by_frame_idx_and_class_id(
     db: Session,
-    calibration_recording_id: int,
+    calibration_id: int,
     frame_idx: int,
     class_id: int,
 ) -> Annotation | None:
     annotation = (
         db.query(Annotation)
         .filter(
-            Annotation.calibration_recording_id == calibration_recording_id,
+            Annotation.calibration_id == calibration_id,
             Annotation.frame_idx == frame_idx,
-            Annotation.sim_room_class_id == class_id,
+            Annotation.simroom_class_id == class_id,
         )
         .first()
     )
@@ -41,13 +41,13 @@ def get_annotation_by_frame_idx_and_class_id(
 
 def get_annotations_by_frame_idx(
     db: Session,
-    calibration_recording_id: int,
+    calibration_id: int,
     frame_idx: int,
 ) -> list[Annotation]:
     annotations = (
         db.query(Annotation)
         .filter(
-            Annotation.calibration_recording_id == calibration_recording_id,
+            Annotation.calibration_id == calibration_id,
             Annotation.frame_idx == frame_idx,
         )
         .all()
@@ -57,14 +57,14 @@ def get_annotations_by_frame_idx(
 
 def get_annotations_by_class_id(
     db: Session,
-    calibration_recording_id: int,
+    calibration_id: int,
     class_id: int,
 ) -> list[Annotation]:
     annotations = (
         db.query(Annotation)
         .filter(
-            Annotation.calibration_recording_id == calibration_recording_id,
-            Annotation.sim_room_class_id == class_id,
+            Annotation.calibration_id == calibration_id,
+            Annotation.simroom_class_id == class_id,
         )
         .all()
     )
@@ -73,16 +73,16 @@ def get_annotations_by_class_id(
 
 def create_annotation(
     db: Session,
-    calibration_recording_id: int,
+    calibration_id: int,
     frame_idx: int,
-    sim_room_class_id: int,
+    simroom_class_id: int,
     mask_base64: str,
     box_json: str,
 ) -> Annotation:
     annotation = Annotation(
-        calibration_recording_id=calibration_recording_id,
+        calibration_id=calibration_id,
         frame_idx=frame_idx,
-        sim_room_class_id=sim_room_class_id,
+        simroom_class_id=simroom_class_id,
         mask_base64=mask_base64,
         box_json=box_json,
     )
