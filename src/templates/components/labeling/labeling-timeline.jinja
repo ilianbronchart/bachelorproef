@@ -1,7 +1,7 @@
-<div id="labeling-controls"
+<div id="labeling-timeline"
      class="d-flex align-items-center gap-3 mb-3 h-auto"
      hx-on::after-settle="initialize(event)"
-     hx-get="/labeling/controls?polling=True"
+     hx-get="/labeling/timeline?polling=True"
      hx-trigger="every 1s"
      hx-select="#script-container"
      hx-target="#script-container"
@@ -28,7 +28,7 @@
   </button>
   <div id="timeline"
        class="position-relative w-100 rounded"
-       hx-get="/labeling/controls?polling=False"
+       hx-get="/labeling/timeline?polling=False"
        hx-select="#script-container"
        hx-target="#script-container"
        hx-swap="outerHTML"

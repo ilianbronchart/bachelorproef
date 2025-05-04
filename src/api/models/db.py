@@ -1,12 +1,11 @@
-import math
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint, event
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_serializer import SerializerMixin
 
-from src.api.db import Base, engine
+from src.api.db import Base
 from src.config import LABELING_ANNOTATIONS_DIR, LABELING_RESULTS_PATH, RECORDINGS_PATH
 from src.utils import generate_pleasant_color
 
@@ -79,6 +78,10 @@ class CalibrationRecording(Base, SerializerMixin):
     annotations: Mapped[list["Annotation"]] = relationship(
         "Annotation", back_populates="calibration_recording", cascade="all, delete-orphan"
     )
+
+    @property
+    def video_path(self) -> Path:
+        return RECORDINGS_PATH / f"{self.recording_id}.mp4"
 
     @property
     def labeling_results_path(self) -> Path:
@@ -157,47 +160,3 @@ class PointLabel(Base, SerializerMixin):
     annotation: Mapped["Annotation"] = relationship(
         "Annotation", back_populates="point_labels"
     )
-
-    @staticmethod
-    def find_closest(
-        annotation_id: int, x: int, y: int, max_distance: int = 1
-    ) -> Union["PointLabel", None]:
-        """
-        Find the closest point label to the given coordinates within an annotation.
-
-        Args:
-            annotation_id: The ID of the annotation to search within
-            x: X-coordinate of the reference point
-            y: Y-coordinate of the reference point
-
-        Returns:
-            The closest PointLabel or None if there are no points for the annotation
-
-        Raises:
-            ValueError: If the closest point exceeds MAX_DISTANCE
-        """
-
-        with Session(engine) as session:
-            points = (
-                session.query(PointLabel)
-                .filter(PointLabel.annotation_id == annotation_id)
-                .all()
-            )
-
-            if not points:
-                return None
-
-            closest_point = None
-            min_distance = float("inf")
-
-            for point in points:
-                distance = math.sqrt((point.x - x) ** 2 + (point.y - y) ** 2)
-                if distance < min_distance:
-                    min_distance = distance
-                    closest_point = point
-
-            # Check if the closest point exceeds MAX_DISTANCE
-            if min_distance > max_distance:
-                return None
-
-            return closest_point

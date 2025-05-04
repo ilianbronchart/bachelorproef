@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from src.aliases import UInt8Array
-from src.api.models.db import Annotation
+from src.api.models.pydantic import AnnotationDTO
 from src.api.services import sam2_service
 from src.config import (
     Sam2Checkpoints,
@@ -19,7 +19,7 @@ class TrackingJob:
 
     def __init__(
         self,
-        annotations: list[Annotation],
+        annotations: list[AnnotationDTO],
         frames_path: Path,
         results_path: Path,
         frame_count: int,

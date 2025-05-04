@@ -259,14 +259,6 @@ def get_frame_from_dir(frame_idx: int, frames_path: Path) -> UInt8Array:
     return cv2.imread(str(frame_path))
 
 
-def encode_to_png(image: UInt8Array) -> str:
-    """Encode an image to PNG format and return as base64 string."""
-    ret, encoded_img = cv2.imencode(".png", image)
-    if not ret:
-        raise ValueError("Failed to encode image to PNG")
-    return base64.b64encode(encoded_img.tobytes()).decode("utf-8")
-
-
 def hex_to_bgr(hex_color: str) -> tuple:
     """Convert a hex color string to a BGR tuple for OpenCV."""
     hex_color = hex_color.lstrip("#")

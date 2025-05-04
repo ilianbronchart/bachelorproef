@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from fastapi import Request as FastAPIRequest
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -69,11 +69,17 @@ class LabelingContext(BaseContext):
     content: str = Template.LABELER
 
 
+class LabelingAnnotation(BaseModel):
+    id: int
+    frame_idx: int
+    frame_crop: str
+
+
 class LabelingAnnotationsContext(BaseContext):
-    annotations: dict[str, Any] = Field(default_factory=dict)
+    annotations: list[LabelingAnnotation]
 
 
-class LabelingControlsContext(BaseContext):
+class LabelingTimelineContext(BaseContext):
     frame_count: int
     current_frame_idx: int
     selected_class_id: int

@@ -8,6 +8,7 @@ from sam2.sam2_video_predictor import SAM2VideoPredictor
 from torchvision.ops import masks_to_boxes
 
 from src.aliases import Int32Array, UInt8Array
+from src.api.exceptions import PredictionFailedError
 from src.config import MAX_INFERENCE_STATE_FRAMES, SAM_2_MODEL_CONFIGS
 
 
@@ -44,7 +45,7 @@ def predict(
     )
 
     if len(masks) == 0:
-        return (None, None)
+        raise PredictionFailedError("No masks found for the given points")
 
     mask_torch = torch.from_numpy(masks[0]).unsqueeze(0)
     x1, y1, x2, y2 = masks_to_boxes(mask_torch)[0].cpu().numpy().astype(np.int32)

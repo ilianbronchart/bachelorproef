@@ -83,36 +83,38 @@ def delete_simroom_class(db: Session, class_id: int) -> None:
 
 
 def get_calibration_recording(
-    db: Session, calibration_id: int
+    db: Session,
+    calibration_id: int = None,
+    sim_room_id: int = None,
+    recording_id: str = None,
 ) -> CalibrationRecording | None:
-    """Get a calibration recording by its ID"""
-    calibration_recording = (
-        db.query(CalibrationRecording)
-        .filter(CalibrationRecording.id == calibration_id)
-        .first()
-    )
-    if calibration_recording is None:
-        raise NotFoundError(f"CalibrationRecording with id {calibration_id} not found")
-    return calibration_recording
-
-
-def get_calibration_recording(
-    db: Session, sim_room_id: int, recording_id: str
-) -> CalibrationRecording | None:
-    """Get a calibration recording by its ID"""
-    calibration_recording = (
-        db.query(CalibrationRecording)
-        .filter(
-            CalibrationRecording.sim_room_id == sim_room_id,
-            CalibrationRecording.recording_id == recording_id,
+    if calibration_id is not None:
+        calibration_recording = (
+            db.query(CalibrationRecording)
+            .filter(CalibrationRecording.id == calibration_id)
+            .first()
         )
-        .first()
-    )
-    if calibration_recording is None:
-        raise NotFoundError(
-            f"CalibrationRecording with sim_room_id {sim_room_id} and recording_id {recording_id} not found"
+        if calibration_recording is None:
+            raise NotFoundError(
+                f"CalibrationRecording with id {calibration_id} not found"
+            )
+        return calibration_recording
+    elif sim_room_id is not None and recording_id is not None:
+        calibration_recording = (
+            db.query(CalibrationRecording)
+            .filter(
+                CalibrationRecording.sim_room_id == sim_room_id,
+                CalibrationRecording.recording_id == recording_id,
+            )
+            .first()
         )
-    return calibration_recording
+        if calibration_recording is None:
+            raise NotFoundError(
+                f"CalibrationRecording with sim_room_id {sim_room_id} and recording_id {recording_id} not found"
+            )
+        return calibration_recording
+    else:
+        raise ValueError("Invalid arguments for get_calibration_recording")
 
 
 def add_calibration_recording(db: Session, sim_room_id: int, recording_id: str) -> None:
@@ -163,19 +165,28 @@ def get_simroom_class(db: Session, class_id: int) -> SimRoomClassDTO:
     return SimRoomClassDTO.from_orm(simroom_class)
 
 
-def get_simroom_classes(db: Session, sim_room_id: int) -> list[SimRoomClassDTO]:
+def get_simroom_classes(db: Session, sim_room_id: int) -> list[SimRoomClass]:
     """Get all classes for a sim room"""
     sim_room = db.query(SimRoom).filter(SimRoom.id == sim_room_id).first()
     if sim_room is None:
         raise NotFoundError(f"SimRoom with id {sim_room_id} not found")
 
     classes = db.query(SimRoomClass).filter(SimRoomClass.sim_room_id == sim_room_id).all()
-    return [SimRoomClassDTO.from_orm(class_) for class_ in classes]
+    return classes
 
 
-def get_simroom_classes_by_ids(
-    db: Session, class_ids: list[int]
-) -> list[SimRoomClassDTO]:
+def get_classes_by_ids(db: Session, class_ids: list[int]) -> list[SimRoomClass]:
     """Get all classes for a sim room"""
     classes = db.query(SimRoomClass).filter(SimRoomClass.id.in_(class_ids)).all()
-    return [SimRoomClassDTO.from_orm(class_) for class_ in classes]
+    return classes
+
+
+def get_tracked_classes(db: Session, calibration_id: int) -> list[SimRoomClass]:
+    """
+    Get all classes that have annotations for a given calibration recording.
+    """
+    cal_rec = get_calibration_recording(db, calibration_id=calibration_id)
+    result_paths = cal_rec.tracking_result_paths
+    result_paths = [path for path in result_paths if len(list(path.iterdir())) > 0]
+    class_ids = [int(path.stem) for path in result_paths]
+    return get_classes_by_ids(db, class_ids)

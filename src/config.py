@@ -78,13 +78,13 @@ class Template:
     LABELING_CLASSES: str = "components/labeling/labeling-classes.jinja"
     LABELING_ANNOTATIONS: str = "components/labeling/labeling-annotations.jinja"
     LABELING_CANVAS: str = "components/labeling/labeling-canvas.jinja"
-    LABELING_CONTROLS: str = "components/labeling/labeling-controls.jinja"
+    LABELING_TIMELINE: str = "components/labeling/labeling-timeline.jinja"
     LABELING_SETTINGS: str = "components/labeling/labeling-settings.jinja"
 
 
 class EndpointFilter(logging.Filter):
     # List of endpoints to filter out from logs
-    FILTERED_ENDPOINTS = ["/labeling/controls", "/glasses/connection"]
+    FILTERED_ENDPOINTS = ["/labeling/timeline", "/glasses/connection"]
 
     def filter(self, record: logging.LogRecord) -> bool:
         message = record.getMessage()

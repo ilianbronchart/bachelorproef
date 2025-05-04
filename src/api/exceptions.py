@@ -42,3 +42,43 @@ class RuntimeError(BaseError):
         super().__init__(message, code)
         self.message = message
         self.code = code
+
+
+# Labeler errors
+class NoClassSelectedError(BaseError):
+    """Exception raised when no class is selected."""
+
+    message: str = "No class selected"
+    code: int = 400
+
+
+class PredictionFailedError(BaseError):
+    """Exception raised when prediction fails."""
+
+    def __init__(self, message: str, code: int = 500):
+        super().__init__(message, code)
+        self.message = message
+        self.code = code
+
+
+class LabelingServiceNotAvailableError(BaseError):
+    """Exception raised when trying to access an unloaded labeling service."""
+
+    message: str = "Labeling service not available"
+    code: int = 400
+
+
+class ImageEncodingError(BaseError):
+    """Exception raised when image encoding fails."""
+
+    def __init__(self, message: str, code: int = 500):
+        super().__init__(message, code)
+        self.message = message
+        self.code = code
+
+
+class TrackingJobAlreadyRunningError(BaseError):
+    """Exception raised when a tracking job is already running."""
+
+    message: str = "Tracking job already running"
+    code: int = 400
