@@ -1,15 +1,17 @@
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, cast
 
-from fastapi import APIRouter, Depends, Form, Response
+from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 
-from src.api.dependencies import get_db, require_labeler
-from src.api.exceptions import NoClassSelectedError, TrackingJobAlreadyRunningError
-from src.api.models import (
-    Request,
+from src.api.db import get_db
+from src.api.exceptions import (
+    LabelingServiceNotAvailableError,
+    NoClassSelectedError,
+    TrackingJobAlreadyRunningError,
 )
+from src.api.models import App
 from src.api.models.context import (
     LabelingAnnotationsContext,
     LabelingClassesContext,
@@ -17,7 +19,7 @@ from src.api.models.context import (
     LabelingTimelineContext,
 )
 from src.api.repositories import annotations_repo
-from src.api.services import annotations_service, labeling_service, simrooms_service
+from src.api.services import annotations_service, simrooms_service
 from src.api.services.labeling_service import Labeler
 from src.api.utils import image_utils
 from src.config import Template, templates
@@ -33,6 +35,13 @@ def get_labeling_context(request: Request, labeler: Labeler) -> LabelingContext:
         recording_id=labeler.recording_id,
         show_inactive_classes=labeler.show_inactive_classes,
     )
+
+
+def require_labeler(request: Request) -> Labeler:
+    app = cast(App, request.app)  # Now MyPy knows what this is
+    if app.labeler is None:
+        raise LabelingServiceNotAvailableError()
+    return app.labeler
 
 
 @router.post("/", response_class=Response)
@@ -81,8 +90,8 @@ async def current_frame(
     db: Session = Depends(get_db), labeler: Labeler = Depends(require_labeler)
 ) -> Response:
     frame = labeler.get_current_frame_overlay(db=db)
-    bytes = image_utils.encode_to_png_bytes(frame)
-    return Response(content=bytes, media_type="image/png")
+    png_bytes = image_utils.encode_to_png_bytes(frame)
+    return Response(content=png_bytes, media_type="image/png")
 
 
 @router.get("/timeline", response_class=HTMLResponse)
@@ -110,7 +119,7 @@ async def timeline(
         context.tracks = annotations_repo.get_tracks(labeler.current_class_results_path)
         context.selected_class_color = simroom_class.color
 
-    if labeler.is_tracking_current_class:
+    if labeler.is_tracking_current_class and labeler.tracking_progress is not None:
         context.tracking_progress = labeler.tracking_progress
         context.is_tracking = True
 
@@ -139,7 +148,7 @@ async def classes(
 
     context = LabelingClassesContext(
         request=request,
-        selected_class_id=selected_class_id,
+        selected_class_id=labeler.selected_class_id,
         simroom_id=labeler.simroom_id,
         classes=classes,
     )
@@ -184,15 +193,15 @@ async def post_annotation(
     if not labeler.has_selected_class:
         raise NoClassSelectedError()
 
-    annotations_service.create_or_update_annotation(
+    annotations_service.post_annotation_point(
         db=db,
         frame=labeler.current_frame,
         image_predictor=labeler.image_predictor,
-        point=body.point,
-        label=body.label,
-        class_id=labeler.selected_class_id,
-        frame_idx=labeler.current_frame_idx,
         calibration_id=labeler.calibration_id,
+        frame_idx=labeler.current_frame_idx,
+        class_id=labeler.selected_class_id,
+        new_point=body.point,
+        new_label=body.label,
         delete_point=body.delete_point,
     )
 
@@ -201,7 +210,10 @@ async def post_annotation(
 
 @router.delete("/annotations/{annotation_id}", response_class=HTMLResponse)
 async def delete_calibration_annotation(
-    request: Request, annotation_id: int, db: Session = Depends(get_db), labeler: Labeler = Depends(require_labeler)
+    request: Request,
+    annotation_id: int,
+    db: Session = Depends(get_db),
+    labeler: Labeler = Depends(require_labeler),
 ) -> HTMLResponse:
     annotations_repo.delete_annotation(db, annotation_id)
     return await annotations(request, db, labeler)
@@ -230,7 +242,7 @@ async def tracking(
 
 
 @router.post("/settings", response_class=HTMLResponse)
-async def settings(
+async def post_settings(
     request: Request,
     show_inactive_classes: Annotated[bool, Form()],
     labeler: Labeler = Depends(require_labeler),
@@ -243,7 +255,7 @@ async def settings(
 
 
 @router.get("/settings", response_class=HTMLResponse)
-async def settings(
+async def get_settings(
     request: Request,
     labeler: Labeler = Depends(require_labeler),
 ) -> HTMLResponse:

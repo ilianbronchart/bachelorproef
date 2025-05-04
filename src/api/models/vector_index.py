@@ -21,8 +21,10 @@ class FAISSIndexWithMetadata:
         for entry in metadata:
             try:
                 json.dumps(entry)
-            except TypeError:
-                raise ValueError(f"Metadata entry {entry} is not JSON serializable")
+            except TypeError as e:
+                raise ValueError(
+                    f"Metadata entry {entry} is not JSON serializable"
+                ) from e
 
         new_vectors_count = embeddings.shape[0]
         current_count = self.index.ntotal
@@ -38,14 +40,14 @@ class FAISSIndexWithMetadata:
     def write(self, index_path: Path):
         faiss.write_index(self.index, str(index_path))
         metadata_path = Path(index_path).parent / (index_path.stem + ".json")
-        with open(metadata_path, "w") as f:
+        with Path.open(metadata_path, "w") as f:
             json.dump(self.metadata, f)
 
     @classmethod
     def load(cls, index_path: Path):
         index: faiss.IndexIDMap = faiss.read_index(str(index_path))
         metadata_path = Path(index_path).parent / (index_path.stem + ".json")
-        with open(metadata_path) as f:
+        with Path.open(metadata_path) as f:
             metadata = json.load(f)
         instance = cls(index.d)
         instance.index = index

@@ -39,22 +39,6 @@ def get_annotation_by_frame_idx_and_class_id(
     return annotation
 
 
-def get_annotations_by_frame_idx(
-    db: Session,
-    calibration_id: int,
-    frame_idx: int,
-) -> list[Annotation]:
-    annotations = (
-        db.query(Annotation)
-        .filter(
-            Annotation.calibration_id == calibration_id,
-            Annotation.frame_idx == frame_idx,
-        )
-        .all()
-    )
-    return annotations
-
-
 def get_annotations_by_class_id(
     db: Session,
     calibration_id: int,
@@ -69,6 +53,16 @@ def get_annotations_by_class_id(
         .all()
     )
     return annotations
+
+
+def get_annotation_by_id(
+    db: Session,
+    annotation_id: int,
+) -> Annotation:
+    annotation = db.query(Annotation).filter(Annotation.id == annotation_id).first()
+    if not annotation:
+        raise NotFoundError(f"Annotation with id {annotation_id} not found")
+    return annotation
 
 
 def create_annotation(
@@ -101,10 +95,10 @@ def delete_annotation(db: Session, annotation_id: int):
     db.delete(annotation)
 
 
-def delete_point_label(db: Session, id: int):
-    point = db.query(PointLabel).filter(PointLabel.id == id).first()
+def delete_point_label(db: Session, point_label_id: int):
+    point = db.query(PointLabel).filter(PointLabel.id == point_label_id).first()
     if not point:
-        raise NotFoundError(f"Point with id {id} not found")
+        raise NotFoundError(f"Point with id {point_label_id} not found")
     db.delete(point)
 
 
@@ -127,7 +121,8 @@ def create_point_labels(
 def get_tracks(class_tracking_results_path: Path) -> list[tuple[int, int]]:
     """
     Get all tracks for the given class labeling results path.
-    Returns a list of tuples, where each tuple contains the start and end frame index of a track.
+    Returns a list of tuples, where each tuple contains the
+    start and end frame index of a track.
     """
     if not class_tracking_results_path.exists():
         return []

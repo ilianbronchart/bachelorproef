@@ -65,6 +65,14 @@ exclude = [
     "^libs/$"
 ]
 
+[[tool.mypy.overrides]]
+module = "torchvision.ops"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sam2.sam2_image_predictor"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]

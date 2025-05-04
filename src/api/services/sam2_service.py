@@ -37,7 +37,7 @@ def predict(
     predictor: SAM2ImagePredictor,
     points: list[tuple[int, int]],
     points_labels: list[int],
-) -> tuple[UInt8Array | None, Int32Array | None]:
+) -> tuple[UInt8Array, Int32Array]:
     masks, _, _ = predictor.predict(
         point_coords=np.array(points),
         point_labels=np.array(points_labels),

@@ -1,7 +1,7 @@
 <div id="class-list"
      class="class-management d-flex flex-column"
-     {% if selected_sim_room.id %}data-sim-room-id="{{ selected_sim_room.id }}"{% endif %}>
-  <form hx-post="/simrooms/{{ selected_sim_room.id }}/classes/add"
+     {% if selected_simroom.id %}data-sim-room-id="{{ selected_simroom.id }}"{% endif %}>
+  <form hx-post="/simrooms/{{ selected_simroom.id }}/classes/add"
         hx-target="#class-list"
         hx-target-4xx="#error-message"
         hx-target-5xx="#error-message"
@@ -29,10 +29,10 @@
     </div>
   </form>
   <ul class="list-group class-list user-select-none">
-    {% if selected_sim_room.classes|length == 0 %}
+    {% if selected_simroom.classes|length == 0 %}
       <li class="list-group-item text-muted text-center">No classes defined</li>
     {% endif %}
-    {% for class in selected_sim_room.classes %}
+    {% for class in selected_simroom.classes %}
       <li class=" list-group-item d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
           <div class="color-preview" style="background-color: {{ class.color }}"></div>
@@ -40,7 +40,7 @@
         </div>
         <button class="btn btn-sm btn-danger"
                 hx-confirm="Are you sure? This will delete all annotations linked to this class."
-                hx-delete="/simrooms/{{ selected_sim_room.id }}/classes/{{ class.id }}"
+                hx-delete="/simrooms/{{ selected_simroom.id }}/classes/{{ class.id }}"
                 hx-target="#class-list"
                 hx-target-400="#error-message"
                 hx-target-404="#error-message"

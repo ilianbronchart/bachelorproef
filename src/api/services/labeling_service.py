@@ -12,10 +12,11 @@ from torchvision.ops import masks_to_boxes
 
 from src.aliases import UInt8Array
 from src.api.models.pydantic import AnnotationDTO, CalibrationRecordingDTO
-from src.api.repositories import annotations_repo, simrooms_repo
-from src.api.services import annotations_service, sam2_service, simrooms_service
+from src.api.repositories import simrooms_repo
+from src.api.services import annotations_service, sam2_service
 from src.api.utils import image_utils
 from src.config import (
+    TRACKING_RESULTS_PATH,
     Sam2Checkpoints,
 )
 from src.utils import extract_frames_to_dir, get_frame_from_dir
@@ -32,19 +33,38 @@ class TrackingJob:
         results_path: Path,
         frame_count: int,
         class_id: int,
-    ):
+    ) -> None:
         self.annotations = sorted(annotations, key=lambda x: x.frame_idx)
         self.frames_path = frames_path
         self.results_path = results_path
         self.frame_count = frame_count
         self.class_id = class_id
 
-    def initialize(self):
+    def run(self) -> None:
+        self.initialize()
+
+        annotations_frame_idx = [annotation.frame_idx for annotation in self.annotations]
+        last_tracked_annotation = -1
+
+        while last_tracked_annotation != len(self.annotations) - 1:
+            start_frame_idx = annotations_frame_idx[last_tracked_annotation + 1]
+            self.progress = start_frame_idx / self.frame_count
+
+            # Track backwards until tracking loss:
+            list(self.track_until_loss(start_frame_idx, reverse=True))
+
+            # Track forwards until tracking loss:
+            for frame_idx in self.track_until_loss(start_frame_idx):
+                self.progress = frame_idx / self.frame_count
+                if frame_idx in annotations_frame_idx:
+                    last_tracked_annotation = annotations_frame_idx.index(frame_idx)
+
+    def initialize(self) -> None:
         # Load the video predictor and initialize the inference state
         self.video_predictor = sam2_service.load_video_predictor(Sam2Checkpoints.LARGE)
         self.inference_state = self.video_predictor.init_state(
             video_path=str(self.frames_path), async_loading_frames=True
-        )  # type: ignore[no-untyped-call]
+        )
         self.img_std = self.inference_state["images"].img_std.cuda()
         self.img_mean = self.inference_state["images"].img_mean.cuda()
 
@@ -61,7 +81,7 @@ class TrackingJob:
             ]
             labels = [point_label.label for point_label in point_labels]
 
-            self.video_predictor.add_new_points(  # type: ignore[no-untyped-call]
+            self.video_predictor.add_new_points(
                 inference_state=self.inference_state,
                 frame_idx=annotation.frame_idx,
                 obj_id=annotation.simroom_class_id,
@@ -73,7 +93,7 @@ class TrackingJob:
         self, start_frame_idx: int, reverse: bool = False
     ) -> Generator[int, None, None]:
         tracking_loss = 0
-        with torch.amp.autocast("cuda"):
+        with torch.amp.autocast("cuda"):  # type: ignore[attr-defined]
             for (
                 out_frame_idx,
                 _,
@@ -117,25 +137,6 @@ class TrackingJob:
                 if tracking_loss >= self.GRACE_PERIOD:
                     break
 
-    def run(self):
-        self.initialize()
-
-        annotations_frame_idx = [annotation.frame_idx for annotation in self.annotations]
-        last_tracked_annotation = -1
-
-        while last_tracked_annotation != len(self.annotations) - 1:
-            start_frame_idx = annotations_frame_idx[last_tracked_annotation + 1]
-            self.progress = start_frame_idx / self.frame_count
-
-            # Track backwards until tracking loss:
-            list(self.track_until_loss(start_frame_idx, reverse=True))
-
-            # Track forwards until tracking loss:
-            for frame_idx in self.track_until_loss(start_frame_idx):
-                self.progress = frame_idx / self.frame_count
-                if frame_idx in annotations_frame_idx:
-                    last_tracked_annotation = annotations_frame_idx.index(frame_idx)
-
 
 class Labeler:
     _tracking_job: TrackingJob | None = None
@@ -174,7 +175,7 @@ class Labeler:
         return self._cal_rec.simroom_id
 
     @property
-    def recording_id(self) -> int:
+    def recording_id(self) -> str:
         return self._cal_rec.recording_id
 
     @property
@@ -184,7 +185,7 @@ class Labeler:
     @property
     def current_frame_idx(self) -> int:
         return self._current_frame_idx
-    
+
     @property
     def current_frame(self) -> UInt8Array:
         return self._current_frame
@@ -214,7 +215,7 @@ class Labeler:
         return self._image_predictor
 
     @property
-    def tracking_progress(self) -> int | None:
+    def tracking_progress(self) -> float | None:
         if self._tracking_job is None:
             return None
         return self._tracking_job.progress
@@ -252,12 +253,7 @@ class Labeler:
 
     def _get_overlay_draw_data(
         self, db: Session
-    ) -> tuple[
-        list[str], 
-        list[str], 
-        list[UInt8Array], 
-        list[tuple[int, int, int, int]]
-    ]:
+    ) -> tuple[list[str], list[str], list[UInt8Array], list[tuple[int, int, int, int]]]:
         # Get all the annotations for the current frame
         current_frame_annotations = annotations_service.get_annotations_by_frame_idx(
             db=db,
@@ -266,7 +262,8 @@ class Labeler:
         )
         annotation_class_ids = {ann.simroom_class_id for ann in current_frame_annotations}
 
-        # Get all tracked classes and filter out the ones which have an annotation in the current frame
+        # Get all tracked classes and filter out the
+        # ones which have an annotation in the current frame
         tracked_classes = simrooms_repo.get_tracked_classes(
             db=db,
             calibration_id=self.calibration_id,
@@ -275,7 +272,8 @@ class Labeler:
             cls_ for cls_ in tracked_classes if cls_.id not in annotation_class_ids
         ]
 
-        # Filter out annotations and classes that are not active if show_inactive_classes is False
+        # Filter out annotations and classes that are
+        # not active if show_inactive_classes is False
         if not self.show_inactive_classes:
             active_id = self.selected_class_id
             current_frame_annotations = [
@@ -310,7 +308,7 @@ class Labeler:
             class_names.append(cls_.class_name)
             colors.append(cls_.color)
             masks.append(file["mask"].squeeze(0))
-            boxes.append(tuple(list(file["box"])))
+            boxes.append(tuple(file["box"]))
 
         return class_names, colors, masks, boxes
 
@@ -324,21 +322,31 @@ class Labeler:
 
         # Draw bounding boxes
         for i in range(len(masks)):
-            image_utils.draw_box(frame, boxes[i], class_names[i], colors[i])
+            image_utils.draw_labeled_box(frame, boxes[i], class_names[i], colors[i])
 
         return frame
 
     def start_tracking(self, annotations: list[AnnotationDTO]) -> None:
-        self.tracking_job = TrackingJob(
-            annotations=annotations,
-            frames_path=self.frames_path,
-            results_path=self.current_class_results_path,
-            frame_count=self.frame_count,
-            class_id=self.selected_class_id,
-        )
+        def job_runner() -> None:
+            self._tracking_job = TrackingJob(
+                annotations=annotations,
+                frames_path=self.frames_path,
+                results_path=self.current_class_results_path,
+                frame_count=self.frame_count,
+                class_id=self.selected_class_id,
+            )
 
-        def job_runner():
-            self.tracking_job.run()
-            self.tracking_job = None
+            self._tracking_job.run()
+            self._tracking_job = None
 
         threading.Thread(target=job_runner).start()
+
+
+def get_class_tracking_results(class_id: int) -> list[Path]:
+    tracking_paths = []
+    for tracking_results in TRACKING_RESULTS_PATH.iterdir():
+        for class_results in tracking_results.iterdir():
+            if class_results.stem == str(class_id):
+                for annotation in class_results.iterdir():
+                    tracking_paths.append(annotation)
+    return tracking_paths

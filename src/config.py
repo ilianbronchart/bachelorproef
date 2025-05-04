@@ -12,15 +12,15 @@ RECORDINGS_PATH = DATA_PATH / "recordings"
 RECORDINGS_PATH.mkdir(exist_ok=True)
 CHECKPOINTS_PATH = Path("checkpoints")
 CHECKPOINTS_PATH.mkdir(exist_ok=True)
-LABELING_RESULTS_PATH = DATA_PATH / "labeling_results"
-LABELING_RESULTS_PATH.mkdir(exist_ok=True)
+TRACKING_RESULTS_PATH = DATA_PATH / "labeling_results"
+TRACKING_RESULTS_PATH.mkdir(exist_ok=True)
 STATIC_FILES_PATH = SRC_PATH / "static"
 TEMPLATES_PATH = SRC_PATH / "templates"
 DEFAULT_GLASSES_HOSTNAME = "192.168.75.51"
 FAST_SAM_CHECKPOINT = CHECKPOINTS_PATH / "FastSAM-x.pt"
 DEBUG_MODE = os.environ.get("DEBUG_MODE", "false").lower() == "true"
 
-if not os.path.exists(FAST_SAM_CHECKPOINT):
+if not FAST_SAM_CHECKPOINT.exists():
     raise FileNotFoundError(f"FastSAM checkpoint not found at {FAST_SAM_CHECKPOINT}.")
 
 # The amount of frames kept in memory for SAM2 video inference

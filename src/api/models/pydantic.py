@@ -37,8 +37,8 @@ class RecordingDTO(BaseDTO):
     participant: str
     created: datetime
     duration: str
-    video_path: Path | None = None
-    gaze_data_path: Path | None = None
+    video_path: Path = Path("N/A")
+    gaze_data_path: Path = Path("N/A")
 
     @computed_field(return_type=str)
     def formatted_duration(self) -> str:
@@ -81,8 +81,6 @@ class RecordingDTO(BaseDTO):
             participant=await cls.parse_participant(glasses_recording),
             created=await glasses_recording.get_created(),
             duration=str(await glasses_recording.get_duration()),
-            video_path=None,
-            gaze_data_path=None,
         )
 
 
@@ -186,13 +184,13 @@ class SimRoomDTO(BaseDTO):
     classes: list[SimRoomClassDTO]
 
     @classmethod
-    def from_orm(cls, sim_room: DBSimRoom) -> "SimRoomDTO":
+    def from_orm(cls, simroom: DBSimRoom) -> "SimRoomDTO":
         return cls(
-            id=sim_room.id,
-            name=sim_room.name,
+            id=simroom.id,
+            name=simroom.name,
             calibration_recordings=[
                 CalibrationRecordingDTO.from_orm(cr)
-                for cr in sim_room.calibration_recordings
+                for cr in simroom.calibration_recordings
             ],
-            classes=[SimRoomClassDTO.from_orm(sc) for sc in sim_room.classes],
+            classes=[SimRoomClassDTO.from_orm(sc) for sc in simroom.classes],
         )

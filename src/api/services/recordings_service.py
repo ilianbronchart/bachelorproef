@@ -22,7 +22,10 @@ def get_all(db: Session) -> list[RecordingDTO]:
 def recording_is_complete(
     db: Session, recording_id: str, recordings_path: Path = RECORDINGS_PATH
 ) -> bool:
-    """Checks if a db entry exists for a recording and all its files exist in the recordings path"""
+    """
+    Checks if a db entry exists for a recording
+    and if all its files exist in the recordings path
+    """
     is_complete = get(db, recording_id) is not None
     is_complete = is_complete and all(
         (recordings_path / f"{recording_id}.{ext}").exists() for ext in ["mp4", "tsv"]

@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from src.config import RECORDINGS_PATH, STATIC_FILES_PATH
 from src.api.services.labeling_service import Labeler
+from src.config import RECORDINGS_PATH, STATIC_FILES_PATH
 
 
 class App(FastAPI):

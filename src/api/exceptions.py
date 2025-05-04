@@ -35,7 +35,7 @@ class RecordingAlreadyExistsError(BaseError):
         self.code = code
 
 
-class RuntimeError(BaseError):
+class InternalError(BaseError):
     """Exception raised when a runtime error occurs."""
 
     def __init__(self, message: str, code: int = 500):
@@ -47,10 +47,11 @@ class RuntimeError(BaseError):
 # Labeler errors
 class NoClassSelectedError(BaseError):
     """Exception raised when no class is selected."""
+
     message: str = "No class selected"
     code: int = 400
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(self.message, self.code)
 
 
@@ -65,10 +66,11 @@ class PredictionFailedError(BaseError):
 
 class LabelingServiceNotAvailableError(BaseError):
     """Exception raised when trying to access an unloaded labeling service."""
+
     message: str = "Labeling service not available"
     code: int = 400
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(self.message, self.code)
 
 
@@ -83,8 +85,9 @@ class ImageEncodingError(BaseError):
 
 class TrackingJobAlreadyRunningError(BaseError):
     """Exception raised when a tracking job is already running."""
+
     message: str = "Tracking job already running"
     code: int = 400
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(self.message, self.code)

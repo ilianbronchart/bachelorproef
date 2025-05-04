@@ -51,21 +51,21 @@
         </div>
       </form>
       <ul id="sim-rooms-list" class="list-group">
-        {% if sim_rooms|length == 0 %}
+        {% if simrooms|length == 0 %}
           <li class="list-group-item text-muted text-center selectable">No sim rooms created yet</li>
         {% endif %}
-        {% for sim_room in sim_rooms %}
+        {% for simroom in simrooms %}
           {% set li_classes = "list-group-item d-flex justify-content-between align-items-center transition-bg selectable" %}
-          {% if sim_room and sim_room.id == selected_sim_room.id %}
+          {% if simroom and simroom.id == selected_simroom.id %}
             {% set li_classes = li_classes + " selected" %}
           {% endif %}
           <li class="{{ li_classes }}"
-              hx-get="/simrooms?simroom_id={{ sim_room.id }}"
+              hx-get="/simrooms?simroom_id={{ simroom.id }}"
               hx-target="#main-content">
-            {{ sim_room.name }}
+            {{ simroom.name }}
             <button class="btn btn-sm btn-danger"
                     hx-confirm="Are you sure? This will delete all calibration recordings, classes and annotations linked to this Sim Room."
-                    hx-delete="/simrooms/{{ sim_room.id }}"
+                    hx-delete="/simrooms/{{ simroom.id }}"
                     hx-target="#main-content"
                     hx-target-4xx="#error-message"
                     hx-target-5xx="#error-message">
@@ -78,7 +78,7 @@
     <!-- Column 2: Manage Classes for a Selected Sim Room -->
     <div class="col-md-4 d-flex flex-column">
       <h2>Sim Room Classes</h2>
-      {% if selected_sim_room %}
+      {% if selected_simroom %}
         {% include "components/class-list.jinja" %}
       {% else %}
         <p class="text-muted">Please select a Sim Room from the left to manage its classes.</p>
@@ -87,8 +87,8 @@
     <!-- Column 3: Add Calibration Recordings -->
     <div class="col-md-4 d-flex flex-column">
       <h2>Calibration Recordings</h2>
-      {% if selected_sim_room %}
-        <form hx-post="/simrooms/{{ selected_sim_room.id }}/calibration_recordings"
+      {% if selected_simroom %}
+        <form hx-post="/simrooms/{{ selected_simroom.id }}/calibration_recordings"
               hx-target="#main-content"
               hx-target-4xx="#error-message"
               hx-target-5xx="#error-message"
@@ -120,12 +120,12 @@
         </form>
       {% endif %}
       <ul id="calibration-recordings-list" class="list-group">
-        {% if not selected_sim_room %}
+        {% if not selected_simroom %}
           <p class="text-muted">Please select a Sim Room from the left to manage its Calibration Recordings</p>
-        {% elif selected_sim_room.calibration_recordings|length == 0 %}
+        {% elif selected_simroom.calibration_recordings|length == 0 %}
           <li class="list-group-item text-muted text-center">No calibration recordings added yet</li>
         {% endif %}
-        {% for cal_rec in selected_sim_room.calibration_recordings %}
+        {% for cal_rec in selected_simroom.calibration_recordings %}
           <li class="list-group-item">
             <div class="d-flex justify-content-between align-items-center">
               <div class="d-flex flex-column">
@@ -148,7 +148,7 @@
                 </button>
                 <button class="btn btn-sm btn-danger d-flex align-items-center"
                         hx-confirm="Are you sure you want to delete this calibration recording? All calibration annotations will be lost."
-                        hx-delete="/simrooms/{{ selected_sim_room.id }}/calibration_recordings/{{ cal_rec.id }}"
+                        hx-delete="/simrooms/{{ selected_simroom.id }}/calibration_recordings/{{ cal_rec.id }}"
                         hx-target="#main-content"
                         hx-target-4xx="#error-message"
                         hx-target-5xx="#error-message"

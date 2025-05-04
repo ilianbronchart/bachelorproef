@@ -3,8 +3,8 @@ CUDA_USER_VERSION := "12.8"
 
 lint:
     poetry run ruff format
-    poetry run ruff check --fix
-    poetry run mypy . --strict
+    poetry run ruff check --fix src
+    poetry run mypy src --strict
     
 download-sam2-checkpoints:
     cd checkpoints && ../libs/sam2/checkpoints/download_ckpts.sh

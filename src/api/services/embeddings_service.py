@@ -31,8 +31,10 @@ def get_embeddings(
     log_performance: bool = False,
 ):
     """
-    Generate embeddings for a list of image samples using the DINOv2 model in batches.
-    Processes data batch by batch so that not all samples are loaded into memory simultaneously.
+    Generate embeddings for a list of image samples
+    using the DINOv2 model in batches.
+    Processes data batch by batch so that not all
+    samples are loaded into memory simultaneously.
 
     Args:
         samples (list[UInt8Array]): A list of image samples to process.

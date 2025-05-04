@@ -89,20 +89,22 @@ class GazeSegmentationJob:
             mask: A tensor containing a single mask of shape (H, W)
 
         Returns:
-            bool: True if the mask's area is less than or equal to 30% of the frame area, False otherwise.
+            bool: True if the mask's area is less than or equal to
+                  30% of the frame area, False otherwise.
         """
         height, width = mask.shape
         frame_area = height * width
         max_mask_area = 0.1 * frame_area
 
         mask_area = mask.sum()
-        return mask_area >= max_mask_area
+        return bool(mask_area >= max_mask_area)
 
     def mask_was_viewed(
         self, mask: torch.Tensor, gaze_position: tuple[float, float]
     ) -> bool:
         """
-        Check if the mask is at least partially within the viewed radius of the gaze point.
+        Check if the mask is at least partially within the
+        viewed radius of the gaze point.
         The mask is assumed to be at the original frame size.
 
         Args:
@@ -110,7 +112,8 @@ class GazeSegmentationJob:
             gaze_position: Tuple (x, y) representing the gaze position.
 
         Returns:
-            bool: True if part of the mask falls within the circular area defined by self.viewed_radius, False otherwise.
+            bool: True if part of the mask falls within the circular
+                  area defined by self.viewed_radius, False otherwise.
         """
         height, width = mask.shape
         device = mask.device
@@ -125,9 +128,9 @@ class GazeSegmentationJob:
 
         # Apply the circular mask to the input mask.
         masked_mask = mask * circular_mask
-        return masked_mask.sum() > 0
+        return bool(masked_mask.sum() > 0)
 
-    def run(self):
+    def run(self) -> None:
         with ThreadPoolExecutor() as executor:
             for frame_idx, results in enumerate(
                 self.model.track(source=str(self.video_path), imgsz=640, stream=True)

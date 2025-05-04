@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 
 from src.api.models.pydantic import CalibrationRecordingDTO, SimRoomClassDTO
 from src.api.repositories import simrooms_repo
-from src.config import LABELING_RESULTS_PATH
 
 
 def get_class_id_to_name_map(db: Session, simroom_id: int) -> dict[int, str]:
@@ -21,14 +20,12 @@ def get_tracked_classes(db: Session, cal_rec_id: int) -> list[SimRoomClassDTO]:
     return [SimRoomClassDTO.from_orm(simroom_class) for simroom_class in classes]
 
 
-def get_annotation_paths(class_id: int):
-    annotation_paths = []
-    for labeling_results in LABELING_RESULTS_PATH.iterdir():
-        for class_results in labeling_results.iterdir():
-            if class_results.stem == str(class_id):
-                for annotation in class_results.iterdir():
-                    annotation_paths.append(annotation)
-    return annotation_paths
+def create_simroom(db: Session, name: str) -> SimRoomClassDTO:
+    """
+    Create a new sim room.
+    """
+    simroom = simrooms_repo.create_simroom(db, name=name)
+    return SimRoomClassDTO.from_orm(simroom)
 
 
 def get_simroom_class(db: Session, class_id: int) -> SimRoomClassDTO:

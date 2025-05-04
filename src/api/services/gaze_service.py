@@ -23,7 +23,8 @@ def mask_was_viewed(
         gaze_position: Tuple (x, y) representing the gaze position.
 
     Returns:
-        bool: True if part of the mask falls within the circular area defined by viewed_radius, False otherwise.
+        bool: True if part of the mask falls within the circular
+              area defined by viewed_radius, False otherwise.
     """
     height, width = mask.shape
     device = mask.device
@@ -53,7 +54,8 @@ def get_gaze_points(
     gaze_data: list[GazeData], resolution: tuple[int, int]
 ) -> list[GazePoint]:
     """
-    Extract gaze points from a list of gaze data and denormalize them to the video resolution.
+    Extract gaze points from a list of gaze data
+    and denormalize them to the video resolution.
 
     Args:
         gaze_data (List[GazeData]): List of gaze data objects.
@@ -94,7 +96,8 @@ def match_frames_to_gaze(
 ) -> list[list[GazePoint]]:
     """
     Match video frames to their corresponding gaze points.
-    The polling rate of gaze data is twice the fps of the video, so there are max two gaze points per frame.
+    The polling rate of gaze data is twice the fps of the video,
+    so there are max two gaze points per frame.
 
     Args:
         num_frames (int): Number of video frames.
@@ -143,7 +146,8 @@ def get_gaze_point_per_frame(
         fps (float): Frames per second of the video.
 
     Returns:
-        dict[int, GazePoint]: Dictionary mapping frame indices to their first valid gaze point.
+        dict[int, GazePoint]: Dictionary mapping frame indices
+                              to their first valid gaze point.
     """
     gaze_data = parse_gazedata_file(gaze_data_path)
     gaze_points = get_gaze_points(gaze_data, resolution)

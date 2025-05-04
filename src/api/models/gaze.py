@@ -12,7 +12,7 @@ class GazePoint:
     timestamp: float
 
     @property
-    def position(self) -> tuple[float, float]:
+    def position(self) -> tuple[int, int]:
         return (self.x, self.y)
 
 

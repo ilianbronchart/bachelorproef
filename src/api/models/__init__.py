@@ -7,7 +7,6 @@ from .context import (
     LabelingSettingsContext,
     LabelingTimelineContext,
     RecordingsContext,
-    Request,
     SimRoomsContext,
 )
 
@@ -21,6 +20,5 @@ __all__ = [
     "LabelingSettingsContext",
     "LabelingTimelineContext",
     "RecordingsContext",
-    "Request",
     "SimRoomsContext",
 ]

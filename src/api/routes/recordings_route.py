@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from src.api.dependencies import get_db
-from src.api.models.context import RecordingsContext, Request
+from src.api.db import get_db
+from src.api.models.context import RecordingsContext
 from src.api.repositories import recordings_repo
 from src.api.services import glasses_service, recordings_service
 from src.config import Template, templates

@@ -1,7 +1,7 @@
-from typing import TYPE_CHECKING
+from typing import Any
 
-from fastapi import Request as FastAPIRequest
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from fastapi import Request
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.api.models.pydantic import (
     AnnotationDTO,
@@ -11,32 +11,14 @@ from src.api.models.pydantic import (
 )
 from src.config import Template
 
-if TYPE_CHECKING:
-    from .app import App
-
-
-class Request(FastAPIRequest):
-    _app: "App"
-
-    @property
-    def app(self) -> "App":
-        return self._app
-
 
 class BaseContext(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
+    request: Request = Field(..., exclude=True)
 
-    # Make request a private attribute (won't be serialized in `.dict()`)
-    _request: Request = PrivateAttr()
-
-    def __init__(self, **data):
-        request = data.pop("request", None)
-        super().__init__(**data)
-        self._request = request
-
-    def model_dump(self, **kwargs):
+    def model_dump(self, **kwargs) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         base = super().model_dump(**kwargs)
-        base["request"] = self._request
+        base["request"] = self.request
         return base
 
 
@@ -54,13 +36,13 @@ class RecordingsContext(BaseContext):
 
 class SimRoomsContext(BaseContext):
     recordings: list[RecordingDTO] = Field(default_factory=list)
-    sim_rooms: list[SimRoomDTO] = Field(default_factory=list)
-    selected_sim_room: SimRoomDTO | None = None
+    simrooms: list[SimRoomDTO] = Field(default_factory=list)
+    selected_simroom: SimRoomDTO | None = None
     content: str = Template.SIMROOMS
 
 
 class ClassListContext(BaseContext):
-    selected_sim_room: SimRoomDTO
+    selected_simroom: SimRoomDTO
 
 
 class LabelingContext(BaseContext):
