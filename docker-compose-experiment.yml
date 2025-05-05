@@ -12,8 +12,8 @@ services:
     volumes:
       - ./src:/app/src:cached
       - ./checkpoints:/app/checkpoints:cached
-      - ./controlled_experiment/database.db:/app/database.db
-      - ./controlled_experiment/data:/app/data:cached
+      - ./experiment/database.db:/app/database.db
+      - ./experiment/data:/app/data:cached
       # cache Poetry & pip downloads between container restarts
       - poetry_cache:/root/.cache/pypoetry
       - pip_cache:/root/.cache/pip

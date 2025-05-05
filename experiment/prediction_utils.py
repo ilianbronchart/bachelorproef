@@ -5,7 +5,7 @@ import torch
 from src.config import UNKNOWN_CLASS_ID
 from torchvision.ops import box_iou
 
-from controlled_experiment.settings import (
+from experiment.settings import (
     CLASS_ID_TO_NAME,
     MISSING_GROUND_TRUTH_ID,
     MISSING_PREDICTION_CLASS_ID,
