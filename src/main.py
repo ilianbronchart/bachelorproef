@@ -19,14 +19,6 @@ async def lifespan(_app: App) -> AsyncGenerator[None, None]:
     with Session(engine) as session:
         recordings_service.clean_recordings(session)
 
-    with Session(engine) as db:
-        cal_rec = simrooms_service.get_calibration_recording(
-            db=db,
-            calibration_id=1,
-        )
-        labeler = Labeler(cal_rec=cal_rec)
-        _app.labeler = labeler
-
     yield
 
 
