@@ -93,6 +93,7 @@ def delete_annotation(db: Session, annotation_id: int) -> None:
     if not annotation:
         raise NotFoundError(f"Annotation with id {annotation_id} not found")
     db.delete(annotation)
+    db.flush()
 
 
 def delete_point_label(db: Session, point_label_id: int) -> None:
