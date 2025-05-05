@@ -14,7 +14,7 @@ from src.config import MAX_INFERENCE_STATE_FRAMES, SAM_2_MODEL_CONFIGS
 
 def load_predictor(checkpoint_path: Path) -> SAM2ImagePredictor:
     model_cfg = SAM_2_MODEL_CONFIGS[checkpoint_path]
-    predictor = SAM2ImagePredictor(build_sam2(model_cfg, str(checkpoint_path)))  # type: ignore[no-untyped-call]
+    predictor = SAM2ImagePredictor(build_sam2(model_cfg, str(checkpoint_path)))
     return predictor
 
 
@@ -29,7 +29,7 @@ def load_video_predictor(
         device="cuda",
         max_cond_frames_in_attn=max_inference_state_frames,
         clear_non_cond_mem_around_input=True,
-    )  # type: ignore[no-untyped-call]
+    )
     return predictor
 
 

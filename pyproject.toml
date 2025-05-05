@@ -42,7 +42,6 @@ numpy = "<2.0.0"
 faiss-gpu = "^1.7.2"
 sqlalchemy = "2.0.29"
 alembic = "^1.14.1"
-sqlalchemy-serializer = "^1.4.22"
 torchvision = "0.20.1"
 decord = "^0.6.0"
 reportlab = "^4.3.1"
@@ -66,12 +65,15 @@ exclude = [
 ]
 
 [[tool.mypy.overrides]]
-module = "torchvision.ops"
+module = [
+    "sam2.*",
+    "torchvision.*",
+    "ultralytics",
+    "faiss",
+    "transformers"
+]
 ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = "sam2.sam2_image_predictor"
-ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

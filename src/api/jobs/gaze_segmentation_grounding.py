@@ -53,15 +53,14 @@ class GazeSegmentationJob:
         self.frame_count = cv2_video_frame_count(self.video_path)
 
         # Set up the output video.
+        self.video_result: cv2.VideoWriter | None = None
         if output_video_path is not None:
             self.video_result = cv2.VideoWriter(
                 str(output_video_path),
-                cv2.VideoWriter_fourcc(*"mp4v"),
+                cv2.VideoWriter_fourcc(*"mp4v"),  # type: ignore[attr-defined]
                 self.fps,
                 (self.resolution[1], self.resolution[0]),
             )
-        else:
-            self.video_result = None
 
         # Parse gaze data.
         self.gaze_data = parse_gazedata_file(self.gaze_data_path)

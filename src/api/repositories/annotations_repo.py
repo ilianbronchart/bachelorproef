@@ -88,14 +88,14 @@ def create_annotation(
     return annotation
 
 
-def delete_annotation(db: Session, annotation_id: int):
+def delete_annotation(db: Session, annotation_id: int) -> None:
     annotation = db.query(Annotation).filter(Annotation.id == annotation_id).first()
     if not annotation:
         raise NotFoundError(f"Annotation with id {annotation_id} not found")
     db.delete(annotation)
 
 
-def delete_point_label(db: Session, point_label_id: int):
+def delete_point_label(db: Session, point_label_id: int) -> None:
     point = db.query(PointLabel).filter(PointLabel.id == point_label_id).first()
     if not point:
         raise NotFoundError(f"Point with id {point_label_id} not found")
@@ -107,7 +107,7 @@ def create_point_labels(
     annotation_id: int,
     points: list[tuple[int, int]],
     labels: list[int],
-) -> PointLabel:
+) -> None:
     for (x, y), label in zip(points, labels, strict=False):
         point_label = PointLabel(
             annotation_id=annotation_id,

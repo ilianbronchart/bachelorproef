@@ -160,11 +160,11 @@ def clamp(x: float, lower: float, upper: float) -> float:
     return max(lower, min(x, upper))
 
 
-def base64_to_numpy(img: str):
+def base64_to_numpy(img: str) -> UInt8Array:
     imgdata = base64.b64decode(img)
     nparr = np.frombuffer(imgdata, np.uint8)
     img_bgr = cv2.imdecode(nparr, flags=cv2.IMREAD_COLOR)
-    return cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+    return cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB).astype(np.uint8)
 
 
 def generate_pleasant_color() -> str:
@@ -206,7 +206,7 @@ def iter_frames_dir(frames_path: Path) -> Generator[tuple[int, UInt8Array], None
 
     for frame_path in sorted(frames_path.iterdir()):
         frame_idx = int(frame_path.stem)
-        frame = cv2.imread(str(frame_path))
+        frame = cv2.imread(str(frame_path)).astype(np.uint8)
         yield frame_idx, frame
 
 
@@ -256,10 +256,10 @@ def get_frame_from_dir(frame_idx: int, frames_path: Path) -> UInt8Array:
     if not frame_path.exists():
         raise FileNotFoundError(f"Frame {frame_idx} not found in {frames_path}")
 
-    return cv2.imread(str(frame_path))
+    return cv2.imread(str(frame_path)).astype(np.uint8)
 
 
-def hex_to_bgr(hex_color: str) -> tuple:
+def hex_to_bgr(hex_color: str) -> tuple[int, int, int]:
     """Convert a hex color string to a BGR tuple for OpenCV."""
     hex_color = hex_color.lstrip("#")
     r = int(hex_color[0:2], 16)

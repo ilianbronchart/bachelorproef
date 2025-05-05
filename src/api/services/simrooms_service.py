@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.api.models.pydantic import CalibrationRecordingDTO, SimRoomClassDTO
+from src.api.models.pydantic import CalibrationRecordingDTO, SimRoomClassDTO, SimRoomDTO
 from src.api.repositories import simrooms_repo
 
 
@@ -20,12 +20,12 @@ def get_tracked_classes(db: Session, cal_rec_id: int) -> list[SimRoomClassDTO]:
     return [SimRoomClassDTO.from_orm(simroom_class) for simroom_class in classes]
 
 
-def create_simroom(db: Session, name: str) -> SimRoomClassDTO:
+def create_simroom(db: Session, name: str) -> SimRoomDTO:
     """
     Create a new sim room.
     """
     simroom = simrooms_repo.create_simroom(db, name=name)
-    return SimRoomClassDTO.from_orm(simroom)
+    return SimRoomDTO.from_orm(simroom)
 
 
 def get_simroom_class(db: Session, class_id: int) -> SimRoomClassDTO:

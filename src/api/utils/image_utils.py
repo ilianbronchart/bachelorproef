@@ -1,4 +1,5 @@
 import base64
+from typing import cast
 
 import cv2
 import numpy as np
@@ -25,7 +26,7 @@ def draw_labeled_box(
     img: UInt8Array, box: tuple[int, int, int, int], label: str, color: str
 ) -> UInt8Array:
     x1, y1, x2, y2 = box
-    color_rgb = ImageColor.getcolor(color, "RGB")
+    color_rgb = cast(tuple[int, int, int], ImageColor.getcolor(color, "RGB"))
     color_bgr = (color_rgb[2], color_rgb[1], color_rgb[0])
 
     (text_w, text_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 2)
@@ -67,7 +68,7 @@ def encode_to_png(image: UInt8Array) -> str:
     ret, encoded_img = cv2.imencode(".png", image)
     if not ret:
         raise ImageEncodingError("Failed to encode image")
-    return base64.b64encode(encoded_img).decode("utf-8")
+    return base64.b64encode(encoded_img.tobytes()).decode("utf-8")
 
 
 def decode_from_base64(base64_str: str) -> UInt8Array:
@@ -75,7 +76,7 @@ def decode_from_base64(base64_str: str) -> UInt8Array:
     try:
         decoded_data = base64.b64decode(base64_str)
         np_arr = np.frombuffer(decoded_data, np.uint8)
-        img = cv2.imdecode(np_arr, cv2.IMREAD_UNCHANGED)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_UNCHANGED).astype(np.uint8)
     except Exception as e:
         raise ImageEncodingError(f"Failed to decode image: {e}") from e
 

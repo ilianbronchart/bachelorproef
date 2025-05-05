@@ -2,7 +2,6 @@ from pathlib import Path
 
 from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy_serializer import SerializerMixin
 
 from src.api.db import Base
 from src.config import RECORDINGS_PATH, TRACKING_RESULTS_PATH
@@ -31,7 +30,7 @@ class Recording(Base):
         return RECORDINGS_PATH / f"{self.id}.tsv"
 
 
-class SimRoom(Base, SerializerMixin):
+class SimRoom(Base):
     __tablename__ = "simrooms"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -45,9 +44,8 @@ class SimRoom(Base, SerializerMixin):
     )
 
 
-class SimRoomClass(Base, SerializerMixin):
+class SimRoomClass(Base):
     __tablename__ = "classes"
-    serialize_rules = ["-annotations", "-simroom"]
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     simroom_id: Mapped[int] = mapped_column(Integer, ForeignKey("simrooms.id"))
@@ -60,7 +58,7 @@ class SimRoomClass(Base, SerializerMixin):
     )
 
 
-class CalibrationRecording(Base, SerializerMixin):
+class CalibrationRecording(Base):
     __tablename__ = "calibration_recordings"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -90,7 +88,7 @@ class CalibrationRecording(Base, SerializerMixin):
         return list(self.tracking_results_path.iterdir())
 
 
-class Annotation(Base, SerializerMixin):
+class Annotation(Base):
     __tablename__ = "annotations"
     __table_args__ = (
         UniqueConstraint(
@@ -101,7 +99,6 @@ class Annotation(Base, SerializerMixin):
             sqlite_on_conflict="ROLLBACK",
         ),
     )
-    serialize_rules = ["-point_labels", "-calibration_recording", "-simroom_class"]
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     calibration_id: Mapped[int] = mapped_column(
@@ -124,8 +121,7 @@ class Annotation(Base, SerializerMixin):
     )
 
 
-class PointLabel(Base, SerializerMixin):
-    serialize_rules = ["-annotation"]
+class PointLabel(Base):
     __tablename__ = "point_labels"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

@@ -5,7 +5,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from src.api.db import Base, engine
+from src.api.db import engine
 from src.api.models import App
 from src.api.models.context import GlassesConnectionContext
 from src.api.routes import labeling_route, recordings_route, simrooms_route
@@ -18,8 +18,6 @@ from src.config import Template, templates
 async def lifespan(_app: App) -> AsyncGenerator[None, None]:
     with Session(engine) as session:
         recordings_service.clean_recordings(session)
-
-    Base.metadata.create_all(bind=engine)
 
     with Session(engine) as db:
         cal_rec = simrooms_service.get_calibration_recording(

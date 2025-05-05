@@ -53,7 +53,7 @@ class RecordingDTO(BaseDTO):
         return self.created.strftime("%d/%m/%y at %I:%M %p")
 
     @classmethod
-    async def parse_participant(recording: GlassesRecording) -> str:
+    async def parse_participant(cls, recording: GlassesRecording) -> str:
         participant_bytes = base64.b64decode(await recording.meta_lookup("participant"))
         participant_json = participant_bytes.decode("utf-8")
         parsed_data = json.loads(participant_json)
@@ -173,7 +173,6 @@ class SimRoomClassDTO(BaseDTO):
             simroom_id=simroom_class.simroom_id,
             class_name=simroom_class.class_name,
             color=simroom_class.color,
-            annotation_paths=[],
         )
 
 

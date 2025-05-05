@@ -3,7 +3,7 @@ from src.api.exceptions import NotFoundError
 from src.api.models.db import Recording
 
 
-def delete(db: Session, recording_id: str):
+def delete(db: Session, recording_id: str) -> None:
     rec = db.query(Recording).filter(Recording.id == recording_id).first()
     if rec is None:
         raise NotFoundError(f"Recording with id {recording_id} not found")
@@ -32,7 +32,7 @@ def create(
     participant: str,
     created: str,
     duration: str,
-) -> Recording:
+) -> None:
     db_recording = Recording(
         id=recording_id,
         visible_name=visible_name,

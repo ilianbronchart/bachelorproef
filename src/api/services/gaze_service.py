@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from src.api.models.gaze import GazeData, GazeDataType, GazePoint
+from src.api.models.gaze import GazeData, GazePoint
 from src.config import VIEWED_RADIUS
 from src.utils import clamp
 
@@ -39,7 +39,7 @@ def mask_was_viewed(
 
     # Apply the circular mask to the input mask.
     masked_mask = mask * circular_mask
-    return masked_mask.sum() > 0
+    return bool(masked_mask.sum() > 0)
 
 
 def parse_gazedata_file(file_path: Path) -> list[GazeData]:
@@ -56,6 +56,7 @@ def get_gaze_points(
     """
     Extract gaze points from a list of gaze data
     and denormalize them to the video resolution.
+    Ignores gaze data with type MISSING.
 
     Args:
         gaze_data (List[GazeData]): List of gaze data objects.
@@ -65,24 +66,28 @@ def get_gaze_points(
         List[GazePoint]: List of gaze points with denormalized coordinates.
     """
 
-    valid_gazedata = [data for data in gaze_data if data.type != GazeDataType.MISSING]
-
     gaze_points = []
-    for data in valid_gazedata:
-        eyeleft = data.eye_data_left
-        eyeright = data.eye_data_right
+    for data in gaze_data:
+        if data.gaze2d is None:
+            continue
 
-        # Calculate gaze origin as the average of both eyes' gaze origins
-        gaze_origin = (
-            np.add(eyeleft.origin, eyeright.origin) / 2
-            if (eyeleft and eyeright)
-            else eyeleft.origin
-            if eyeleft
-            else eyeright.origin
-        )
+        gaze_depth = None
+        if data.gaze3d and data.eye_data_left and data.eye_data_right:
+            eyeleft = data.eye_data_left
+            eyeright = data.eye_data_right
 
-        # Calculate gaze depth as the distance from the gaze origin to the gaze point
-        gaze_depth = np.sqrt(np.sum((data.gaze3d - gaze_origin) ** 2, axis=0))
+            # Calculate gaze origin as the average of both eyes' gaze origins
+            gaze_origin = (
+                np.add(eyeleft.origin, eyeright.origin) / 2
+                if (eyeleft and eyeright)
+                else eyeleft.origin
+                if eyeleft
+                else eyeright.origin
+            )
+
+            # Calculate gaze depth as the distance from the gaze origin to the gaze point
+            gaze_depth = np.sqrt(np.sum((data.gaze3d - gaze_origin) ** 2, axis=0))
+
         x = int(clamp(data.gaze2d[0], 0, 1) * resolution[1])
         y = int(clamp(data.gaze2d[1], 0, 1) * resolution[0])
 

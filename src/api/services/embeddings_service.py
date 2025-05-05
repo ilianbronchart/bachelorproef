@@ -1,4 +1,5 @@
 import time
+from collections.abc import Generator
 
 import torch
 import torchvision.transforms as T
@@ -21,7 +22,7 @@ transformation_chain = T.Compose([
 
 
 def load_model(device: str = "cuda") -> tuple[torch.nn.Module, BitImageProcessor]:
-    return AutoModel.from_pretrained("facebook/dinov2-base").to(device)
+    return AutoModel.from_pretrained("facebook/dinov2-base").to(device)  # type: ignore[no-any-return]
 
 
 def get_embeddings(
@@ -29,7 +30,7 @@ def get_embeddings(
     samples: list[UInt8Array],
     batch_size: int = 64,
     log_performance: bool = False,
-):
+) -> Generator[tuple[torch.Tensor, int, int], None, None]:
     """
     Generate embeddings for a list of image samples
     using the DINOv2 model in batches.

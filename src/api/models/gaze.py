@@ -8,7 +8,7 @@ import numpy.typing as npt
 class GazePoint:
     x: int
     y: int
-    depth: float
+    depth: float | None
     timestamp: float
 
     @property

@@ -30,7 +30,7 @@ def get_all_simrooms(db: Session) -> list[SimRoomDTO]:
 def create_simroom(
     db: Session,
     name: str,
-) -> SimRoomClass:
+) -> SimRoom:
     """Create a new sim room"""
     simroom = SimRoom(name=name)
     db.add(simroom)
