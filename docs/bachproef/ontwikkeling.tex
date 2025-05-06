@@ -153,7 +153,6 @@ Over het algemeen hebben we slechts één annotatie nodig voor elk gedeelte van 
 Het specifieke algoritme dat bedacht werd voor de tracking komt aan bod in de technische sectie van dit onderdeel.
 Tenslotte bestaat de mogelijkheid dat er veel objecten in beeld zijn waardoor maskers, bounding boxes en labels elkaar overlappen. Om deze reden kunnen we rechtsboven een optie `Show inactive classes', uitvinken om enkel het actieve object te tonen in het canvas.
 
-
 \subsubsection{Analyse van Eyetracking-Opnames}
 
 Hoewel het aanvankelijk de bedoeling was, werd in de context van deze bachelorproef, geen werkende analyse-tool ontwikkeld maar enkel een proof-of-concept.
@@ -165,11 +164,12 @@ De analyses die uitgevoerd werden in deze bachelorproef komen aan bod in Hoofdst
 
 \section{Technische Specificaties}
 
-Voor de ontwikkeling van de applicatie werd een lichtgewicht, modulaire softwarestack gekozen, afgestemd op de specifieke noden van het project. De belangrijkste technologieën en keuzes worden hieronder toegelicht:
+Voor de ontwikkeling van de applicatie werd een lichtgewicht, modulaire softwarestack gekozen, afgestemd op de specifieke noden van het project.
+Er is geopteerd voor een web-applicatie die lokaal kan draaien op een laptop (met een degelijke GPU) of een desktop computer, en die via een browser toegankelijk is.
 
 \begin{itemize}
     \item \textbf{Backend Framework:} Python met \texttt{FastAPI} werd gekozen omwille van zijn hoge prestaties, asynchrone mogelijkheden (belangrijk voor I/O-intensieve taken zoals data-import en analyse), automatische documentatie en type hinting-integratie.
-    \item \textbf{Frontend Aanpak:} In plaats van een zwaar JavaScript-framework, werd geopteerd voor \texttt{HTMX}. Dit laat toe om dynamische interacties te bouwen door HTML direct uit te wisselen met de server, wat de complexiteit van de frontend aanzienlijk reduceert. \texttt{Jinja2} dient als templating engine om deze HTML server-side te genereren.
+    \item \textbf{Frontend Aanpak:} In plaats van een zwaar JavaScript-framework, werd geopteerd voor \texttt{HTMX}. Dit laat toe om dynamische interacties te bouwen door HTML direct uit te wisselen met de server, wat de complexiteit van de frontend aanzienlijk reduceert. \texttt{Jinja2} dient als templating engine om deze HTML server-side te genereren. Tenslotte werd \texttt{Bootstrap} gebruikt voor de opmaak van de applicatie.
     \item \textbf{Database:} Een \texttt{SQLite} database werd gebruikt vanwege de eenvoud en het feit dat de applicatie bedoeld is voor lokaal gebruik, waardoor een complexe database server overbodig is. \texttt{SQLAlchemy} werd ingezet als ORM (Object-Relational Mapping) voor een gestructureerde interactie met de database vanuit Python.
     \item \textbf{Hardware Communicatie:} Voor de interactie met de Tobii Pro Glasses 3 werd de officiële \texttt{g3pylib} SDK gebruikt, die toegang biedt tot opnames en statusinformatie via de WiFi-verbinding.
     \item \textbf{Development \& Kwaliteitsborging:} \texttt{Poetry} werd gebruikt voor dependency management. Strikte type hinting met \texttt{Mypy} en code linting/formatting met \texttt{Ruff} dragen bij aan de robuustheid en onderhoudbaarheid van de code. \texttt{Docker} werd ingezet om de applicatie te containeriseren, wat zorgt voor een consistente uitvoeringsomgeving en eenvoudige deployment.
@@ -177,5 +177,64 @@ Voor de ontwikkeling van de applicatie werd een lichtgewicht, modulaire software
 Deze keuzes resulteerden in een applicatie die relatief eenvoudig te onderhouden en verder te ontwikkelen is, conform de doelstelling om iteratieve verbeteringen in volgende bachelorproeven mogelijk te maken.
 
 \subsection{Softwarearchitectuur}
+
+De applicatie volgt een gelaagde architectuur om een duidelijke scheiding van verantwoordelijkheden (Separation of Concerns) te waarborgen en de onderhoudbaarheid en testbaarheid te verhogen. 
+De data en requests vloeien doorgaans van de \texttt{frontend} via de \texttt{routes} naar de \texttt{services}, die vervolgens de \texttt{repositories} aanroepen voor databasetoegang (zie figuur \ref{fig:software-architectuur}).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{software-architectuur.png}
+  \caption[]{\label{fig:software-architectuur} Software-architectuur van de applicatie. De applicatie is opgebouwd uit verschillende lagen die elk hun eigen verantwoordelijkheden hebben. }
+\end{figure}
+% Link naar canva: https://www.canva.com/design/DAGmr8n_Umg/6k1gqiCpq2hON75Jq9H17Q/edit?utm_content=DAGmr8n_Umg&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
+
+\subsubsection{Frontend (HTML, HTMX, en Jinja2)}
+
+De gebruikersinterface (UI) wordt weergegeven in de browser en is opgebouwd uit HTML-pagina's die server-side worden gegenereerd met behulp van de \texttt{Jinja2} templating engine.
+Deze engine maakt het mogelijk om inhoud (data vanuit de Backend) te integreren in de HTML-pagina's door gebruik te maken van variabelen en controle-structuren.
+Voor de dynamische aspecten van de applicatie, waaronder het bijwerken van de UI zonder de volledige pagina te herladen, wordt \texttt{HTMX} ingezet.
+
+\texttt{HTMX} maakt het mogelijk om via HTML-attributen aanroepen te doen naar de backend (vb: als een knop wordt ingedrukt).
+De backend genereert vervolgens het gevraagde HTML-fragment---zoals een tabel met opnames of een lijst van objecten---die HTMX vervolgens injecteert in de huidige pagina.
+Op deze manier kunnen eenvoudige interacties worden gerealiseerd zonder de noodzaak van een volledig JavaScript-framework zoals React of Vue.js.
+
+Binnen de `Browse Recordings'-en `Manage Sim Rooms'-pagina's is HTMX grotendeels voldoende, maar toch valt JavaScript niet volledig te vermijden.
+De labeling-tool vergt immers complexe interacties die niet eenvoudig gerealiseerd kunnen worden met enkel HTML en HTMX.
+Zo werd de labeling-tool opgesplitst in vijf componenten die elk hun eigen verantwoordelijkheden hebben:
+\begin{itemize}
+    \item De \texttt{labeling-canvas} die de huidige frame toont en het mogelijk maakt om objecten te labelen.
+    \item De \texttt{tijdlijn} die de voortgang van de opname toont en het mogelijk maakt om naar een specifieke frame te navigeren.
+    \item De \texttt{objectenlijst} die de beschikbare objecten toont en het mogelijk maakt om objecten te beheren en te selecteren.
+    \item De \texttt{annotatielijst} die de gemaakte annotaties van het momenteel geselecteerde object toont.
+    \item De \texttt{labeling settings} die instellingen van de labeling-tool toont (`Show inactive classes').
+\end{itemize}
+Elk van deze componenten communiceert apart via HTMX-attributen met de backend, en kunnen onafhankelijk van elkaar worden geladen.
+Wanneer toch communicatie nodig is tussen de componenten, gebeurt dit via \texttt{Events} die door de componenten worden uitgezonden en opgevangen.
+Een voorbeeld hiervan is wanneer de gebruiker klikt op de tijdlijn om naar een specifieke frame te navigeren.
+De tijdlijn stuurt een event naar de labeling-canvas, die vervolgens een aanroep doet naar de backend om de juiste frame op te halen.
+
+Aangezien het gaat om een single-user applicatie, is het toch mogelijk om een groot deel van de logica over te dragen aan de backend.
+De frontend is dus voornamelijk verantwoordelijk voor de presentatie van de data en de interactie met de gebruiker.
+De backend is verantwoordelijk voor de verwerking van de data, en het bijhouden van de status van de applicatie (de huidige frame, de geselecteerde objecten, de machine-learning modellen, etc.).
+
+\subsubsection{Backend (Python met FastAPI)}
+
+De backend, geschreven in Python met het \texttt{FastAPI} framework, is verantwoordelijk voor het verwerken van requests, 
+het uitvoeren van de businesslogica, en de interactie met de datalaag en externe hardware.
+
+\paragraph{Routes (FastAPI Endpoints)}
+De \texttt{routes} definiëren de API-endpoints waarnaar de frontend requests stuurt.
+Deze laag ontvangt HTTP-requests, valideert inkomende data 
+(via Pydantic modellen die FastAPI automatisch uit request bodies of query parameters haalt), 
+roept de juiste methoden aan in de \texttt{services}-laag, en formatteert de respons. 
+Voor HTMX-requests is dit typisch een HTML-fragment gerenderd met Jinja2; voor andere endpoints kan dit JSON zijn 
+(bv. het ophalen van annotatiepunten voor de labeler).
+
+\paragraph{Services (Business Logic)}
+De \texttt{services}-laag bevat de kernlogica van de applicatie.
+Services coördineren operaties en implementeren de business rules. 
+Ze zijn ontkoppeld van de HTTP-laag en de directe database-implementatie. 
+In plaats daarvan gebruiken ze methoden uit de \texttt{repositories}-laag voor datatoegang en -persistentie, 
+en kunnen ze andere utilities of externe bibliotheken aanroepen (bv. \texttt{g3pylib} voor communicatie met de Tobii-bril, of \texttt{SAM2ImagePredictor} voor segmentatie).
 
 \subsection{Labeling Tool}

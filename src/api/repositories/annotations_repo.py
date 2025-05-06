@@ -151,3 +151,4 @@ def get_tracks(class_tracking_results_path: Path) -> list[tuple[int, int]]:
     # Add the final track
     tracks.append((start, prev))
     return tracks
+
