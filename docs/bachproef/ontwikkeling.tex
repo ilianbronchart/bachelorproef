@@ -237,4 +237,60 @@ Ze zijn ontkoppeld van de HTTP-laag en de directe database-implementatie.
 In plaats daarvan gebruiken ze methoden uit de \texttt{repositories}-laag voor datatoegang en -persistentie, 
 en kunnen ze andere utilities of externe bibliotheken aanroepen (bv. \texttt{g3pylib} voor communicatie met de Tobii-bril, of \texttt{SAM2ImagePredictor} voor segmentatie).
 
-\subsection{Labeling Tool}
+\paragraph{Repositories (Data Access)}
+De \texttt{repositories}-laag vormt de abstractielaag boven de database en het filesysteem.
+Het bevat alle logica voor het ophalen, opslaan, en beheren van data in de \texttt{SQLite} database via \texttt{SQLAlchemy} ORM.
+Ook bevat het logica voor het beheren van bestanden op de schijf, zoals resultaten van de labeling-tool of de video-opnames.
+Dit zorgt ervoor dat de \texttt{services}-laag onafhankelijk is van de specifieke database-implementatie.
+
+\subsection{Database}
+
+We hebben het al eerder gehad over opnames, simulatieomgevingen, objecten en annotaties, maar hoe worden deze nu opgeslagen in de database?
+Om een beter zicht te krijgen op de database, werd er een Entity-Relationship Diagram (ERD) gemaakt dat de verschillende entiteiten en hun onderlinge relaties toont (zie figuur \ref{fig:erd}).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{erd.png}
+  \caption[]{\label{fig:erd} Entity-Relationship Diagram (ERD) van de applicatie. De verschillende entiteiten en hun onderlinge relaties worden weergegeven: simulatieruimten, objecten (classes), opnames, kalibratie-opnames, annotaties, en point-labels. }
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{simrooms} zijn de verschillende omgevingen waarin de opnames worden gemaakt. 
+  Elke simulatieomgeving heeft een naam en kan meerdere objecten bevatten.
+  \item \textbf{classes} zijn de verschillende objecten die in de simulatieomgeving aanwezig zijn. 
+  Elk object heeft een naam, een kleur, en kan meerdere annotaties bevatten.
+  \item \textbf{recordings} zijn de video-opnames die gemaakt worden met de eyetracker. 
+  Elke opname heeft een naam, een datum, en een duur. 
+  Een opname kan ook dienen als kalibratie-opname voor meerdere simulatieruimten. 
+  Opnames hebben ook een pad naar hun video-bestand en hun blik-data bestand. 
+  Deze paden worden niet opgeslagen in de database, maar worden gegenereerd op basis van het \texttt{id} van de opname. 
+  \item \textbf{calibration\_recordings} zijn louter een referentie naar de opname die als kalibratie-opname wordt gebruikt 
+  voor de simulatieomgeving. Ze kunnen meerdere annotaties bevatten.
+  \item \textbf{annotations} worden gemaakt in de labeling-tool en hebben een \texttt{class}, een \texttt{frame index}, 
+  een base64-gecodeerde afbeelding van het masker en van de regio in de originele frame, en een bounding box. Zowel het base64-gecodeerde 
+  masker en de bounding-box worden getoond in de labeler bovenop de originele frame. De bounding-box is de rechthoek die de regio van de 
+  annotatie omsluit, met het json formaat: \texttt{[x1, y1, x2, y2]}. Hier zijn \texttt{x1} en \texttt{y1} de coördinaten van de 
+  linkerbovenhoek van de rechthoek, en \texttt{x2} en \texttt{y2} de coördinaten van de rechteronderhoek. 
+  Tenslotte wordt ook een `crop' van de originele frame opgeslagen, dat enkel de regio van de annotatie bevat. 
+  Dit is een afbeelding van dezelfde grootte als het masker, en wordt gebruikt om de annotatie te tonen in de annotatielijst onderaan de labeler.
+  \item \textbf{point\_labels} zijn de individuele punten die aan een annotatie worden gegeven. Elk point-label heeft een x- en y-coördinaat, en een label dat aangeeft of het punt binnen (1) of buiten (0) de annotatie ligt.
+\end{itemize}
+
+Merk op dat de geautomatiseerde tracking-resultaten niet in de database worden opgeslagen, maar enkel de manuele annotaties.
+Dit is omdat tracking grote hoeveelheden data generereert die op een optimale manier moeten worden opgeslagen.
+De tracking-resultaten worden opgeslagen in een aparte map, onderverdeeld per kalibratie-opname en per klasse.
+Elke file bevat de tracking-resultaten van één object in één kalibratie-opname, met als naam de frame index.
+Ze worden opgeslagen in \texttt{.npz}-bestanden, die een gecomprimeerd formaat zijn voor numpy arrays.
+Ze bevatten de volgende data:
+\begin{itemize}
+  \item \texttt{mask}: de gecomprimeerde versie van het masker dat werd gegenereerd door het segmentatie-algoritme.
+  \item \texttt{bbox}: \texttt{[x1, y1, x2, y2]} de coördinaten van de bounding-box die het object omsluit.
+  \item \texttt{roi}: de regio van de originele frame die overeenkomt met het masker.
+  \item \texttt{class\_id}: de id van de klasse waartoe het object behoort. 
+  Zo kan andere informatie over het object---zoals de naam en de kleur---worden opgehaald uit de database.
+  \item \texttt{frame\_index}: de index van de frame waarin het object werd getracked.
+\end{itemize}
+
+Deze tracking-resultaten zullen uiteindelijk als basis dienen voor de analyses die uitgevoerd worden op de eyetracking-opnames van de studenten.
+Hoe worden deze resultaten nu precies gegenereerd vanuit de manuele annotaties? Dit zullen we verder bekijken in de volgende sectie.
+
