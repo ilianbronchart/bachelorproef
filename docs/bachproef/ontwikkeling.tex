@@ -103,12 +103,12 @@ Deze pagina heeft drie kolommen:
 \begin{itemize}
     \item De eerste kolom toont de reeds gedefinieërde simulatieomgevingen, met hun naam, een knop om deze te verwijderen, en een invoerveld om meer simulatieomgevingen toe te voegen.
     \item Wanneer een simulatieomgeving is geselecteerd, worden de bijbehorende objecten getoond in de tweede kolom. Elk object krijgt automatisch een kleur toegewezen die ook gebruikt zal worden in de labeling-tool, en eventueel de visualisatie van de metrieken.
-    \item In de derde kolom kan men geïmporteerde opnames selecteren om deze te gebruiken als kalibratie-opnames. Elke kalibratie-opname heeft een knop "Start Labeling". Wanneer men hierop klikt, wordt de labeling-tool geopend met de geselecteerde opname.
+    \item In de derde kolom kan men geïmporteerde opnames selecteren om deze te gebruiken als kalibratie-opnames. Elke kalibratie-opname heeft een knop `Start Labeling'. Wanneer men hierop klikt, wordt de labeling-tool geopend met de geselecteerde opname.
 \end{itemize}
 
 Merk op dat het mogelijk is om welke opname dan ook te selecteren als kalibratie-opname, waardoor ook praktijkopnames kunnen worden gebruikt!
 Zo kunnen we reeds gemaakte opnames van studenten ook gebruiken om de analysemodellen te trainen.
-Dit stelt de applicatie eventueel in staat om de opnames te analyseren op basis van manuele annotaties van de trainers.
+Dit stelt de applicatie eventueel in staat om de opnames te analyseren op basis van manuele annotaties door de trainers.
 Deze aanpak zal meer tijd vergen, maar is veel nauwkeuriger dan een automatische analyse. Aangezien het in deze bachelorproef gaat om geautomatiseerde analyse, werd deze optie niet verder uitgewerkt.
 
 Wanneer men een kalibratie-opname verwijdert, heeft dit geen invloed op de opname zelf, maar enkel op de associatie met de simulatieomgeving.
@@ -118,7 +118,7 @@ Hetzelfde geldt voor de objecten: indien een object wordt verwijderd, worden ook
 \subsubsection{Labeling Tool}
 
 We hebben het al eerder gehad over de labeling-tool, maar hoe werkt deze nu precies? Dit is één van de belangrijkste onderdelen van de applicatie, en ook het meest complexe.
-De labeler kunnen we openen door op de knop "Start Labeling" te klikken van een kalibratie-opname binnen de `Manage Sim Rooms'-pagina.
+De labeler kunnen we openen door op de knop `Start Labeling' te klikken van een kalibratie-opname binnen de `Manage Sim Rooms'-pagina.
 In de achtergrond worden alle individuele frames uit de opname gehaald en in een map opgeslagen, waardoor het enige tijd kan duren voor de tool opent. De specifieke implementatieredenen hiervoor komen later aan bod.
 Het doel van de labeler is om een masker (en een `bounding box') te verkrijgen binnen elke frame van de opname waarin een object zich bevindt.
 Natuurlijk zou dit een grote tijdsinvestering vragen bij een volledig manuele tool: Aangezien de framerate van de eyetracker 25FPS is, zou dit betekenen dat we 1500 frames moeten labelen voor een opname van 1 minuut, en dit voor elk object dat we willen labelen.
@@ -243,6 +243,130 @@ Het bevat alle logica voor het ophalen, opslaan, en beheren van data in de \text
 Ook bevat het logica voor het beheren van bestanden op de schijf, zoals resultaten van de labeling-tool of de video-opnames.
 Dit zorgt ervoor dat de \texttt{services}-laag onafhankelijk is van de specifieke database-implementatie.
 
+\subsection{Backend van de Labeling Tool en Tracking-logica}
+
+In deze sectie gaan we dieper in op wat er in de achtergrond gebeurt wanneer de gebruiker objecten labelt in de labeling-tool.
+
+\subsubsection{Decoderen van Video-opnames}
+
+Voordat de gebruiker kan beginnen met labelen, moeten eerst de frames van de opname worden geëxtraheerd.
+Op deze manier moeten niet alle frames in het geheugen geladen worden, wat onmogelijk zou zijn voor lange opnames.
+Ook neemt het enige tijd om een enkele frame te extraheren uit een video-opname, wat de gebruikerservaring zou beïnvloeden.
+Voor het decoderen van een opname wordt gebruik gemaakt van \texttt{ffmpeg}, een populaire open-source tool die verschillende 
+functies biedt voor het verwerken van video- en audiobestanden.
+Zo worden alle afzonderlijke frames opgeslagen in een map, met als naam het indexnummer van de frame.
+
+\subsubsection{Annotaties en Tracking}
+
+Om te verstaan waarom we manuele annotaties nodig hebben, en hoe de geautomatiseerde tracking werkt, moeten we eerst begrijpen hoe het achterliggende machine-learning model werkt.
+Er werd gekozen om het Segment Anything Model 2 (SAM2) van Meta te gebruiken, dat in staat is om objecten te segmenteren (een masker genereren) in zowel een afbeelding als een video.
+
+Via het `promptable-segmentation'-mechanisme van SAM2 kunnen we een object segmenteren door een aantal punten te geven die het object beschrijven.
+Men kan een positief punt geven dat `binnen' het object ligt (voorgesteld door een 1), en een negatief punt dat `buiten' het object ligt (voorgesteld door een 0).
+Zo krijgen we een annotatie die uit meerdere punten bestaat (zie figuur \ref{fig:annotation}).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{annotation.png}
+  \caption[]{\label{fig:annotation} Links een annotatie met een aantal positieve (groene) en negatieve (rode) punten zoals zichtbaar in de labeling-tool. Rechts het overeenkomstig masker dat werd gegenereerd door SAM2. }
+\end{figure}
+
+De manuele annotaties vormen de basis voor de automatische tracking van het object doorheen de opname.
+Zoals eerder vermeld, worden niet alle frames bekeken binnen deze tracking-opdracht.
+Het frame-per-frame verwerken van een volledige video-opname is immers onnodig (wanneer een object voor een lange tijd niet in beeld is) en tijdrovend.
+
+Om de tracking efficiënt uit te voeren, fungeert elke manuele annotatie als een startpunt. 
+De \texttt{TrackingJob} klasse initieert vanuit deze `ankerpunten' het trackingproces, zoals geïmplementeerd in de run methode:
+
+\begin{listing}
+  \begin{minted}{python}
+    def run(self) -> None:
+      self.initialize()
+
+      annotations_frame_idx = [annotation.frame_idx for annotation in self.annotations]
+      last_tracked_annotation = -1
+
+      while last_tracked_annotation != len(self.annotations) - 1:
+          start_frame_idx = annotations_frame_idx[last_tracked_annotation + 1]
+          self.progress = start_frame_idx / self.frame_count
+
+          # Track backwards until tracking loss:
+          list(self.track_until_loss(start_frame_idx, reverse=True))
+
+          # Track forwards until tracking loss:
+          for frame_idx in self.track_until_loss(start_frame_idx):
+              self.progress = frame_idx / self.frame_count
+              if frame_idx in annotations_frame_idx:
+                  last_tracked_annotation = annotations_frame_idx.index(frame_idx)
+  \end{minted}
+  \caption[Kernlogica van de \texttt{TrackingJob} voor efficiënte verwerking]{
+    De \texttt{run} methode van \texttt{TrackingJob} itereert over de gesorteerde manuele annotaties en start vanuit elk ankerpunt een 
+    gelokaliseerd tracking-proces om de rekentijd te beperken.
+  }
+\end{listing}
+
+De strategie is als volgt:
+\begin{enumerate}
+\item De \texttt{TrackingJob} ontvangt een lijst van manuele annotaties, die eerst gesorteerd worden op frame-index.
+\item Vervolgens wordt er over deze annotaties geïtereerd. Voor elke nog niet verwerkte annotatie (\texttt{start\_frame\_idx}) 
+wordt de functie \texttt{track\_until\_loss} aangeroepen, eerst in achterwaartse richting (\texttt{reverse=True}) en daarna in voorwaartse richting.
+\item Dit zorgt ervoor dat de tracking zich vanuit elk betrouwbaar, manueel gelabeld punt uitspreidt, 
+maar enkel over segmenten waar het object vermoedelijk aanwezig is. Dit reduceert het totaal aantal te verwerken frames aanzienlijk.
+\end{enumerate}
+
+De kern van het daadwerkelijke volgen binnen deze segmenten zit in de \texttt{track\_until\_loss} methode. 
+Deze methode maakt gebruik van de \texttt{propagate\_in\_video} functionaliteit van de \texttt{SAM2VideoPredictor}.
+
+\begin{listing}
+  \begin{minted}{python}
+    def track_until_loss(
+        self, start_frame_idx: int, reverse: bool = False
+    ) -> Generator[int, None, None]:
+        tracking_loss = 0 # Teller voor het aantal frames zonder tracking
+
+        with torch.amp.autocast("cuda"):
+            for (
+              out_frame_idx, _, out_mask_logits
+            ) in self.video_predictor.propagate_in_video(
+                inference_state=self.inference_state,
+                start_frame_idx=start_frame_idx,
+                reverse=reverse,
+            ):
+                yield out_frame_idx # Rapporteer de verwerkte frame index voor de progress bar
+
+                mask_torch = out_mask_logits[0] > 0.5
+                if mask_torch.any(): # Is er een masker getedecteerd?
+                    tracking_loss = 0 # Reset teller bij succesvolle tracking
+
+                    # ... (opslaan van resultaten: masker, box, roi) ...
+
+                    file_path = self.results_path / f"{out_frame_idx}.npz"
+                    np.savez_compressed(
+                        file_path,
+                        # ... (data)
+                    )
+                else:
+                    tracking_loss += 1 # Verhoog teller bij mislukte tracking
+
+                if tracking_loss >= self.GRACE_PERIOD: # Tolerantie overschreden?
+                    break # Stop tracking in deze richting
+
+  \end{minted}
+  \caption[Gelokaliseerde tracking met tolerantieperiode]{
+    De \texttt{track\_until\_loss} methode propageert het masker frame per frame binnen een beperkt segment. 
+    De \texttt{GRACE\_PERIOD} helpt om de tracking robuust te houden tegen kortstondige detectieproblemen binnen dit segment.
+  }
+\end{listing}
+
+\paragraph{Waarom geen FastSAM?}
+
+Men zou zich kunnen afvragen waarom het FastSAM-model niet werd gebruikt, dat ook in staat is om objecten te segmenteren in video-opnames en bovendien veel sneller is.
+Het probleem is dat de gegenereerde maskers van FastSAM minder nauwkeurig zijn dan die van SAM2 \autocite{Zhao2023}. 
+Aangezien het om labeling gaat, is het belangrijk dat de maskers zo nauwkeurig mogelijk zijn.
+Het is mogelijk dat dit verschil in context van de noden van deze bachelorproef niet zo belangrijk is, maar het is moeilijk om dit te zeggen zonder de verschillen in detail te analyseren.
+Hoewel het testen van FastSAM binnen de labeling-tool niet verder werd uitgewerkt, werd dit model wel gebruikt voor de analyses in Hoofdstuk~\ref{ch:experiment}.
+Zo zijn er voorbeelden van het gebruik van beide modellen binnen de codebase terug te vinden, en kan de labeling-tool overschakelen naar FastSAM indien gewenst.
+
 \subsection{Database}
 
 We hebben het al eerder gehad over opnames, simulatieomgevingen, objecten en annotaties, maar hoe worden deze nu opgeslagen in de database?
@@ -285,7 +409,7 @@ Ze bevatten de volgende data:
 \begin{itemize}
   \item \texttt{mask}: de gecomprimeerde versie van het masker dat werd gegenereerd door het segmentatie-algoritme.
   \item \texttt{bbox}: \texttt{[x1, y1, x2, y2]} de coördinaten van de bounding-box die het object omsluit.
-  \item \texttt{roi}: de regio van de originele frame die overeenkomt met het masker.
+  \item \texttt{roi} (Region of Interest): de regio van de originele frame die overeenkomt met het masker.
   \item \texttt{class\_id}: de id van de klasse waartoe het object behoort. 
   Zo kan andere informatie over het object---zoals de naam en de kleur---worden opgehaald uit de database.
   \item \texttt{frame\_index}: de index van de frame waarin het object werd getracked.
