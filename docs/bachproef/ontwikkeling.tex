@@ -164,6 +164,12 @@ De analyses die uitgevoerd werden in deze bachelorproef komen aan bod in Hoofdst
 
 \section{Technische Specificaties}
 
+We hebben het gehad over de features van de applicatie vanuit het perspectief van een gebruiker.
+In deze sectie gaan we dieper in op de technische aspecten van de applicatie, 
+met als doel de keuzes te verduidelijken en eventuele nieuwe developers wegwijs te maken in de codebase.
+
+\subsection{Softwarearchitectuur}
+
 Voor de ontwikkeling van de applicatie werd een lichtgewicht, modulaire softwarestack gekozen, afgestemd op de specifieke noden van het project.
 Er is geopteerd voor een web-applicatie die lokaal kan draaien op een laptop (met een degelijke GPU) of een desktop computer, en die via een browser toegankelijk is.
 
@@ -174,11 +180,9 @@ Er is geopteerd voor een web-applicatie die lokaal kan draaien op een laptop (me
     \item \textbf{Hardware Communicatie:} Voor de interactie met de Tobii Pro Glasses 3 werd de officiële \texttt{g3pylib} SDK gebruikt, die toegang biedt tot opnames en statusinformatie via de WiFi-verbinding.
     \item \textbf{Development \& Kwaliteitsborging:} \texttt{Poetry} werd gebruikt voor dependency management. Strikte type hinting met \texttt{Mypy} en code linting/formatting met \texttt{Ruff} dragen bij aan de robuustheid en onderhoudbaarheid van de code. \texttt{Docker} werd ingezet om de applicatie te containeriseren, wat zorgt voor een consistente uitvoeringsomgeving en eenvoudige deployment.
 \end{itemize}
+
 Deze keuzes resulteerden in een applicatie die relatief eenvoudig te onderhouden en verder te ontwikkelen is, conform de doelstelling om iteratieve verbeteringen in volgende bachelorproeven mogelijk te maken.
-
-\subsection{Softwarearchitectuur}
-
-De applicatie volgt een gelaagde architectuur om een duidelijke scheiding van verantwoordelijkheden (Separation of Concerns) te waarborgen en de onderhoudbaarheid en testbaarheid te verhogen. 
+Er werd gewerkt met een gelaagde architectuur om een duidelijke scheiding van verantwoordelijkheden (Separation of Concerns) te waarborgen en de onderhoudbaarheid en testbaarheid te verhogen. 
 De data en requests vloeien doorgaans van de \texttt{frontend} via de \texttt{routes} naar de \texttt{services}, die vervolgens de \texttt{repositories} aanroepen voor databasetoegang (zie figuur \ref{fig:software-architectuur}).
 
 \begin{figure}[H]
@@ -367,6 +371,55 @@ Het is mogelijk dat dit verschil in context van de noden van deze bachelorproef 
 Hoewel het testen van FastSAM binnen de labeling-tool niet verder werd uitgewerkt, werd dit model wel gebruikt voor de analyses in Hoofdstuk~\ref{ch:experiment}.
 Zo zijn er voorbeelden van het gebruik van beide modellen binnen de codebase terug te vinden, en kan de labeling-tool overschakelen naar FastSAM indien gewenst.
 
+\subsubsection{Prestaties en Geheugenverbruik}
+
+Een belangrijke overweging bij het implementeren van de applicatie in het Zorglab zijn de hardwarevereisten.
+Het Zorglab is uitgerust met een computer met een krachtige CPU (Central Processing Unit) en 32GB RAM, maar heeft momenteel geen GPU (Graphics Processing Unit).
+Daarom is het interessant om te kijken wat de vereisten zijn voor een vlotte werking van de applicatie.
+Hier zullen we het specifiek hebben over SAM2, maar in hoofdstuk \ref{ch:experiment} komen ook de modellen van de analyses aan bod.
+
+De ontwikkeling van de applicatie, inclusief alle analyses, werd uitgevoerd op een computer met de volgende specificaties:
+\begin{itemize}
+    \item \textbf{Processor:} Ryzen 7 7700X @ 4.50 GHz (8 cores)
+    \item \textbf{Geheugen:} 32GB DDR5
+    \item \textbf{Grafische Kaart:} NVIDIA GeForce RTX 4090
+    \item \textbf{Opslag:} 1TB M.2 SSD
+\end{itemize}
+
+De machine in het Zorglab is een Dell Precision 7550 met de volgende specificaties:
+\begin{itemize}
+    \item \textbf{Processor:} Intel Core i9-10885H CPU @ 2.40 GHz (16 cores)
+    \item \textbf{Geheugen:} 32GB
+    \item \textbf{Grafische Kaart:} Geen
+    \item \textbf{Opslag:} Niet gekend % TODO: mss opzoeken
+\end{itemize}
+
+\paragraph{Verschil tussen CPU en GPU}
+Voor taken binnen machine-learning, zoals de hier toegepaste beeldsegmentatie, is een GPU significant sneller dan een CPU. 
+Een CPU specialiseert zich in het sequentieel uitvoeren van een beperkt aantal complexe taken. 
+Een GPU daarentegen is ontworpen met duizenden kleinere cores (de RTX 4090 heeft er bijvoorbeeld 16,384) 
+om een grote hoeveelheid relatief eenvoudigere taken parallel uit te voeren. 
+Dit parallellisme is ideaal voor de matrixoperaties die de ruggengraat vormen van neurale netwerken zoals SAM2.
+
+Niet enkel het aantal cores is bepalend, maar ook de hoeveelheid en snelheid van het toegewijde geheugen op de GPU (VRAM). 
+Zowel het model zelf (de parameters of 'gewichten') als de te verwerken data (in dit geval de videoframes) moeten tegelijkertijd 
+in het VRAM geladen kunnen worden voor efficiënte verwerking.
+Pogingen om dergelijke modellen uitsluitend op een CPU uit te voeren, resulteren in onpraktisch lange verwerkingstijden, 
+waardoor de interactiviteit van de labeling tool verloren zou gaan.
+
+% TODO voeg analyse toe van verschil CPU en GPU?
+
+\paragraph{VRAM: Analyse van de vereisten}
+
+Het SAM2-model komt in vier verschillende varianten, elk met een andere hoeveelheid parameters en dus ook andere geheugeneisen.
+
+
+
+
+\subsubsection{Bugfix in SAM2-bibliotheek}
+
+
+
 \subsection{Database}
 
 We hebben het al eerder gehad over opnames, simulatieomgevingen, objecten en annotaties, maar hoe worden deze nu opgeslagen in de database?
@@ -408,7 +461,7 @@ Ze worden opgeslagen in \texttt{.npz}-bestanden, die een gecomprimeerd formaat z
 Ze bevatten de volgende data:
 \begin{itemize}
   \item \texttt{mask}: de gecomprimeerde versie van het masker dat werd gegenereerd door het segmentatie-algoritme.
-  \item \texttt{bbox}: \texttt{[x1, y1, x2, y2]} de coördinaten van de bounding-box die het object omsluit.
+  \item \texttt{bbox} \texttt{[x1, y1, x2, y2]}: de coördinaten van de bounding-box die het object omsluit.
   \item \texttt{roi} (Region of Interest): de regio van de originele frame die overeenkomt met het masker.
   \item \texttt{class\_id}: de id van de klasse waartoe het object behoort. 
   Zo kan andere informatie over het object---zoals de naam en de kleur---worden opgehaald uit de database.
