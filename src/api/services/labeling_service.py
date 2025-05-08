@@ -33,16 +33,19 @@ class TrackingJob:
         results_path: Path,
         frame_count: int,
         class_id: int,
+        remove_previous_results: bool = True,
     ) -> None:
         self.annotations = sorted(annotations, key=lambda x: x.frame_idx)
         self.frames_path = frames_path
         self.results_path = results_path
         self.frame_count = frame_count
         self.class_id = class_id
+        self.remove_previous_results = remove_previous_results
 
-    def run(self) -> None:
+    def run(self) -> int:
         self.initialize()
 
+        total_frames_tracked = 0
         annotations_frame_idx = [annotation.frame_idx for annotation in self.annotations]
         last_tracked_annotation = -1
 
@@ -56,8 +59,14 @@ class TrackingJob:
             # Track forwards until tracking loss:
             for frame_idx in self.track_until_loss(start_frame_idx):
                 self.progress = frame_idx / self.frame_count
+                total_frames_tracked += 1
+
                 if frame_idx in annotations_frame_idx:
                     last_tracked_annotation = annotations_frame_idx.index(frame_idx)
+
+        self.teardown()
+
+        return total_frames_tracked
 
     def initialize(self) -> None:
         # Load the video predictor and initialize the inference state
@@ -69,9 +78,12 @@ class TrackingJob:
         self.img_mean = self.inference_state["images"].img_mean.cuda()
 
         # Remove the results directory if it already exists
-        if self.results_path.exists():
+        if self.results_path.exists() and self.remove_previous_results:
             shutil.rmtree(self.results_path)
-        self.results_path.mkdir(parents=True)
+        
+        if self.remove_previous_results or not self.results_path.exists():
+            # Create the results directory
+            self.results_path.mkdir(parents=True, exist_ok=True)
 
         # Add the initial points to the video predictor
         for annotation in self.annotations:
@@ -88,6 +100,11 @@ class TrackingJob:
                 points=points,
                 labels=labels,
             )
+
+    def teardown(self) -> None:
+        del self.video_predictor
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
 
     def track_until_loss(
         self, start_frame_idx: int, reverse: bool = False

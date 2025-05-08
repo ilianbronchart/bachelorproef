@@ -382,7 +382,7 @@ De ontwikkeling van de applicatie, inclusief alle analyses, werd uitgevoerd op e
 \begin{itemize}
     \item \textbf{Processor:} Ryzen 7 7700X @ 4.50 GHz (8 cores)
     \item \textbf{Geheugen:} 32GB DDR5
-    \item \textbf{Grafische Kaart:} NVIDIA GeForce RTX 4090
+    \item \textbf{Grafische Kaart:} NVIDIA GeForce RTX 4090 (24GB VRAM)
     \item \textbf{Opslag:} 1TB M.2 SSD
 \end{itemize}
 
@@ -412,13 +412,24 @@ waardoor de interactiviteit van de labeling tool verloren zou gaan.
 \paragraph{VRAM: Analyse van de vereisten}
 
 Het SAM2-model komt in vier verschillende varianten, elk met een andere hoeveelheid parameters en dus ook andere geheugeneisen.
+Via de \texttt{torch.profiler} module werd de geheugengebruik van elk model gemeten tijdens het laden van de parameters.
+De resultaten zijn als volgt:
+\begin{itemize}
+    \item \textbf{sam2.1_hiera_large.pt}: 1000.91 Mb
+    \item \textbf{sam2.1_hiera_base_plus.pt}: 450.47 Mb
+    \item \textbf{sam2.1_hiera_small.pt}: 315.29 Mb
+    \item \textbf{sam2.1_hiera_tiny.pt}: 288.71 Mb
+\end{itemize}
+
+Aangezien geheugenvereisten matig zijn, werd besloten om het grootste model te gebruiken, dat ook de beste resultaten oplevert.
+Naast de modelparameters is het ook belangrijk om te meten hoeveel geheugen gebruikt wordt bij de tracking-opdracht.
+
+% TODO: Afwerken
 
 
+\subsubsection{Bugfix in de SAM2-bibliotheek}
 
-
-\subsubsection{Bugfix in SAM2-bibliotheek}
-
-
+% TODO: Afwerken
 
 \subsection{Database}
 
