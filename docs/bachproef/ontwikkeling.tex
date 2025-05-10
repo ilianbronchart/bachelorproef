@@ -24,7 +24,7 @@ De applicatie is dus opgebouwd uit verschillende componenten die samen een staps
 \subsubsection{Opnames Maken}
 
 Voordat de applicatie ontwikkeld kon worden, waren er eerst een aantal video-opnames nodig. 
-In deze fase werd de Tobii eyetracking-bril van het Zorglab ontleend om vertrouwd te raken met het maken van opnames. 
+In deze fase werd de Tobii eyetracking-bril van het Zorglab ontleend om vertrouwd te geraken met het maken van opnames. 
 Deze opnames werden thuis uitgevoerd en dienden zowel als basis voor de applicatie zelf als voor initiële experimenten met de computer vision-modellen die later zouden worden ingezet in de labelingtool en de analyses.
 Om een opname te maken hebben we twee zaken nodig: de eyetracker zelf met bijbehorende accessoires, en een laptop of computer waarop de `Tobii Pro Glasses 3 Controller'\footnote{\url{https://www.tobii.com/products/eye-trackers/wearables/tobii-pro-glasses-3/controller-app}} app is geïnstalleerd.
 
@@ -121,14 +121,14 @@ We hebben het al eerder gehad over de labeling-tool, maar hoe werkt deze nu prec
 De labeler kunnen we openen door op de knop `Start Labeling' te klikken van een kalibratie-opname binnen de `Manage Sim Rooms'-pagina.
 In de achtergrond worden alle individuele frames uit de opname gehaald en in een map opgeslagen, waardoor het enige tijd kan duren voor de tool opent. De specifieke implementatieredenen hiervoor komen later aan bod.
 Het doel van de labeler is om een masker (en een `bounding box') te verkrijgen binnen elke frame van de opname waarin een object zich bevindt.
-Natuurlijk zou dit een grote tijdsinvestering vragen bij een volledig manuele tool: Aangezien de framerate van de eyetracker 25FPS is, zou dit betekenen dat we 1500 frames moeten labelen voor een opname van 1 minuut, en dit voor elk object dat we willen labelen.
+Natuurlijk zou dit een grote tijdsinvestering vragen bij een volledig manuele tool: aangezien de framerate van de eyetracker 25 FPS (Frames per Second) is, zou dit betekenen dat we 1500 frames moeten labelen voor een opname van 1 minuut, en dit voor elk object dat we willen labelen.
 Het probleem werd opgelost met een semi-automatische labelingtool. Daarbij hoeft men enkel in minder dan tien frames per object te klikken. De tool volgt vervolgens elk object automatisch doorheen de hele opname.
 De functies van de labeling-tool worden hieronder verder toegelicht.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{labeler.png}
-  \caption[]{\label{fig:labeler} Een screenshot van de labeling-tool met vier onderdelen: de labeling-canvas, de tijdlijn, de objectenlijst rechts, en een lijst van gemaakte annotaties onderaan. In dit voorbeeld is het object `Stethoscoop' geselecteerd. }
+  \caption[]{\label{fig:labeler} Een screenshot van de labeling-tool met vier onderdelen: de labeling-canvas, de tijdlijn, de objectenlijst rechts, en een lijst van gemaakte annotaties onderaan. In dit voorbeeld is het object `stethoscoop' geselecteerd. }
 \end{figure}
 
 Eenmaal de labeling-tool geopend is, zien we een pagina met vier onderdelen (zie figuur \ref{fig:labeler}).
@@ -373,7 +373,7 @@ Zo zijn er voorbeelden van het gebruik van beide modellen binnen de codebase ter
 
 \subsubsection{Prestaties en Geheugenverbruik}
 
-Een belangrijke overweging bij het implementeren van de applicatie in het Zorglab zijn de hardwarevereisten.
+Belangrijke overwegingen bij het implementeren van de applicatie in het Zorglab zijn de hardwarevereisten.
 Het Zorglab is uitgerust met een computer met een krachtige CPU (Central Processing Unit) en 32GB RAM, maar heeft momenteel geen GPU (Graphics Processing Unit).
 Daarom is het interessant om te kijken wat de vereisten zijn voor een vlotte werking van de applicatie.
 Hier zullen we het specifiek hebben over SAM2, maar in hoofdstuk \ref{ch:experiment} komen ook de modellen van de analyses aan bod.
@@ -401,7 +401,7 @@ Een GPU daarentegen is ontworpen met duizenden kleinere cores (de RTX 4090 heeft
 om een grote hoeveelheid relatief eenvoudigere taken parallel uit te voeren. 
 Dit parallellisme is ideaal voor de matrixoperaties die de ruggengraat vormen van neurale netwerken zoals SAM2.
 
-Niet enkel het aantal cores is bepalend, maar ook de hoeveelheid en snelheid van het toegewijde geheugen op de GPU (VRAM). 
+Niet enkel het aantal cores is bepalend, maar ook de hoeveelheid en snelheid van het toegewijde geheugen op de GPU (VRAM).
 Zowel het model zelf (de parameters of 'gewichten') als de te verwerken data (in dit geval de videoframes) moeten tegelijkertijd 
 in het VRAM geladen kunnen worden voor efficiënte verwerking.
 Pogingen om dergelijke modellen uitsluitend op een CPU uit te voeren, resulteren in onpraktisch lange verwerkingstijden, 
@@ -409,27 +409,89 @@ waardoor de interactiviteit van de labeling tool verloren zou gaan.
 
 % TODO voeg analyse toe van verschil CPU en GPU?
 
-\paragraph{VRAM: Analyse van de vereisten}
+\paragraph{Analyse van de prestaties}
 
 Het SAM2-model komt in vier verschillende varianten, elk met een andere hoeveelheid parameters en dus ook andere geheugeneisen.
-Via de \texttt{torch.profiler} module werd de geheugengebruik van elk model gemeten tijdens het laden van de parameters.
-De resultaten zijn als volgt:
+Via de \texttt{torch.profiler} module werd het geheugengebruik van elk model gemeten tijdens het laden van de parameters.
+De resultaten hiervan zijn als volgt:
+
 \begin{itemize}
-    \item \textbf{sam2.1_hiera_large.pt}: 1000.91 Mb
-    \item \textbf{sam2.1_hiera_base_plus.pt}: 450.47 Mb
-    \item \textbf{sam2.1_hiera_small.pt}: 315.29 Mb
-    \item \textbf{sam2.1_hiera_tiny.pt}: 288.71 Mb
+    \item \texttt{sam2.1\_hiera\_large.pt}: 1000 MB
+    \item \texttt{sam2.1\_hiera\_base\_plus.pt}: 450 MB
+    \item \texttt{sam2.1\_hiera\_small.pt}: 315 MB
+    \item \texttt{sam2.1\_hiera\_tiny.pt}: 288 MB
 \end{itemize}
 
 Aangezien geheugenvereisten matig zijn, werd besloten om het grootste model te gebruiken, dat ook de beste resultaten oplevert.
+
 Naast de modelparameters is het ook belangrijk om te meten hoeveel geheugen gebruikt wordt bij de tracking-opdracht.
+Zo werd er doorheen een tracking-opdracht gemeten hoeveel videogeheugen er werd gebruikt door het SAM2 model.
+Het ging om een totaal van 360 getrackede frames aan een snelheid van 10.5 FPS, met een piek geheugenverbruik van 1599 MB (zie figuur \ref{fig:sam-mem-usage}).
 
-% TODO: Afwerken
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{sam_mem_usage.png}
+  \caption[]{\label{fig:sam-mem-usage} 
+  Het geheugengebruik van SAM2 tijdens een tracking-opdracht. Links het cumulatieve geheugengebruik doorheen de tijd met een piek van 1599MB, rechts een boxplot van het geheugengebruik met een gemiddelde van 1374 MB. }
+\end{figure}
 
+Deze analyses zijn terug te vinden in de file \texttt{experiment/12\_performance.ipynb} in de Git repository.
 
-\subsubsection{Bugfix in de SAM2-bibliotheek}
+\subsubsection{Optimalisatie van Geheugenbeheer in de SAM2-bibliotheek}
 
-% TODO: Afwerken
+Naast de inherente VRAM-vereisten van het SAM2-model, werd tijdens de ontwikkeling van de tracking-functionaliteit een probleem met 
+toenemend GPU-geheugenverbruik in de originele SAM2-bibliotheek van Meta geïdentificeerd \autocite{Hu2024facebookresearch}. 
+Bij langdurige tracking-opdrachten, bleek dat de bibliotheek intermediaire 
+resultaten of toestanden van reeds verwerkte frames in het GPU-geheugen vasthield. 
+Dit leidde tot een lineaire toename van het VRAM-gebruik naarmate de tracking vorderde. 
+Uiteindelijk kon dit de beschikbare GPU-geheugenlimiet overschrijden, resulterend in een crash van de applicatie. 
+
+Om dit probleem aan te pakken en het GPU-geheugenverbruik te stabiliseren, werd er een fork gemaakt van de originele 
+SAM2-bibliotheek waarin een aanpassing is doorgevoerd \autocite{Hu2025ilianbronchart}.
+
+De volgende code-snippet bevat de logica die werd toegevoegd binnen de propagatielus van de video-predictor:
+\begin{listing}[H]
+  \begin{minted}{python}
+  # Fragment uit de aangepaste SAM2VideoPredictor binnen de video propagatie lus
+  # Bepaal de dictionary waar frame outputs worden opgeslagen
+  obj_output_dict = inference_state["obj_wise_inference_states"][obj_id]
+  storage_key = "non_cond_frame_outputs"
+  obj_specific_storage_key = "output_dict_per_obj"
+
+  # Identificeer oude frames die verwijderd moeten worden
+  if reverse: # Bij achterwaarts tracken
+      # Verwijder frames die te ver vooruit liggen
+      newest_allowed_idx = frame_idx + 16 # Behoud een buffer van 16 frames
+      all_frame_idxs = obj_output_dict[storage_key].keys()
+      old_frame_idxs = [idx for idx in all_frame_idxs if idx > newest_allowed_idx]
+  else: # Bij voorwaarts tracken
+      # Verwijder frames die te ver achterliggen
+      oldest_allowed_idx = frame_idx - 16 # Behoud een buffer van 16 frames
+      all_frame_idxs = obj_output_dict[storage_key].keys()
+      old_frame_idxs = [idx for idx in all_frame_idxs if idx < oldest_allowed_idx]
+
+  # Verwijder de geïdentificeerde oude frames uit de cache
+  for old_idx in old_frame_idxs:
+      obj_output_dict[storage_key].pop(old_idx, None) # Verwijder uit algemene cache
+      # Verwijder ook uit object-specifieke caches indien aanwezig
+      for objid_iter in inference_state[obj_specific_storage_key].keys():
+          if old_idx in inference_state[obj_specific_storage_key][objid_iter][storage_key]:
+              inference_state[obj_specific_storage_key][objid_iter][storage_key].pop(old_idx, None)
+  \end{minted}
+  \caption[Geheugenoptimalisatie in SAM2 door caching van frame outputs]{Toegevoegde logica om gecachte frame-specifieke outputs selectief te verwijderen, waardoor het GPU-geheugengebruik tijdens lange tracking-sessies constant blijft.}
+  \label{lst:sam2-memory-fix}
+\end{listing}
+
+De oplossing werkt als volgt:
+\begin{enumerate}
+  \item De code richt zich op specifieke dictionaries binnen de \texttt{inference\_state} waar frame-gerelateerde data wordt opgeslagen.
+  \item Er wordt een buffer rond de huidige \texttt{frame\_idx} gedefinieerd. Data van frames die buiten dit venster vallen, worden beschouwd als "oud" en komen in aanmerking voor verwijdering.
+  \item De geïdentificeerde \texttt{old\_frame\_idxs} worden vervolgens uit de relevante cache-dictionaries verwijderd. Dit gebeurt zowel voor de algemene frame outputs als voor de object-specifieke outputs.
+\end{enumerate}
+Merk op dat de buffer van 16 frames hier hardgecodeerd is. 
+In de toekomst kan het nuttig zijn om deze waarde aanpasbaar te maken door middel van een configuratieparameter binnen de \texttt{SAM2VideoPredictor} klasse.
+
+% TODO: veranderingen in AsyncVideoLoader ook beschrijven?
 
 \subsection{Database}
 
@@ -478,7 +540,4 @@ Ze bevatten de volgende data:
   Zo kan andere informatie over het object---zoals de naam en de kleur---worden opgehaald uit de database.
   \item \texttt{frame\_index}: de index van de frame waarin het object werd getracked.
 \end{itemize}
-
-Deze tracking-resultaten zullen uiteindelijk als basis dienen voor de analyses die uitgevoerd worden op de eyetracking-opnames van de studenten.
-Hoe worden deze resultaten nu precies gegenereerd vanuit de manuele annotaties? Dit zullen we verder bekijken in de volgende sectie.
 

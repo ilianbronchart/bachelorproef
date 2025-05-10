@@ -54,7 +54,8 @@ class TrackingJob:
             self.progress = start_frame_idx / self.frame_count
 
             # Track backwards until tracking loss:
-            list(self.track_until_loss(start_frame_idx, reverse=True))
+            for frame_idx in self.track_until_loss(start_frame_idx, reverse=True):
+                total_frames_tracked += 1
 
             # Track forwards until tracking loss:
             for frame_idx in self.track_until_loss(start_frame_idx):
