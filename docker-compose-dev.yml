@@ -13,10 +13,10 @@ services:
       - driver: nvidia
         count: all
     volumes:
-      - ./src:/app/src:cached
-      - ./checkpoints:/app/checkpoints:cached
+      - ./src:/app/src
+      - ./checkpoints:/app/checkpoints
       - ./database.db:/app/database.db
-      - ./data:/app/data:cached
+      - ./data:/app/data
       # cache Poetry & pip downloads between container restarts
       - poetry_cache:/root/.cache/pypoetry
       - pip_cache:/root/.cache/pip

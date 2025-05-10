@@ -12,11 +12,11 @@ def get_class_id_to_name_map(db: Session, simroom_id: int) -> dict[int, str]:
     return {simroom_class.id: simroom_class.class_name for simroom_class in classes}
 
 
-def get_tracked_classes(db: Session, cal_rec_id: int) -> list[SimRoomClassDTO]:
+def get_tracked_classes(db: Session, calibration_id: int) -> list[SimRoomClassDTO]:
     """
     Get all classes that have annotations for a given calibration recording.
     """
-    classes = simrooms_repo.get_tracked_classes(db, cal_rec_id)
+    classes = simrooms_repo.get_tracked_classes(db, calibration_id)
     return [SimRoomClassDTO.from_orm(simroom_class) for simroom_class in classes]
 
 
