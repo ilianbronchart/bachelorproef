@@ -9,7 +9,7 @@ Daarom is het essentieel dat zorgopleidingen aan studenten observatie-vaardighed
 
 # Nood
 
-Via simulatie-onderwijs worden de observatie-vaardigheden van student-zorgverleners getraind. Opdat de trainer/lesgever tijdens simulaties kan opvolgen welke zaken de student al dan niet observeert, beschikt het 360°-zorglab aan HOGENT over Tobii Glasses. De technologie laat toe om reallife op te volgen wat de student in de simulatie-oefening al dan niet bekijkt. Echter is er geen software voor degelijke dataverwerking en -visualisatie van de videodata die de Tobii Glasses capteren. Bijgevolg kan de trainer/lesgever op basis van Tobii-eyetracker-registraties niet gericht in kaart te brengen welke zaken de student tijdens de simulatie geobserveerd heeft.
+Via simulatie-onderwijs worden de observatie-vaardigheden van student-zorgverleners getraind. Opdat de trainer/lesgever tijdens simulaties kan opvolgen welke zaken de student al dan niet observeert, beschikt het 360°-zorglab aan HOGENT over Tobii Glasses. De technologie laat toe om reallife op te volgen wat de student in de simulatie-oefening al dan niet bekijkt. Er is echter geen software voor degelijke dataverwerking en -visualisatie van de videodata die de Tobii Glasses capteren. Bijgevolg kan de trainer/lesgever op basis van Tobii-eyetracker-registraties niet gericht in kaart te brengen welke zaken de student tijdens de simulatie geobserveerd heeft.
 
 # Onderzoek
 

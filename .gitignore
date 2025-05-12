@@ -177,3 +177,4 @@ notebooks/notebooks-old/analysis-pipeline/data/
 runs/
 
 13_pizza.ipynb
+test/*
