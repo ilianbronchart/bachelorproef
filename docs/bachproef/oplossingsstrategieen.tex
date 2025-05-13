@@ -1,0 +1,85 @@
+\chapter{Mogelijke Oplossingsstrategieën}
+\label{ch:oplossingsstrategieen}
+
+Bij het ontwerpen van een oplossing voor de gestelde problematiek, is het belangrijk om de 
+kernfunctionaliteit van het systeem te beschouwen in termen van zijn inputs en outputs. 
+Het systeem dient de eyetracking-opnames als input te verwerken en als output de relevante metrieken te leveren.
+Hoewel verschillende strategieën zullen leiden tot een proof-of-concept systeem met verschillende eisen, 
+zullen ze allemaal grotendeels voldoen aan dezelfde input-output specificatie.
+
+% TODO: hier een figuur toevoegen die de input-output specificatie visualiseert?
+
+\section{Inputs voor het Systeem}
+
+\subsubsection{Opnames}
+
+De tobii eyetracking-opnamen bevatten verschillende gegevens, waarvan de volgende nuttig zijn voor de 
+doeleinden van ons specifieke probleem \autocite{tobii_developer_guide}:
+\begin{itemize}
+    \item \textbf{Video-opname}: De video-opname van de eyetracking-bril, met een resolutie van 1920x1080 pixels en een framerate van 30 fps (frames per seconde).
+    \item \textbf{Blikdata}: De blikdata van de eyetracking-bril, die de coördinaten het blikpunt 
+    (het punt gedefinieerd door de samenkomst van de twee ooglijnen) bevat in de vorm van een 2D-coördinaatssysteem.
+    Deze worden opgenomen met een frequentie van 50 Hz, wat betekent dat er 50 blikpunten per seconde worden geregistreerd.
+    \item \textbf{Metadata}: Metadata van de opname, zoals ID van de opname, naam van de deelnemer, tijdstempel, en andere relevante informatie.
+\end{itemize}
+
+Andere gegevens omvatten onder andere data afkomstig van de IMU (Inertial Measurement Unit) van de eyetracker, 
+zoals de oriëntatie van de bril, de acceleratie, en metingen van het magnetisch veld rond de bril.
+Deze kunnen eventueel gebruikt worden als secundaire gegevens voor het verbeteren van de resultaten, 
+maar zijn niet noodzakelijk voor de kernfunctionaliteit van het systeem.
+
+\subsubsection{Objecten}
+
+Naast de eyetracking-opnames zelf, vereist het systeem ook een vooraf gedefinieerde lijst van de specifieke objecten waarvan de observatiestatus moet worden bepaald.
+Afhankelijk van de gekozen oplossingsstrategie, kan het gaan om een enkele foto van elk object, of een dataset met meerdere beelden (samples) van elk object vanuit verschillende hoeken en onder verschillende belichtingsomstandigheden.
+
+\section{Outputs van het Systeem}
+
+De uiteindelijke doelmetrieken werden eerder gedefinieerd als de specifieke objecten die studenten hebben bekeken en de totale 
+tijdsduur van deze observaties per object binnen een opname. 
+Deze metrieken zijn echter afgeleide, geaggregeerde waarden die niet rechtstreeks 
+uit de ruwe eyetracking-data kunnen worden geëxtraheerd.
+
+Om deze doelmetrieken te kunnen berekenen, moet het systeem eerst een meer fundamentele, primaire output genereren. 
+Deze primaire output bestaat, voor elke individuele frame van de video-opname, uit een identificatie van het (de) object(en) 
+waarop de blik van de deelnemer op dat specifieke moment gericht was. Met andere woorden, gegeven alle frames uit een opname, 
+is het de taak van het systeem om per frame te bepalen welk(e) relevant(e) object(en) zich in het blikveld bevonden en daadwerkelijk werden aangekeken.
+
+Vanuit deze frame-per-frame objectidentificatie kunnen vervolgens de twee beoogde hoofdmetrieken worden afgeleid:
+\begin{itemize}
+    \item \textbf{Geobserveerde objecten:} Een lijst van alle unieke objecten die gedurende de opname minstens één keer zijn bekeken.
+    \item \textbf{Observatieduur per object:} Voor elk geobserveerd object, de cumulatieve tijd (of het aantal frames) die de blik van de deelnemer op dat object gericht was.
+\end{itemize}
+
+\section{Oplossingsstrategieën}
+
+De uitdaging is om een systeem te ontwerpen die als brug fungeert tussen de inputgegevens en de outputmetrieken.
+Zoals eerder gezien in de stand van zaken, zijn er binnen computervisie verschillende technieken beschikbaar.
+Op basis van deze technieken werden verschillende oplossingsstrategieën geformuleerd, elk met hun eigen voor- en nadelen.
+
+\subsection{Strategie 1: Objectdetectie met Vooraf Getrainde Specifieke Modellen}
+
+Deze strategie is gebaseerd op het trainen van een objectdetectiemodel, zoals een variant van YOLO (zie ~\ref{sec:yolo}), 
+op de voorgedefiniëerde objecten.
+
+\paragraph{Conceptuele Werking:}
+\begin{enumerate}
+    \item \textbf{Dataverzameling \& Annotatie}: Er wordt een uitgebreide dataset gecreëerd met beelden van elk te detecteren object. 
+    Deze beelden dienen de objecten vanuit verschillende hoeken, onder variërende belichtingscondities en tegen diverse achtergronden te tonen. 
+    Elk object in deze trainingsbeelden wordt vervolgens geannoteerd met bounding boxes.
+    \item \textbf{Modeltraining}: Een objectdetectiemodel wordt getraind op deze dataset.
+    \item \textbf{Analyse van Evaluatieopnames:} Tijdens de analyse van een eyetracking-opname wordt het getrainde model frame-per-frame 
+    toegepast op de videobeelden. 
+    De blikdata wordt gebruikt om te bepalen of het gedetecteerd object ook daadwerkelijk wordt aangekeken.
+\end{enumerate}
+
+\paragraph{Voordelen:}
+\begin{itemize}
+    \item \textbf{Snelheid tijdens Analyse:} Modellen zoals YOLO staan bekend om hun hoge snelheid, wat potentieel real-time analyse mogelijk maakt.
+    \item \textbf{Eenvoudige Analyse:} % TODO:
+\end{itemize}
+
+
+
+
+% TODO: ik zet dit hier ff maar best eens nakijken of ik overal dat/die op de juiste plaats gebruik

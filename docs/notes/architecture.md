@@ -53,7 +53,7 @@ Ideally, we would define a catalog of target objects that we want to detect in a
 
 #### Disadvantages:
 
-1. More work at video analysis time
+1. significantly more work at video analysis time
 
 ### Option 4: Eyetracking as a first-class citizen + Grounding DINO
 
@@ -83,7 +83,7 @@ Could we use structured inputs and outputs to allow the model to choose from a l
 
 ### Option 5: Eyetracking as a first-class citizen + Content based image retrieval
 
-See https://www.reddit.com/r/opencv/comments/b8f4up/question_scale_invariant_template_matching/
+[//]: # See https://www.reddit.com/r/opencv/comments/b8f4up/question_scale_invariant_template_matching/
 
 Preparation:
 1. We use the glasses to record video of each target object we want to detect
