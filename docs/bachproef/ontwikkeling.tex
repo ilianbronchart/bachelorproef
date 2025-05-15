@@ -498,7 +498,7 @@ In de toekomst kan het nuttig zijn om deze waarde aanpasbaar te maken door midde
 \subsection{Omgaan met Blikdata}
 \label{sec:omgaan-met-blikdata}
 
-Om de analyses in hoofdstuk \ref{ch:analyse} te vergemakkelijken, biedt de applicatie 
+Om de analyses in Hoofdstuk~\ref{ch:analyse} te vergemakkelijken, en voor het bouwen van de grondwaarheid in Hoofdstuk~\ref{ch:grondwaarheid}, biedt de applicatie 
 in de service-laag (geïmplementeerd in \texttt{src.api.services.gaze\_service}) ook functionaliteit om de blikdata van de eyetracker te verwerken.
 Deze functionaliteit omvat het laden, verwerken en synchroniseren van de blikdata met de videoframes.
 Hier worden de kernstappen van deze functionaliteit besproken.
@@ -581,7 +581,7 @@ Zoals men kan zien bevat elke regel van het bestand de volgende metadata, waarva
 Nadat de ruwe blikdata is geparsed, wordt deze verder verwerkt door de \texttt{get\_gaze\_points} functie.
 Het resultaat van deze functie is een lijst van \texttt{GazePoint}-objecten, die elk een x-coördinaat, y-coördinaat, 
 de geschatte diepte, en de oorspronkelijke timestamp bevatten.
-Hoewel de diepte binnen de analyses in hoofdstuk \ref{ch:analyse} niet verder wordt gebruikt, kan deze in de 
+Hoewel de diepte binnen de analyses in Hoofdstuk~\ref{ch:analyse} niet verder wordt gebruikt, kan deze in de 
 toekomst nuttig zijn voor andere analyses.
 
 \begin{listing}[H]
