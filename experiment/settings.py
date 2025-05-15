@@ -53,7 +53,7 @@ RECORDING_ID_TO_EXPERIMENT_OBJECTS = {
     ],
     "b8eeecc0-06b1-47f7-acb5-89aab3c1724d": [
         "bril",
-        "scherm",
+        "monitor",
         "rollator",
         "ampulevloeistof",
         "ampulepoeder",
@@ -73,7 +73,7 @@ RECORDING_ID_TO_EXPERIMENT_OBJECTS = {
         "spuit",
     ],
     "98128cdc-ffeb-40cb-9528-573e25028e87": [
-        "scherm",
+        "monitor",
         "ampulevloeistof",
         "ampulepoeder",
         "nuchter",
@@ -82,7 +82,7 @@ RECORDING_ID_TO_EXPERIMENT_OBJECTS = {
     "89b60530-e0e4-4f5d-9ee6-af85c8d99ff4": [
         "nuchter",
         "stethoscoop",
-        "scherm",
+        "monitor",
         "spuit",
         "ampulevloeistof",
     ],
@@ -104,7 +104,7 @@ RECORDING_ID_TO_EXPERIMENT_OBJECTS = {
         "naaldcontainer",
         "ampulepoeder",
         "iced tea",
-        "scherm",
+        "monitor",
         "keukenmes",
     ],
     "b8f453aa-5a12-4cbb-a0ec-20eb503f8797": [
@@ -126,7 +126,7 @@ RECORDING_ID_TO_EXPERIMENT_OBJECTS = {
         "bol wol",
         "infuus",
         "stethoscoop",
-        "scherm",
+        "monitor",
     ],
     "5235be94-da01-43b5-8827-92a51d32ce30": [
         "rollator",
@@ -160,7 +160,7 @@ CLASS_ID_TO_NAME = {
     9: "fotokader",
     10: "iced tea",
     11: "bril",
-    12: "scherm",
+    12: "monitor",
     13: "rollator",
     14: "ampulevloeistof",
     15: "ampulepoeder",

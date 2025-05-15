@@ -32,9 +32,9 @@ def mask_was_viewed(
     # Create a coordinate grid for the mask.
     y_coords = torch.arange(0, height, device=device).view(-1, 1).repeat(1, width)
     x_coords = torch.arange(0, width, device=device).view(1, -1).repeat(height, 1)
-    dist_sq = (x_coords - gaze_position[0]) ** 2 + (y_coords - gaze_position[1]) ** 2
 
     # Create the circular mask based on self.viewed_radius.
+    dist_sq = (x_coords - gaze_position[0]) ** 2 + (y_coords - gaze_position[1]) ** 2
     circular_mask = (dist_sq <= viewed_radius**2).float()
 
     # Apply the circular mask to the input mask.

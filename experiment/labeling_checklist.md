@@ -10,7 +10,7 @@ Recording 1:
 - [x] fotokader  
 - [x] iced tea  
 - [x] bril  
-- [x] scherm  
+- [x] monitor  
 - [x] rollator  
 - [x] ampulevloeistof  
 - [x] ampulepoeder  
@@ -27,7 +27,7 @@ Recording 2:
 - [x] fotokader  
 - [x] iced tea  
 - [x] bril  
-- [x] scherm  
+- [x] monitor  
 - [x] rollator  
 - [x] ampulevloeistof  
 - [x] ampulepoeder  
@@ -44,7 +44,7 @@ Recording 3:
 - [x] fotokader  
 - [x] iced tea  
 - [x] bril  
-- [x] scherm  
+- [x] monitor  
 - [x] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -61,7 +61,7 @@ Recording 4:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -78,7 +78,7 @@ Recording 5:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -95,7 +95,7 @@ Recording 6:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -112,7 +112,7 @@ Recording 7:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -129,7 +129,7 @@ Recording 8:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -146,7 +146,7 @@ Recording 9:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -163,7 +163,7 @@ Recording 10:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -180,7 +180,7 @@ Recording 11:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -197,7 +197,7 @@ Recording 12:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -214,7 +214,7 @@ Recording 11:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -231,7 +231,7 @@ Recording 13:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -248,7 +248,7 @@ Recording 11:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  
@@ -265,7 +265,7 @@ Recording 14:
 - [ ] fotokader  
 - [ ] iced tea  
 - [ ] bril  
-- [ ] scherm  
+- [ ] monitor  
 - [ ] rollator  
 - [ ] ampulevloeistof  
 - [ ] ampulepoeder  

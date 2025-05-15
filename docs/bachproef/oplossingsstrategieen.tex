@@ -77,8 +77,8 @@ op de voorgedefiniëerde objecten.
 
 \paragraph{Voordelen:}
 \begin{itemize}
-    \item \textbf{Snelheid tijdens Analyse:} Modellen zoals YOLO staan bekend om hun hoge snelheid, wat potentieel real-time analyse mogelijk maakt.
-    \item \textbf{Eenvoudige Analyse:} % TODO:
+    \item \textbf{Snelheid tijdens Analyse:} Zoals vermeld in de stand van zaken, zijn YOLO-modellen geoptimaliseerd voor snelheid.
+    \item \textbf{Eenvoudige Analyse:} Deze methode maakt gebruik van een enkel model, tegenover andere strategieën die meerdere modellen combineren.
 \end{itemize}
 
 \paragraph{Nadelen:}
@@ -118,14 +118,14 @@ Deze strategie minimaliseert de afhankelijkheid van automatische objectdetectie 
 
 \paragraph{Conceptuele Werking:}
 \begin{enumerate}
-    \item \textbf{Handmatige Initialisatie:} In een of meerdere keyframes van de video klikt een operator handmatig op de te volgen objecten. Deze interactie kan gebruikt worden om een initiële bounding box of segmentatiemasker te genereren, eventueel met hulp van SAM.
+    \item \textbf{Handmatige Initialisatie:} In één of meerdere keyframes van de video klikt een operator handmatig op de te volgen objecten. Deze interactie kan gebruikt worden om een initiële bounding box of segmentatiemasker te genereren, eventueel met hulp van SAM.
     \item \textbf{Object Tracking:} Vanaf deze initiële handmatige definitie wordt een trackingalgoritme (bv. SAM 2 of een traditioneler trackingmodel) ingezet om de objecten door de rest van de video te volgen.
     \item \textbf{Koppeling met Blikdata}
 \end{enumerate}
 
 \paragraph{Voordelen:}
 \begin{itemize}
-    \item \textbf{Hoge Accuraatheid bij Initialisatie:} Menselijke input voor de initiële detectie is doorgaans zeer accuraat, wat een goede start voor de tracker kan opleveren.
+    \item \textbf{Hoge Accuraatheid bij Initialisatie:} Hoge accuraatheid bij handmatige annotatie vermindert de kans op fout-positieven.
     \item \textbf{Geen Model Training Nodig:} Elimineert de noodzaak voor het trainen van een detectiemodel.
 \end{itemize}
 
@@ -135,17 +135,13 @@ Het handmatig initialiseren van objecten in elke video is extreem tijdrovend en 
 \subsection{Strategie 4: Blikgestuurde Segmentatie Gevolgd door Classificatie}
 
 Deze strategie stelt de eyetracking-data centraal in het segmentatieproces, waarna diverse modellen kunnen worden toegepast voor classificatie.
-
-\paragraph{Conceptuele Werking:}
-
-Deze strategie maakt gebruik van de "segment everything" capaciteit van moderne segmentatiemodellen, waarbij de blikdata vervolgens wordt ingezet om de voor classificatie relevante segmenten te identificeren.
-% TODO toevoegen aan literatuur
+Het maakt gebruik van de "segment everything" capaciteit van moderne segmentatiemodellen, waarbij de blikdata vervolgens wordt ingezet om de voor classificatie relevante segmenten te identificeren.
 
 \paragraph{Conceptuele Werking:}
 \begin{enumerate}
     \item \textbf{"Segment Everything" en Object Tracking:} Een model zoals SAM 2 of FastSAM wordt toegepast om in elk frame van de video alle potentiële objecten te segmenteren. 
     Deze gesegmenteerde objecten krijgen een unieke identifier en worden over de frames heen getrackt. Dit resulteert in een verzameling van segmentatiemaskers met bijbehorende object-ID's per frame.
-    \item \textbf{Koppeling met Blikdata:} Per frame wordt het blikpunt gebruikt om te bepalen welk(e) van de gesegmenteerde en getrackte objecten daadwerkelijk door de deelnemer wordt aangekeken. 
+    \item \textbf{Koppeling met Blikdata:} Per frame wordt het blikpunt gebruikt om te bepalen welk(e) van de gesegmenteerde en getrackte objecten daadwerkelijk door de deelnemer worden aangekeken. 
     Dit kan bijvoorbeeld door te controleren of het blikpunt binnen een bepaald segmentatiemasker valt, rekening houdend met de inherente onnauwkeurigheid van de eyetracker.
     \item \textbf{Segment Uitsnijden en Classificatie:} Enkel de segmenten die als "aangekeken" zijn geïdentificeerd, worden uit het frame geknipt.
     Deze uitsnedes kunnen vervolgens geclassificeerd worden met verschillende mogelijke modellen.
@@ -172,7 +168,7 @@ Hier is het mogelijk om verschillende benaderingen te gebruiken voor de classifi
     \item \textbf{Beheer van Groot Aantal Segmenten:} Het tracken en beheren van ID's voor potentieel veel segmenten per frame kan complex zijn, vooral in drukke omgevingen.
     \item \textbf{Complexe Pipeline:} Het combineren van segmentatie, tracking en classificatie kan leiden tot een complexe implementatie.
     \item \textbf{Trager dan Directe Objectdetectie:} Het toepassen van meerdere modellen (segmentatie/tracking, classificatie) kan de snelheid van de analyse verminderen in vergelijking met een directe objectdetectie-aanpak.
-    \item \textbf{Unknown Objecten:} Het zysteem zal veel objecten segmenteren die niet relevant zijn voor de analyse, wat kan leiden tot eventuele fout-positieven in de uiteindelijke classificatie.
+    \item \textbf{Unknown Objecten:} Het systeem zal veel objecten segmenteren die niet relevant zijn voor de analyse, wat kan leiden tot eventuele fout-positieven in de uiteindelijke classificatie.
 \end{itemize}
 
 \section{Keuze van de Oplossingsstrategie}

@@ -21,7 +21,7 @@ De workflow die bedacht werd voor de proof-of-concept applicatie, om van ruwe da
 \end{enumerate}
 De applicatie is dus opgebouwd uit verschillende componenten die samen een stapsgewijs proces vormen. Deze zullen hieronder verder worden toegelicht.
 
-\subsubsection{Opnames Maken}
+\subsection{Opnames Maken}
 
 Voordat de applicatie ontwikkeld kon worden, waren er eerst een aantal video-opnames nodig. 
 In deze fase werd de Tobii eyetracking-bril van het Zorglab ontleend om vertrouwd te geraken met het maken van opnames. 
@@ -56,7 +56,7 @@ De app zal nu beginnen met het opnemen van de video, en de participant kan nu vr
 
 % TODO: Best-practices toevoegen?
 
-\subsubsection{Importeren van Eyetracking-Opnames}
+\subsection{Importeren van Eyetracking-Opnames}
 
 Zoals eerder vermeld heeft de Tobii eyetracker twee componenten: de bril zelf en een `hub' die stroom levert aan de bril en de opnames opslaat op een SD-kaart.
 Het zou dus mogelijk zijn om de opnames via de SD-kaart te importeren, maar dit is niet praktisch omdat de SD-kaart steeds uit de hub dient gehaald te worden.
@@ -87,7 +87,7 @@ Elke rij in de onderste tabel bevat een blauwe knop met een pijl naar beneden, w
   \caption[]{\label{fig:browse-recordings-connected} Bij dit voorbeeld is de bril wel verbonden met de computer. Men ziet linksonder de batterlijstatus van de bril. In de onderste tabel is het mogelijk om opnames te importeren vanuit de bril naar de computer. }
 \end{figure}
 
-\subsubsection{Simulatieruimten en Objecten}
+\subsection{Simulatieruimten en Objecten}
 
 Eens de opnames zijn geïmporteerd, kunnen we overgaan tot het definiëren van de objecten in de kalibratie-opnames. Één van de design-keuzes was om met zogenaamde `simulatieruimten` te werken die verschillende omgevingen voorstellen, elk met hun eigen objecten.
 Men kan zich dus voorstellen dat men niet enkel in het Zorglab werkt, maar bijvoorbeeld ook in een echt ziekenhuis of een woonzorgcentrum. Het doel was dus om de applicatie zo gebruiksvriendelijk mogelijk te maken, om het werk van de trainers te vergemakkelijken.
@@ -115,7 +115,7 @@ Wanneer men een kalibratie-opname verwijdert, heeft dit geen invloed op de opnam
 Indien er met de opname werd gelabeld binnen deze simulatieomgeving, worden deze annotaties wel verwijderd. 
 Hetzelfde geldt voor de objecten: indien een object wordt verwijderd, worden ook de annotaties die gemaakt werden met dit object in alle kalibratie-opnames verwijderd.
 
-\subsubsection{Labeling Tool}
+\subsection{Labeling Tool}
 
 We hebben het al eerder gehad over de labeling-tool, maar hoe werkt deze nu precies? Dit is één van de belangrijkste onderdelen van de applicatie, en ook het meest complexe.
 De labeler kunnen we openen door op de knop `Start Labeling' te klikken van een kalibratie-opname binnen de `Manage Sim Rooms'-pagina.
@@ -153,7 +153,7 @@ Over het algemeen hebben we slechts één annotatie nodig voor elk gedeelte van 
 Het specifieke algoritme dat bedacht werd voor de tracking komt aan bod in de technische sectie van dit onderdeel.
 Tenslotte bestaat de mogelijkheid dat er veel objecten in beeld zijn waardoor maskers, bounding boxes en labels elkaar overlappen. Om deze reden kunnen we rechtsboven een optie `Show inactive classes', uitvinken om enkel het actieve object te tonen in het canvas.
 
-\subsubsection{Analyse van Eyetracking-Opnames}
+\subsection{Analyse van Eyetracking-Opnames}
 
 Hoewel het aanvankelijk de bedoeling was, werd in de context van deze bachelorproef, geen werkende analyse-tool ontwikkeld maar enkel een proof-of-concept.
 De labeling-tool was in dit opzicht de belangrijkste component, omdat deze de annotaties genereert die nodig zijn voor de analyse.
@@ -493,6 +493,224 @@ Merk op dat de buffer van 16 frames hier hardgecodeerd is.
 In de toekomst kan het nuttig zijn om deze waarde aanpasbaar te maken door middel van een configuratieparameter binnen de \texttt{SAM2VideoPredictor} klasse.
 
 % TODO: veranderingen in AsyncVideoLoader ook beschrijven?
+
+\subsection{Omgaan met Blikdata}
+\label{sec:omgaan-met-blikdata}
+
+Om de analyses in hoofdstuk \ref{ch:analyse} te vergemakkelijken, biedt de applicatie 
+in de service-laag (geïmplementeerd in \texttt{src.api.services.gaze\_service}) ook functionaliteit om de blikdata van de eyetracker te verwerken.
+Deze functionaliteit omvat het laden, verwerken en synchroniseren van de blikdata met de videoframes.
+Hier worden de kernstappen van deze functionaliteit besproken.
+
+\subsubsection{Parseren van Blikdatabestanden}
+
+De blikdata van de eyetracker wordt opgeslagen in een \texttt{.tsv}-bestand.
+Hoewel men er van uit zou gaan dat het hier om tab-separated values gaat (tsv), blijkt dit niet het geval te zijn.
+In de werkelijkheid bestaan deze bestanden uit een reeks van \texttt{json}-objecten, waarbij elke regel metadata bevat over een bepaald blikpunt.
+De \texttt{parse\_gazedata\_file} functie is verantwoordelijk voor het inlezen van de bestanden, 
+en levert een lijst aan \texttt{GazeData} objecten op.
+
+Het volgende is een voorbeeld van een regel uit een blikdatabestand:
+\begin{listing}
+  \begin{minted}{python}
+    {
+        "type": "gaze",
+        "timestamp": 0.014574,
+        "data": {
+            "gaze2d": [
+                0.42802076888650348,
+                0.59985904570034698
+            ],
+            "gaze3d": [
+                5524.405064657687,
+                -4220.9188210373977,
+                38060.311822743075
+            ],
+            "eyeleft": {
+                "gazeorigin": [
+                    32.591088912983722,
+                    -9.3800673986482224,
+                    -28.144596430671765
+                ],
+                "gazedirection": [
+                    0.14673772446588171,
+                    -0.10725782137152362,
+                    0.98334317507836977
+                ],
+                "pupildiameter": 3.078226794385742
+            },
+            "eyeright": {
+                "gazeorigin": [
+                    -28.884017016163959,
+                    -9.1355755568510908,
+                    -27.103885607429742
+                ],
+                "gazedirection": [
+                    0.13854486333094154,
+                    -0.11030711082172073,
+                    0.98419391491045893
+                ],
+                "pupildiameter": 3.1712040692965147
+            }
+        }
+    }
+  \end{minted}
+  \caption[Voorbeeld van een regel in een blikdatabestand]{
+    Een voorbeeld van een regel in een blikdatabestand. 
+    Het bevat metadata over de blikdata, zoals de tijdstempel, de 2D- en 3D-coördinaten van de blik, en de pupilgrootte.
+  }
+\end{listing}
+
+Zoals men kan zien bevat elke regel van het bestand de volgende metadata, waarvan de uitleg afkomstig is van de Tobii Glasses 3 Developer Guide \autocite{tobii_developer_guide}:
+\begin{itemize}
+    \item \texttt{type}: het type van de data (in dit geval `gaze').
+    \item \texttt{timestamp}: de tijdstempel van de data in seconden.
+    \item \texttt{data}: een dictionary met de blikdata. Het is mogelijk dat deze leeg is wanneer er geen blikdata beschikbaar is. Het bevat de volgende velden:
+    \begin{itemize}
+      \item \texttt{gaze2d}: De 2D-coördinaten van de blik. Merk op dat dit genormaliseerde coördinaten zijn ten opzichte van de resolutie van de video-opname,
+      waarbij (0, 0) de linkerbovenhoek van de video-opname is en (1, 1) de rechteronderhoek.
+      \item \texttt{gaze3d}: Dit is een 3D-coördinaat in millimeters, dat de positie van de blik in de ruimte weergeeft tegenover de positie van de camera.
+      \item \texttt{eyeleft} en \texttt{eyeright}: metadata over het linker en rechter oog, waaronder de oorsprong van de blik, de richting van de blik, en de pupilgrootte.
+      Het is mogelijk dat één van deze velden leeg is wanneer er geen data beschikbaar is voor dat oog. Indien beide velden leeg zijn, betekent dit dat er geen blikdata beschikbaar is (het `data' veld is dan ook volledig leeg).
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Converteren naar Bruikbare Blikpunten}
+
+Nadat de ruwe blikdata is geparsed, wordt deze verder verwerkt door de \texttt{get\_gaze\_points} functie.
+Het resultaat van deze functie is een lijst van \texttt{GazePoint}-objecten, die elk een x-coördinaat, y-coördinaat, 
+de geschatte diepte, en de oorspronkelijke timestamp bevatten.
+Hoewel de diepte binnen de analyses in hoofdstuk \ref{ch:analyse} niet verder wordt gebruikt, kan deze in de 
+toekomst nuttig zijn voor andere analyses.
+
+\begin{listing}
+  \begin{minted}{python}
+    def get_gaze_points(
+        gaze_data: list[GazeData], resolution: tuple[int, int]
+    ) -> list[GazePoint]:
+        gaze_points = [] 
+        
+        for data in gaze_data:
+            if data.gaze2d is None:
+                # Geen 2D-coördinaten beschikbaar, dus deze data is niet bruikbaar
+                continue
+
+            gaze_depth = None
+            if data.gaze3d and data.eye_data_left and data.eye_data_right:
+                eyeleft = data.eye_data_left
+                eyeright = data.eye_data_right
+
+                # Bereken de oorsprong van de blik als het 
+                # gemiddelde van de oorsprong van beide ogen
+                gaze_origin = (
+                    np.add(eyeleft.origin, eyeright.origin) / 2
+                    if (eyeleft and eyeright)
+                    else eyeleft.origin
+                    if eyeleft
+                    else eyeright.origin
+                )
+
+                # Bereken de diepte van de blik als de 
+                # euclidische afstand tussen de oorsprong en het 3D-punt
+                gaze_depth = np.sqrt(np.sum((data.gaze3d - gaze_origin) ** 2, axis=0))
+
+            # Denormaliseer de 2D-coördinaten naar pixelcoördinaten
+            x = int(clamp(data.gaze2d[0], 0, 1) * resolution[1])
+            y = int(clamp(data.gaze2d[1], 0, 1) * resolution[0])
+
+            gaze_points.append(GazePoint(x, y, gaze_depth, data.timestamp))
+
+        return gaze_points
+  \end{minted}
+  \caption[\texttt{get\_gaze\_points} functie]{
+    De \texttt{get\_gaze\_points} functie verwerkt de ruwe blikdata en zet deze om naar bruikbare blikpunten.
+    Het resultaat is een lijst van \texttt{GazePoint} objecten met de x- en y-coördinaten, de geschatte diepte, en de oorspronkelijke timestamp.
+  }
+\end{listing}
+
+De functie heeft twee hoofddoelen:
+\begin{enumerate}
+  \item \textbf{Filteren van Ongeldige Data:} Blikregistraties waarbij geen \texttt{gaze2d}-coördinaten beschikbaar zijn, 
+  worden genegeerd, omdat deze niet bruikbaar zijn voor 2D-analyse op het videobeeld.
+  \item \textbf{Denormalisatie en Diepteberekening:}
+    \begin{itemize}
+      \item Een schatting van de diepte van het blikpunt (\texttt{gaze\_depth}) wordt berekend. 
+        Indien data voor beide ogen beschikbaar is, wordt de 3D-oorsprong van de blik benaderd als 
+        het gemiddelde van de \texttt{gazeorigin} van het linker- en rechteroog. 
+        De diepte is dan de Euclidische afstand tussen dit gemiddelde oorsprongspunt en het geregistreerde \texttt{gaze3d}-punt.
+      \item De genormaliseerde \texttt{gaze2d}-coördinaten (x, y) worden omgezet naar absolute pixelcoördinaten 
+        ten opzichte van de resolutie van de video-opname. 
+        Hierbij wordt gebruik gemaakt van de \texttt{clamp}-functie om te verzekeren dat de coördinaten 
+        binnen de grenzen [0,1] blijven alvorens te vermenigvuldigen met de respectievelijke breedte en hoogte.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Synchronisatie van Blikpunten met Videoframes}
+
+Een belangrijke stap voor analyse is het correct toewijzen van de continue stroom van blikpunten aan de verschillende videoframes.
+De Tobii Pro Glasses 3 registreert blikdata met hogere frequentie (50Hz) dan de videoframerate (25fps).
+Dit betekent dat er meerdere blikpunten kunnen corresponderen met een enkele videoframe.
+
+De functie \texttt{match\_frames\_to\_gaze} implementeert de logica voor deze synchronisatie.
+\begin{listing}
+  \begin{minted}{python}
+    def match_frames_to_gaze(
+        frame_count: int, gaze_points: list[GazePoint], fps: float
+    ) -> list[list[GazePoint]]:
+        # Lijst van lijsten om de blikpunten per frame op te slaan
+        frame_gaze_mapping = []
+        
+        # Bijhouden waar we zijn in de lijst van blikpunten
+        gaze_index = 0
+
+        for frame_num in range(frame_count):
+            # Bepaal de tijdstempel van de volgende frame
+            next_frame_timestamp = (frame_num + 1) / fps
+
+            # Maak een lijst voor de blikpunten van deze frame
+            frame_gazes = []
+
+            while (
+                gaze_index < len(gaze_points)
+                and gaze_points[gaze_index].timestamp < next_frame_timestamp
+            ):
+                # Als de tijdstempel van het blikpunt kleiner is 
+                # dan de tijdstempel van de volgende frame,
+                # voeg het blikpunt toe aan de lijst van deze frame
+                gaze_point = gaze_points[gaze_index]
+                frame_gazes.append(gaze_point)
+                gaze_index += 1
+
+            frame_gaze_mapping.append(frame_gazes)
+
+        # Controleer of er frames zijn met meer dan 2 blikpunten
+        # Dit is ongebruikelijk en kan duiden op een probleem
+        gaze_counts = {len(points) for points in frame_gaze_mapping}
+        if 3 in gaze_counts:
+            raise Warning(
+                "Detected 3 gaze points for a frame in the video. This is unexpected."
+            )
+
+        return frame_gaze_mapping
+  \end{minted}
+  \caption[\texttt{match\_frames\_to\_gaze} functie]{
+    De \texttt{match\_frames\_to\_gaze} functie synchroniseert de blikpunten met de videoframes.
+    Het resultaat is een lijst van lijsten, waarbij elke sublijst de blikpunten bevat die overeenkomen met de respectieve frame-index.
+  }
+\end{listing}
+
+Gegeven het totaal aantal frames in de video, de lijst van \texttt{GazePoint}-objecten (gesorteerd op timestamp), 
+en de framerate (fps) van de video, doorloopt deze functie elke frame-index:
+\begin{enumerate}
+  \item Voor elke frame wordt de eindtijd van dat frame berekend.
+  \item Vervolgens worden alle \texttt{GazePoint}-objecten verzameld waarvan de timestamp valt vóór de eindtijd van de huidige frame, 
+  maar na de eindtijd van de vorige frame (impliciet, doordat de \texttt{gaze\_index} behouden blijft).
+  \item Dit resulteert in een mapping waarbij elke frame-index wordt geassocieerd met een lijst van één of meerdere 
+  \texttt{GazePoint}-objecten die tijdens de duur van dat frame zijn geregistreerd. 
+  Typisch zullen dit, afhankelijk van de sampling rates, nul, één of twee blikpunten per frame zijn. 
+  Een waarschuwing wordt gegenereerd indien er onverwacht drie of meer blikpunten aan een frame worden toegewezen, 
+  wat kan duiden op inconsistenties in de inputdata of aannames.
+\end{enumerate}
 
 \subsection{Database}
 

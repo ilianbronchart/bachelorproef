@@ -1,5 +1,3 @@
-\chapter{\IfLanguageName{dutch}{Stand van zaken}{State of the art}}%
-\label{ch:stand-van-zaken}
 
 % \begin{figure}
 %   \centering
@@ -33,6 +31,9 @@
 %   \caption[Voorbeeld tabel]{\label{tab:example}Voorbeeld van een tabel.}
 % \end{table}
 
+\chapter{\IfLanguageName{dutch}{Stand van zaken}{State of the art}}%
+\label{ch:stand-van-zaken}
+
 Deze bachelorproef onderzoekt het raakvlak tussen de huidige state-of-the-art Machine Learning-modellen in Computer Vision en de analyse van hoofd-gemonteerde eyetracking data.
 Daarom kan dit hoofdstuk opgedeeld worden in twee hoofddelen. Het eerste deel geeft een overzicht van hoofd-gemonteerde eyetracking technologie, met in het bijzonder een focus op de Tobii Pro Glasses 3.
 Het tweede deel biedt een overzicht van de huidige state-of-the-art in Computer Vision, met aandacht voor object detection en segmentation, evenals technieken voor image preprocessing.
@@ -40,6 +41,7 @@ Het tweede deel biedt een overzicht van de huidige state-of-the-art in Computer 
 \section{Maatschappelijke Relevantie}
 
 % TODO: uitleggen waarom het onderzoek relevant is + aantal concrete simulatiescenario's schetsen
+% voeg dit eerder toe aan de inleiding?
 
 \section{Eyetracking}
 
@@ -57,7 +59,7 @@ Eyetracking-technologie biedt daarentegen een objectieve methode om visuele aand
 \subsection{Soorten eyetrackers}
 
 Eyetrackers kunnen worden onderverdeeld in twee hoofdtypes: screen-based of mobile devices \autocite{PAUSZEK2023100031}.
-Screen-based eyetrackers worden gebruikt in omgevingen waar de gebruiker stationair blijft en naar een scherm kijkt, zoals een computermonitor .
+Screen-based eyetrackers worden gebruikt in omgevingen waar de gebruiker stationair blijft en naar een monitor kijkt, zoals een computermonitor .
 Mobile eyetrackers zijn draagbare toestellen waarmee gebruikers zich vrij kunnen bewegen terwijl hun kijkgedrag nog steeds wordt gevolgd.
 
 In de context van medische training en simulatie, waarbij studenten vaak fysieke handelingen uitvoeren en zich door een ruimte verplaatsen, zijn mobile eyetrackers de meest geschikte optie.
@@ -89,6 +91,17 @@ Een AOI is een geselecteerd stimulusgebied, element of regio binnen het visuele 
 Een aantal concrete voorbeelden van AOI's in de context van het Zorglab zijn: een colafles op de nachtkast van een diabetespatiënt, een infuuspomp in een ziekenhuiskamer of een foto van een familielid op de kamer van een patiënt.
 % In figuur \ref{fig:voorbeeld-aoi} is een voorbeeld van een AOI te zien, in dit geval een fotokader binnen de simulatieruimte van het Zorglab.
 
+\subsection{Fovea Centralis}
+\label{sec:fovea-centralis}
+
+De fovea centralis is een klein gebied in het netvlies van het oog dat verantwoordelijk is voor het 
+scherpste zicht en de meeste visuele waarneming \autocite{REMINGTON201261}.
+Dit gebied vertegenvoordigt slechts ongeveer 1 graad van het gezichtsveld, maar bevat een hoge concentratie van kegeltjes, 
+de fotoreceptoren die verantwoordelijk zijn voor kleurwaarneming en hoge visuele scherpte.
+Deze informatie kan belangrijk zijn voor het bepalen van de objecten die de deelnemer van een eyetracking-opname daadwerkelijk heeft gezien,
+aangezien de blikpunten maar duiden op een enkele pixel in de afbeelding. 
+Zo kunnen we AOI's selecteren die overlappen met de cirkel gedefinieerd door de fovea en eventueel de nauwkeurigheid van de eyetracker.
+Volgens de specificaties van de Tobii Pro Glasses 3 is de eyetracker nauwkeurig tot op 0.6 graden \autocite{tobii_pro_glasses_3}.
 
 \subsection{Bestaande oplossingen voor eyetracking data-analyse}
 
@@ -262,7 +275,9 @@ De tweede fase, de \textit{prompt-guided selection}, gebruikt vervolgens de gege
 Deze prompts kunnen bestaan uit punten (\textit{point prompts}), rechthoeken (\textit{box prompts}) of zelfs tekstuele beschrijvingen (\textit{text prompts}). 
 Bij een punt-prompt wordt bijvoorbeeld gekeken welk segmentatiemasker het opgegeven punt bevat, terwijl een box-prompt gebruikmaakt van de overlap tussen een opgegeven rechthoek en bestaande segmentatiemaskers.
 Zo kunnen we bij eye-tracking data bijvoorbeeld een punt-prompt gebruiken op basis van de blikrichting van de gebruiker om objecten te selecteren uit een all-instance segmentatie.
-Merk op dat hier geen klassen worden toegewezen aan objecten, enkel de segmentatie van objecten wordt bepaald. 
+Een interessante eigenschap van zowel SAM als FastSAM is de mogelijkheid om een zogenaamde \textit{everything-prompt} te gebruiken, waarbij alle objecten in de afbeelding gesegmenteerd worden zonder dat de gebruiker specifieke prompts hoeft op te geven.
+Zo is het mogelijk om een everything-prompt te gebruiken, en vervolgens de segmentatiemaskers te filteren op basis van de blikpunten van de gebruiker, om zo de relevante objecten te selecteren.
+Merk op dat hier geen klassen worden toegewezen aan objecten (behalve bij text-prompting), maar enkel segmentatiemaskers worden gegenereerd.
 Daarom zullen segmentatiemodellen zoals FastSAM en SAM moeten worden gecombineerd met objectdetectiemodellen om na te gaan welke objecten er in de afbeelding aanwezig zijn.
 
 FastSAM is beschikbaar in de Model Hub van Ultralytics\footnote{\url{https://docs.ultralytics.com/models/fast-sam/}} en kan gratis worden gebruikt voor open-source projecten en onderzoek.
@@ -318,7 +333,7 @@ Ook onderzochten ze de prestatieverschillen tussen YOLOv8 en DINO modellen op de
 DINO modellen een langere rekentijd nodig hebben dan de YOLO modellen.
 
 SAM werd ook onderzocht in combinatie met eyetracking data door \textcite{Wang2023} in hun applicatie genaamd `GazeSAM'. Dit onderzoek richtte zich op het segmenteren van de objecten waarnaar de gebruiker kijkt tijdens een eyetracking-sessie.
-Een belangrijk onderschijd tussen de context van dit onderzoek en deze bachelorproef is dat er gebruik gemaakt werd van screen-based eyetracking, waarbij de gebruiker naar een computerscherm keek in plaats van een fysieke omgeving.
+Een belangrijk onderschijd tussen de context van dit onderzoek en deze bachelorproef is dat er gebruik gemaakt werd van screen-based eyetracking, waarbij de gebruiker naar een computermonitor keek in plaats van een fysieke omgeving.
 De blikrichting van de gebruiker werd gebruikt als basis voor een punt-prompt, waarmee SAM de objecten in de afbeelding kon segmenteren. Het bleek dat SAM soms moeilijkheden had met het segmenteren van medische afbeeldingen, omdat 
 SAM voornamelijk getraind is op alledaagse objecten. Dit zal echter geen probleem vormen voor de toepassingen binnen het Zorglab, waar de objecten voornamelijk alledaagse objecten zijn. Een ander nadeel van SAM was dat het model 
 moeilijkheden had met het correct segmenteren van objecten op basis van een enkele punt-prompt, waardoor verdere manuele interventie nodig was.
