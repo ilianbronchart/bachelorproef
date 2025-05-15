@@ -25,7 +25,7 @@ De applicatie is dus opgebouwd uit verschillende componenten die samen een staps
 
 Voordat de applicatie ontwikkeld kon worden, waren er eerst een aantal video-opnames nodig. 
 In deze fase werd de Tobii eyetracking-bril van het Zorglab ontleend om vertrouwd te geraken met het maken van opnames. 
-Deze opnames werden thuis uitgevoerd en dienden zowel als basis voor de applicatie zelf als voor initiële experimenten met de computer vision-modellen die later zouden worden ingezet in de labelingtool en de analyses.
+Deze opnames werden thuis uitgevoerd en dienden zowel als basis voor de applicatie zelf als voor initiële experimenten met de computer vision-modellen die later zouden worden ingezet in de labeling-tool en de analyses.
 Om een opname te maken hebben we twee zaken nodig: de eyetracker zelf met bijbehorende accessoires, en een laptop of computer waarop de `Tobii Pro Glasses 3 Controller'\footnote{\url{https://www.tobii.com/products/eye-trackers/wearables/tobii-pro-glasses-3/controller-app}} app is geïnstalleerd.
 
 \begin{figure}[H]
@@ -122,7 +122,7 @@ De labeler kunnen we openen door op de knop `Start Labeling' te klikken van een 
 In de achtergrond worden alle individuele frames uit de opname gehaald en in een map opgeslagen, waardoor het enige tijd kan duren voor de tool opent. De specifieke implementatieredenen hiervoor komen later aan bod.
 Het doel van de labeler is om een masker (en een `bounding box') te verkrijgen binnen elke frame van de opname waarin een object zich bevindt.
 Natuurlijk zou dit een grote tijdsinvestering vragen bij een volledig manuele tool: aangezien de framerate van de eyetracker 25 FPS (Frames per Second) is, zou dit betekenen dat we 1500 frames moeten labelen voor een opname van 1 minuut, en dit voor elk object dat we willen labelen.
-Het probleem werd opgelost met een semi-automatische labelingtool. Daarbij hoeft men enkel in minder dan tien frames per object te klikken. De tool volgt vervolgens elk object automatisch doorheen de hele opname.
+Het probleem werd opgelost met een semi-automatische labeling-tool. Daarbij hoeft men enkel in minder dan tien frames per object te klikken. De tool volgt vervolgens elk object automatisch doorheen de hele opname.
 De functies van de labeling-tool worden hieronder verder toegelicht.
 
 \begin{figure}[H]
@@ -248,6 +248,7 @@ Ook bevat het logica voor het beheren van bestanden op de schijf, zoals resultat
 Dit zorgt ervoor dat de \texttt{services}-laag onafhankelijk is van de specifieke database-implementatie.
 
 \subsection{Backend van de Labeling Tool en Tracking-logica}
+\label{sec:labeling-tool-logic}
 
 In deze sectie gaan we dieper in op wat er in de achtergrond gebeurt wanneer de gebruiker objecten labelt in de labeling-tool.
 
@@ -282,7 +283,7 @@ Het frame-per-frame verwerken van een volledige video-opname is immers onnodig (
 Om de tracking efficiënt uit te voeren, fungeert elke manuele annotatie als een startpunt. 
 De \texttt{TrackingJob} klasse initieert vanuit deze `ankerpunten' het trackingproces, zoals geïmplementeerd in de run methode:
 
-\begin{listing}
+\begin{listing}[H]
   \begin{minted}{python}
     def run(self) -> None:
       self.initialize()
@@ -321,7 +322,7 @@ maar enkel over segmenten waar het object vermoedelijk aanwezig is. Dit reduceer
 De kern van het daadwerkelijke volgen binnen deze segmenten zit in de \texttt{track\_until\_loss} methode. 
 Deze methode maakt gebruik van de \texttt{propagate\_in\_video} functionaliteit van de \texttt{SAM2VideoPredictor}.
 
-\begin{listing}
+\begin{listing}[H]
   \begin{minted}{python}
     def track_until_loss(
         self, start_frame_idx: int, reverse: bool = False
@@ -511,7 +512,7 @@ De \texttt{parse\_gazedata\_file} functie is verantwoordelijk voor het inlezen v
 en levert een lijst aan \texttt{GazeData} objecten op.
 
 Het volgende is een voorbeeld van een regel uit een blikdatabestand:
-\begin{listing}
+\begin{listing}[H]
   \begin{minted}{python}
     {
         "type": "gaze",
@@ -583,7 +584,7 @@ de geschatte diepte, en de oorspronkelijke timestamp bevatten.
 Hoewel de diepte binnen de analyses in hoofdstuk \ref{ch:analyse} niet verder wordt gebruikt, kan deze in de 
 toekomst nuttig zijn voor andere analyses.
 
-\begin{listing}
+\begin{listing}[H]
   \begin{minted}{python}
     def get_gaze_points(
         gaze_data: list[GazeData], resolution: tuple[int, int]
@@ -651,8 +652,8 @@ Een belangrijke stap voor analyse is het correct toewijzen van de continue stroo
 De Tobii Pro Glasses 3 registreert blikdata met hogere frequentie (50Hz) dan de videoframerate (25fps).
 Dit betekent dat er meerdere blikpunten kunnen corresponderen met een enkele videoframe.
 
-De functie \texttt{match\_frames\_to\_gaze} implementeert de logica voor deze synchronisatie.
-\begin{listing}
+De functie \texttt{match\_frames\_to\_gaze} implementeert de logica voor deze synchronisatie:
+\begin{listing}[H]
   \begin{minted}{python}
     def match_frames_to_gaze(
         frame_count: int, gaze_points: list[GazePoint], fps: float

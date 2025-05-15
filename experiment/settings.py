@@ -183,3 +183,6 @@ OBJECT_DATASETS_PATH = Path("data/object_datasets")
 FINAL_PREDICTIONS_PATH = Path("data/final_predictions")
 TRAINING_DATASETS_PATH = Path("data/training_datasets")
 YOLO_MODELS_PATH = Path("data/yolo_models")
+
+# Database
+SIMROOM_ID = 1

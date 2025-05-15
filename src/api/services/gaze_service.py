@@ -38,8 +38,8 @@ def mask_was_viewed(
     circular_mask = (dist_sq <= viewed_radius**2).float()
 
     # Apply the circular mask to the input mask.
-    masked_mask = mask * circular_mask
-    return bool(masked_mask.sum() > 0)
+    overlapped_mask = mask * circular_mask
+    return bool(overlapped_mask.sum() > 0)
 
 
 def parse_gazedata_file(file_path: Path) -> list[GazeData]:

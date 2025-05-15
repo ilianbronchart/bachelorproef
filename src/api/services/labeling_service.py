@@ -360,11 +360,12 @@ class Labeler:
         threading.Thread(target=job_runner).start()
 
 
-def get_class_tracking_results(class_id: int) -> list[Path]:
+def get_class_tracking_results(cal_rec_id: int, class_id: int) -> list[Path]:
     tracking_paths = []
     for tracking_results in TRACKING_RESULTS_PATH.iterdir():
-        for class_results in tracking_results.iterdir():
-            if class_results.stem == str(class_id):
-                for annotation in class_results.iterdir():
-                    tracking_paths.append(annotation)
+        if tracking_results.stem == str(cal_rec_id):
+            for class_results in tracking_results.iterdir():
+                if class_results.stem == str(class_id):
+                    for annotation in class_results.iterdir():
+                        tracking_paths.append(annotation)
     return tracking_paths

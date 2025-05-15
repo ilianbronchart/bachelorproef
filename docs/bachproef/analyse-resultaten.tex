@@ -22,7 +22,7 @@ De notebook is opgedeeld in verschillende secties, die elk een specifiek aspect 
     in een aparte submap (\texttt{data/recording\_frames/<recording\_id>/xxxxx.png}).
     \item Tenslotte werd de database van de applicatie geïnitialiseerd met alle nodige data. De metadata van de opnames werden 
     ingelezen en opgeslagen in de database.
-    Ook werd er een simulatieruimte aangemaakt met de naam "Controlled Experiment Room" met de 15 objecten, evenals het toewijzen 
+    Ook werd er een simulatieruimte aangemaakt met de naam `Controlled Experiment Room' met de 15 objecten, evenals het toewijzen 
     van kalibratieopnames aan deze simulatieruimte.
     Merk op dat de evaluatieopnames hier ook als kalibratieopnames werden beschouwd binnen de applicatie, omdat deze ook geannoteerd 
     dienden te worden voor het maken van de grondwaarheid.
@@ -32,7 +32,7 @@ De notebook is opgedeeld in verschillende secties, die elk een specifiek aspect 
 
 Een accurate en consistente annotatie van de experimentele data vormt de spil voor zowel het 
 initialiseren van de analysemethoden als het valideren van hun prestaties. 
-Dit proces werd uitgevoerd met behulp van de in Hoofdstuk~\ref{ch:ontwikkeling} beschreven labelingtool binnen de ontwikkelde PoC-applicatie. 
+Dit proces werd uitgevoerd met behulp van de in Hoofdstuk~\ref{ch:ontwikkeling} beschreven labeling-tool binnen de ontwikkelde PoC-applicatie. 
 Er wordt een fundamenteel onderscheid gemaakt in de doelstelling en aanpak van annotatie voor de 
 kalibratieopnames enerzijds en de evaluatieopnames anderzijds.
 
@@ -63,8 +63,8 @@ werd een meeromvattende aanpak gekozen.
 De onderzoeker bekeek daartoe elke evaluatieopname integraal, waarbij de videofeed werd gecombineerd met een overlay 
 van de geregistreerde blikpunten. Deze visuele combinatie maakte het mogelijk om dynamisch te beoordelen welke van de 15 potentiële 
 objecten op enig moment relevant waren voor annotatie, namelijk die objecten waar de blik van de deelnemer daadwerkelijk op rustte, 
-ongeacht of dit een geïnstrueerd doelobject was of een object dat "toevallig" werd aangekeken. 
-Zodra een fixatie op een van de 15 objecten werd vastgesteld, werd dit specifieke object in de labelingtool geselecteerd. 
+ongeacht of dit een geïnstrueerd doelobject was of een object dat `toevallig' werd aangekeken. 
+Zodra een fixatie op een van de 15 objecten werd vastgesteld, werd dit specifieke object in de labeling-tool geselecteerd. 
 Vervolgens werden met behulp van positieve (en eventueel negatieve) interactiepunten de SAM2-segmentatie en de semi-automatische 
 tracking ingezet om het object te volgen. Waar nodig werden manuele correcties of herinitialisaties van de tracking uitgevoerd.
 
@@ -78,11 +78,13 @@ en de opname waarbij de achtergrond verschillend was.
 
 \subsection{Genereren van de Grondwaarheid}
 
+De resultaten van het annotatieproces werden door de applicatie opgeslagen in de map \texttt{data/labeling\_results}, en worden 
+verder verwerkt in het \texttt{03\_create\_ground\_truth\_dataset.ipynb}-notebook tot een grondwaarheidsdataset.
 Merk op dat de output van het annotatieproces voor de evaluatieopnames niet direct gelijkgesteld kan worden aan de uiteindelijke grondwaarheid. 
-De trackingfunctionaliteit van de labelingtool volgt immers objecten zodra ze gemarkeerd zijn, onafhankelijk van de continue blikrichting van de deelnemer. 
+De trackingfunctionaliteit van de labeling-tool volgt immers objecten zodra ze gemarkeerd zijn, onafhankelijk van de continue blikrichting van de deelnemer. 
 Dit resulteert in een dataset die ook segmentaties bevat van objecten waar de deelnemer op dat specifieke moment niet (meer) naar keek.
 
-\subsection{Filtering van de Annotaties}
+\subsubsection{Filtering van de Annotaties}
 
 Een aanvullende filterstap, gebaseerd op de geregistreerde blikdata, is noodzakelijk om enkel die objectsegmentaties 
 te behouden die daadwerkelijk samenvallen met de fixaties van de deelnemer.
@@ -101,21 +103,20 @@ het dichtst aansluit bij de visuele informatie aan het begin van dat frame.
 Met een representatief blikpunt per frame kon vervolgens de kern van de filtering worden uitgevoerd. 
 De uitdaging hierbij is dat een blikpunt, zoals geregistreerd door de eyetracker, één enkel pixelcoördinaat representeert, 
 terwijl visuele waarneming plaatsvindt binnen een bepaald gebied van het gezichtsveld. 
-Om te bepalen of een segmentatiemasker daadwerkelijk "bekeken" werd, dient dus berekend te worden of er een 
-overlap bestaat tussen het blikpunt---vertegenwoordigd door een cirkelvormig gebied dat de foveale 
-waarneming en de nauwkeurigheid van de eyetracker modelleert---en het segmentatiemasker.
+Om te bepalen of een segmentatiemasker daadwerkelijk `bekeken' werd, dient dus berekend te worden of er een 
+overlap bestaat tussen het blikpunt---vertegenwoordigd door een cirkelvormig gebied dat de fovea en de nauwkeurigheid van de eyetracker modelleert---en het segmentatiemasker.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\textwidth]{gaze-overlap.png}
   \caption[]{\label{fig:gaze-overlap} 
-    Een illustratie van de filtering van segmentatiemaskers op basis van de geregistreerde blikdata.
-    De rode cirkel stelt het blikpunt voor, met een straal die de foveale waarneming en de eyetracker-nauwkeurigheid modelleert.
-    % todo extra uitleg
+    Voorbeelden van de overlap tussen een blikpunt en een segmentatiemasker.
+    Indien het blikpunt geheel buiten het masker valt, wordt dit beschouwd als een `niet bekeken' object.
+    De rode cirkel stelt het blikpunt voor, met een straal die de fovea en de nauwkeurigheid van de eyetracker modelleert.
   }
 \end{figure}
 
-Dit cirkelvormige "kijkgebied" wordt gedefinieerd op basis van twee principes die in 
+Dit cirkelvormige kijkgebied wordt gedefinieerd op basis van twee principes die in 
 Sectie~\ref{sec:fovea-centralis} (Stand van Zaken) werden besproken:
 \begin{enumerate}
     \item De fovea centralis, het gebied in het netvlies verantwoordelijk voor het scherpste zicht, beslaat ongeveer 1 graad van het menselijk gezichtsveld.
@@ -123,16 +124,18 @@ Sectie~\ref{sec:fovea-centralis} (Stand van Zaken) werden besproken:
 \end{enumerate}
 
 Om rekening te houden met beide factoren, wordt de effectieve Field of View (FOV) voor 
-"aandachtig kijken" benaderd als de som van de foveale FOV en de eyetracker-nauwkeurigheid, dus \(1° + 0.6° = 1.6° \).
+`aandachtig kijken' benaderd als de som van de foveale FOV en de eyetracker-nauwkeurigheid, dus \(1° + 0.6° = 1.6° \).
 Deze gecombineerde hoek wordt vervolgens omgezet naar een pixelradius op het camerabeeld. 
 Gegeven de horizontale FOV van de Tobii Pro Glasses 3 camera (95\textdegree, volgens \textcite{tobii_pro_glasses_3}) en de horizontale resolutie van de video (1920 pixels),
-wordt de straal van het cirkelvormige kijkgebied berekend als:
+wordt de straal in pixels van het cirkelvormige kijkgebied berekend als:
 
 \[
-\text{VIEWED\_RADIUS} = \text{int}\left( \frac{\text{GAZE\_FOV}}{\text{TOBII\_FOV\_X}} \times \frac{\text{Horizontale Resolutie}}{2} \right)
+\text{straal} = \left( \frac{\text{1.6°}}{\text{95°}} \times \text{1920} \right) / 2
 \]
 
-\begin{listing}
+Deze waarde maakt de \texttt{mask\_was\_viewed} functie mogelijk, die controleert of het blikpunt van de deelnemer overlapt met een segmentatiemasker.
+
+\begin{listing}[H]
   \begin{minted}{python}
     def mask_was_viewed(
         mask: torch.Tensor,
@@ -158,12 +161,12 @@ wordt de straal van het cirkelvormige kijkgebied berekend als:
         circular_mask = (dist_sq <= viewed_radius**2).float()
         
         # Pas het cirkelvormige blikmasker toe op het input (segmentatie)masker.
-        # Dit gebeurt door een element-wise vermenigvuldigin
-        masked_mask = mask * circular_mask
+        # Dit gebeurt door een element-wise vermenigvuldiging 
+        overlapped_mask = mask * circular_mask
 
         # Indien de som van de resulterende maskerwaarden groter is dan 0,
         # betekent dit dat er overlap was.
-        return bool(masked_mask.sum() > 0)
+        return bool(overlapped_mask.sum() > 0)
 
   \end{minted}
   \caption[\texttt{mask\_was\_viewed} functie]{
@@ -171,11 +174,52 @@ wordt de straal van het cirkelvormige kijkgebied berekend als:
   }
 \end{listing}
 
+De werking van deze functie kan als volgt worden samengevat:
+\begin{enumerate}
+  \item Eerst wordt een binair masker gegenereerd dat het cirkelvormige kijkgebied rond de \texttt{gaze\_position} representeert, 
+  gebruikmakend van de berekende \texttt{viewed\_radius}. Pixels binnen deze cirkel krijgen de waarde 1, pixels daarbuiten de waarde 0.
+  \item Vervolgens wordt een element-wise vermenigvuldiging uitgevoerd tussen dit binaire kijkgebied-masker 
+  en het input segmentatiemasker (dat eveneens binair is, waarbij 1 objectpixels en 0 achtergrondpixels aanduidt). 
+  \item Het resultaat is een nieuw masker (\texttt{overlapped\_mask}) dat enkel pixels met waarde 1 bevat waar 
+  zowel het oorspronkelijke segmentatiemasker als het cirkelvormige kijkgebied een pixel hadden. 
+  Indien de som van alle pixelwaarden in dit \texttt{overlapped\_mask} groter is dan nul, 
+  betekent dit dat er ten minste één pixel overlap is, en wordt het object als `bekeken' beschouwd.
+\end{enumerate}
 
+\subsubsection{Bouwen van de Grondwaarheid}
 
-\subsection{Valideren van de Grondwaarheid}
+De filtering van de annotaties resulteert in een lijst van bekeken segmentatiemaskers per frame,
+wat een directe input vormt voor het construeren van de finale grondwaarheidsdataset.
+Voor elke evaluatieopname werden de opgeslagen trackingresultaten 
+(de \texttt{.npz}-bestanden, zie Sectie~\ref{sec:labeling-tool-logic}) verder verwerkt. 
+Uit elk relevant \texttt{.npz}-bestand werden de volgende kerneigenschappen geëxtraheerd:
+\begin{itemize}
+  \item De unieke identificatie van de opname (\texttt{recording\_id}).
+  \item De index van het videokader (\texttt{frame\_idx}).
+  \item De numerieke ID van het bekeken object (\texttt{class\_id}).
+  \item De coördinaten van de bounding box rond het object (\texttt{x1, y1, x2, y2}).
+  \item De oppervlakte van het segmentatiemasker in pixels (\texttt{mask\_area}), als indicatie van de objectgrootte.
+\end{itemize}
 
-\section{Everything-Segmentatie en Blikfiltering}
+Deze gegevens werden samengevoegd tot één tabel, waarbij elke rij een uniek, door een deelnemer bekeken object 
+in een specifiek frame van een evaluatieopname representeert. 
+De tabel, opgeslagen als \texttt{data/ground\_truth.csv}, constitueert de finale grondwaarheid.
+
+\subsubsection{Valideren van de Grondwaarheid}
+
+Om de correctheid van de gegenereerde grondwaarheid te waarborgen, werd een iteratieve, manuele validatiestap uitgevoerd.
+Voor elke evaluatieopname werd op elke frame de volgende informatie gevisualiseerd (indien beschikbaar):
+\begin{enumerate}
+  \item \textbf{Bekeken Objecten:} Voor de objecten die volgens de gebouwde grondwaarheid in dat specifieke frame als `bekeken' 
+  waren geïdentificeerd, werd het bijbehorende segmentatiemasker en een gelabelde bounding box (met objectnaam en -kleur) op het frame getekend.
+  \item \textbf{Blikpunt:} Het representatieve blikpunt voor dat frame, werd als een rode cirkel gevisualiseerd.
+\end{enumerate}
+Deze geannoteerde frames werden vervolgens samengevoegd tot nieuwe video's, opgeslagen in de map \texttt{data/labeling\_validation\_videos}. 
+
+Indien een segmentatiemasker niet correct was (te groot of te klein) of ontbrak (blikpunt op het object, maar geen segmentatie zichtbaar),
+ging de onderzoeker terug naar labeling-tool om dit te corrigeren.
+
+\section{Everything-Segmentatie}
 
 \section{Classificatie van de Objecten}
 
