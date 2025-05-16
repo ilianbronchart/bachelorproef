@@ -259,7 +259,7 @@ Op deze manier moeten niet alle frames in het geheugen geladen worden, wat onmog
 Ook neemt het enige tijd om een enkele frame te extraheren uit een video-opname, wat de gebruikerservaring zou beïnvloeden.
 Voor het decoderen van een opname wordt gebruik gemaakt van \texttt{ffmpeg}, een populaire open-source tool die verschillende 
 functies biedt voor het verwerken van video- en audiobestanden.
-Zo worden alle afzonderlijke frames opgeslagen in een map, met als naam het indexnummer van de frame.
+Zo worden alle afzonderlijke frames opgeslagen in een map, met als naam het indexnummer van het frame.
 
 \subsubsection{Annotaties en Tracking}
 
@@ -749,7 +749,7 @@ Om een beter zicht te krijgen op de database, werd er een Entity-Relationship Di
 Merk op dat de geautomatiseerde tracking-resultaten niet in de database worden opgeslagen, maar enkel de manuele annotaties.
 Dit is omdat tracking grote hoeveelheden data generereert die op een optimale manier moeten worden opgeslagen.
 De tracking-resultaten worden opgeslagen in een aparte map, onderverdeeld per kalibratie-opname en per klasse.
-Elke file bevat de tracking-resultaten van één object in één kalibratie-opname, met als naam de frame index.
+Elke file bevat de tracking-resultaten van één object in één kalibratie-opname, met als naam het frame index.
 Ze worden opgeslagen in \texttt{.npz}-bestanden, die een gecomprimeerd formaat zijn voor numpy arrays.
 Ze bevatten de volgende data:
 \begin{itemize}
@@ -758,7 +758,7 @@ Ze bevatten de volgende data:
   \item \texttt{roi} (Region of Interest): de regio van de originele frame die overeenkomt met het masker.
   \item \texttt{class\_id}: de id van de klasse waartoe het object behoort. 
   Zo kan andere informatie over het object---zoals de naam en de kleur---worden opgehaald uit de database.
-  \item \texttt{frame\_index}: de index van de frame waarin het object werd getracked.
+  \item \texttt{frame\_index}: de index van het frame waarin het object werd getracked.
 \end{itemize}
 
 \section{Installatie en Configuratie}
