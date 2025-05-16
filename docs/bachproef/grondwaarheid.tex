@@ -3,12 +3,25 @@
 
 \section{Inleiding}
 
-% TODO: inleiding
+De evaluatie van elk geautomatiseerd systeem, staat of valt met de beschikbaarheid 
+van een betrouwbare referentiestandaard, ook wel de grondwaarheid genoemd.
+In de context van deze bachelorproef, is een dergelijke grondwaarheid essentieel om de validiteit en effectiviteit 
+van de ontwikkelde methoden (zie Hoofdstuk~\ref{ch:oplossingsstrategieen}, Strategie 4) te kunnen beoordelen.
+De kern van deze grondwaarheid ligt in het nauwkeurig vaststellen, frame per frame, van welke kritische objecten 
+door een deelnemer werden bekeken gedurende de eyetracking-opnames.
+Dit hoofdstuk beschrijft het proces gevolgd werd om deze grondwaarheidsdataset te creëren.
+De code en data voor zowel dit hoofdstuk als Hoofdstuk~\ref{ch:analyse} is beschikbaar in de repository van deze bachelorproef,
+in de map \texttt{experiment}.
 
 \section{Voorbereiding van de Data}
 
-Alvorens de annotatie en analyse konden plaatsvinden, was een voorbereiding van de verzamelde ruwe data nodig.
+Alvorens de annotatie kon plaatsvinden, was een voorbereiding van de verzamelde ruwe data nodig.
 Dit voorbereidingsproces werd geautomatiseerd in de python-notebook \texttt{02\_preprocess\_data.ipynb}.
+Hier worden zowel de evaluatie- als kalibratieopnames voorbereid voor annotatie. 
+We zullen ons hier echter alleen richten op de evaluatieopnames,
+aangezien de kalibratieopnames enkel dienden voor het creëren van visuele voorbeelden van de objecten
+als trainingsdata voor de classificatie-algoritmen in Hoofdstuk~\ref{ch:analyse}.
+
 De notebook is opgedeeld in verschillende secties, die elk een specifiek aspect van de voorbereiding behandelen:
 \begin{enumerate}
     \item De ruwe opnamemappen werden geïnventariseerd. Er werd gecontroleerd of het verwachte aantal van 14 evaluatieopnames 
@@ -27,29 +40,11 @@ De notebook is opgedeeld in verschillende secties, die elk een specifiek aspect 
     dienden te worden voor het maken van de grondwaarheid.
 \end{enumerate}
 
-\section{Annotatie en Grondwaarheid}
+\section{Annotatie van Evaluatieopnames}
 
 Een accurate en consistente annotatie van de experimentele data vormt de spil voor zowel het 
 initialiseren van de analysemethoden als het valideren van hun prestaties. 
 Dit proces werd uitgevoerd met behulp van de in Hoofdstuk~\ref{ch:ontwikkeling} beschreven labeling-tool binnen de ontwikkelde PoC-applicatie. 
-Er wordt een fundamenteel onderscheid gemaakt in de doelstelling en aanpak van annotatie voor de 
-kalibratieopnames enerzijds en de evaluatieopnames anderzijds.
-
-De annotaties van de kalibratieopnames zijn primair bedoeld om een referentiedataset te creëren van de 15 gedefinieerde objecten. 
-Deze dataset, bestaande uit diverse visuele voorbeelden (segmentatiemaskers en uitgeknipte objectregio's) 
-van elk object vanuit verschillende hoeken, 
-dient als input voor de initialisatie of training van de classificatiemodellen die later op de evaluatieopnames worden toegepast. 
-Het genereren van deze referentiedata is een integraal onderdeel van de beoogde workflow van de PoC-applicatie, 
-ook bij toekomstig praktisch gebruik.
-
-De annotaties van de evaluatieopnames daarentegen, hebben als exclusief doel het vaststellen van de grondwaarheid. 
-Deze grondwaarheid specificeert per frame welk(e) object(en) daadwerkelijk door de deelnemer werden bekeken. 
-Deze data is noodzakelijk voor dit onderzoek om de nauwkeurigheid van de ontwikkelde geautomatiseerde analysemethoden 
-(zie Hoofdstuk~\ref{ch:oplossingsstrategieen}, Strategie 4) te kunnen kwantificeren. 
-
-\subsection{Annotatieproces}
-
-\subsubsection{Evaluatieopnames}
 
 Voor de 14 evaluatieopnames was het hoofddoel het creëren van een nauwkeurige grondwaarheid van het kijkgedrag van de deelnemers. 
 Hoewel elke deelnemer instructies kreeg om naar een specifieke set van vijf objecten te kijken, kon niet worden uitgesloten dat hun blik, 
@@ -67,15 +62,15 @@ Zodra een fixatie op een van de 15 objecten werd vastgesteld, werd dit specifiek
 Vervolgens werden met behulp van positieve (en eventueel negatieve) interactiepunten de SAM2-segmentatie en de semi-automatische 
 tracking ingezet om het object te volgen. Waar nodig werden manuele correcties of herinitialisaties van de tracking uitgevoerd.
 
-\subsubsection{Kalibratieopnames}
+% \subsection{Kalibratieopnames}
+% TODO: verplaatsen naar volgende hoofdstuk
+% Bij de twee kalibratieopnames lag de focus op het verzamelen van visuele voorbeelden van elk van de 15 gedefinieerde objecten. 
+% De onderzoeker doorliep deze opnames en selecteerde frames waarin de objecten duidelijk en vanuit diverse perspectieven 
+% (verschillende hoeken, afstanden) zichtbaar waren.
+% Dit voor zowel de opname waarbij de achtergrond van de objecten hetzelfde was als de evaluatieopnames, 
+% en de opname waarbij de achtergrond verschillend was.
 
-Bij de twee kalibratieopnames lag de focus op het verzamelen van visuele voorbeelden van elk van de 15 gedefinieerde objecten. 
-De onderzoeker doorliep deze opnames en selecteerde frames waarin de objecten duidelijk en vanuit diverse perspectieven 
-(verschillende hoeken, afstanden) zichtbaar waren.
-Dit voor zowel de opname waarbij de achtergrond van de objecten hetzelfde was als de evaluatieopnames, 
-en de opname waarbij de achtergrond verschillend was.
-
-\subsection{Genereren van de Grondwaarheid}
+\section{Genereren van de Grondwaarheid}
 
 De resultaten van het annotatieproces werden door de applicatie opgeslagen in de map \texttt{data/labeling\_results}, en worden 
 verder verwerkt in het \texttt{03\_create\_ground\_truth\_dataset.ipynb}-notebook tot een grondwaarheidsdataset.
@@ -83,7 +78,7 @@ Merk op dat de output van het annotatieproces voor de evaluatieopnames niet dire
 De trackingfunctionaliteit van de labeling-tool volgt immers objecten zodra ze gemarkeerd zijn, onafhankelijk van de continue blikrichting van de deelnemer. 
 Dit resulteert in een dataset die ook segmentaties bevat van objecten waar de deelnemer op dat specifieke moment niet (meer) naar keek.
 
-\subsubsection{Filtering van de Annotaties}
+\subsection{Filtering van de Annotaties}
 
 Een aanvullende filterstap, gebaseerd op de geregistreerde blikdata, is noodzakelijk om enkel die objectsegmentaties 
 te behouden die daadwerkelijk samenvallen met de fixaties van de deelnemer.
@@ -185,7 +180,7 @@ De werking van deze functie kan als volgt worden samengevat:
   betekent dit dat er ten minste één pixel overlap is, en wordt het object als `bekeken' beschouwd.
 \end{enumerate}
 
-\subsubsection{Bouwen van de Grondwaarheid}
+\subsection{Bouwen van de Grondwaarheid}
 
 De filtering van de annotaties resulteert in een lijst van bekeken segmentatiemaskers per frame,
 wat een directe input vormt voor het construeren van de finale grondwaarheidsdataset.
@@ -204,7 +199,7 @@ Deze gegevens werden samengevoegd tot één tabel, waarbij elke rij een uniek, d
 in een specifiek frame van een evaluatieopname representeert. 
 De tabel, opgeslagen als \texttt{data/ground\_truth.csv}, constitueert de finale grondwaarheid.
 
-\subsubsection{Valideren van de Grondwaarheid}
+\subsection{Valideren van de Grondwaarheid}
 
 Om de correctheid van de gegenereerde grondwaarheid te waarborgen, werd een iteratieve, manuele validatiestap uitgevoerd.
 Voor elke evaluatieopname werd op elke frame de volgende informatie gevisualiseerd (indien beschikbaar):

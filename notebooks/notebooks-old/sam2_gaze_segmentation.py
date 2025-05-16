@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 import torch
 import torchvision.transforms.functional as F
-from src.config import GAZE_FOVEA_FOV, TOBII_FOV_X
+from src.config import GAZE_FOV, TOBII_FOV_X
 from src.api.services.gaze_service import (
     get_gaze_points,
     match_frames_to_gaze,
@@ -30,7 +30,7 @@ class GazeSegmentationJob:
         results_path: Path,
         batch_size: int = 50,
         crop_size: int = 512,
-        fovea_fov: float = GAZE_FOVEA_FOV,
+        fovea_fov: float = GAZE_FOV,
         fov_x: float = TOBII_FOV_X,
         checkpoint_path: str = "checkpoints/FastSAM-x.pt",
         frames_path: Path | None = None,

@@ -12,7 +12,7 @@ from src.api.services.gaze_service import (
     match_frames_to_gaze,
     parse_gazedata_file,
 )
-from src.config import FAST_SAM_CHECKPOINT, GAZE_FOVEA_FOV, TOBII_FOV_X
+from src.config import FAST_SAM_CHECKPOINT, GAZE_FOV, TOBII_FOV_X
 from src.utils import cv2_video_fps, cv2_video_frame_count, cv2_video_resolution
 from torchvision.ops import masks_to_boxes
 from torchvision.transforms import InterpolationMode
@@ -25,7 +25,7 @@ class GazeSegmentationJob:
         video_path: Path,
         gaze_data_path: Path,
         results_path: Path,
-        fovea_fov: float = GAZE_FOVEA_FOV,
+        fovea_fov: float = GAZE_FOV,
         fov_x: float = TOBII_FOV_X,
         checkpoint_path: Path = FAST_SAM_CHECKPOINT,
         output_video_path: Path | None = None,
