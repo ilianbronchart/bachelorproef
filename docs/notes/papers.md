@@ -91,7 +91,7 @@ https://link.springer.com/article/10.3758/s13428-024-02360-0
 This paper also uses the Tobii Glasses 3, and may provide useful insights into motion deblurring and object detection for eye-tracking data.
 
 ```bibtex
-@phdthesis{CederinBremberg2023, 
+@phdthesis{Cederin2023, 
   series={UPTEC IT}, 
   title={Automatic object detection and tracking for eye-tracking analysis}, 
   url={https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-504416}, 

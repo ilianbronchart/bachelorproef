@@ -10,7 +10,7 @@ van de ontwikkelde methoden (zie Hoofdstuk~\ref{ch:oplossingsstrategieen}, Strat
 De kern van deze grondwaarheid ligt in het nauwkeurig vaststellen, frame per frame, van welke kritische objecten 
 door een deelnemer werden bekeken gedurende de eyetracking-opnames.
 Dit hoofdstuk beschrijft het proces gevolgd werd om deze grondwaarheidsdataset te creëren.
-De code en data voor zowel dit hoofdstuk als Hoofdstuk~\ref{ch:analyse} is beschikbaar in de repository van deze bachelorproef,
+De code en data voor zowel dit hoofdstuk als Hoofdstuk~\ref{ch:analyse} is beschikbaar in de git-repository,
 in de map \texttt{experiment}.
 
 \section{Voorbereiding van de Data}
@@ -120,7 +120,7 @@ Sectie~\ref{sec:fovea-centralis} (Stand van Zaken) werden besproken:
 Om rekening te houden met beide factoren, wordt de effectieve Field of View (FOV) voor 
 `aandachtig kijken' benaderd als de som van de foveale FOV en de eyetracker-nauwkeurigheid, dus \(1° + 0.6° = 1.6° \).
 Deze gecombineerde hoek wordt vervolgens omgezet naar een pixelradius op het camerabeeld. 
-Gegeven de horizontale FOV van de Tobii Pro Glasses 3 camera (95\textdegree, volgens \textcite{tobii_pro_glasses_3}) en de horizontale resolutie van de video (1920 pixels),
+Gegeven de horizontale FOV van de Tobii Pro Glasses 3 camera (95\textdegree, volgens \textcite{Tobii2025a}) en de horizontale resolutie van de video (1920 pixels),
 wordt de straal in pixels van het cirkelvormige kijkgebied berekend als:
 
 \[

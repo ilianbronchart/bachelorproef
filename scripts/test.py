@@ -2,7 +2,6 @@ from sqlalchemy import text
 from src.api.db import engine, Session
 
 
-
 with Session(engine) as session:
     text_query = """
 /* Standard SQLite */

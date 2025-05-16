@@ -1,12 +1,13 @@
+from typing import TYPE_CHECKING
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from src.config import RECORDINGS_PATH, STATIC_FILES_PATH
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from src.api.services.labeling_service import Labeler
+
 
 class App(FastAPI):
     def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]

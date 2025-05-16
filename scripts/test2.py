@@ -16,7 +16,9 @@ with Session(engine) as session:
     for i, anno in enumerate(annotations):
         mask = image_utils.decode_from_base64(anno.mask_base64) * 255
 
-        path = f"scripts/test_{calibration_id}_{anno.frame_idx}_{anno.simroom_class_id}.png"
+        path = (
+            f"scripts/test_{calibration_id}_{anno.frame_idx}_{anno.simroom_class_id}.png"
+        )
         # save result_img as png
 
         cv2.imwrite(path, mask)

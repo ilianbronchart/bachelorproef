@@ -7,7 +7,6 @@ from torchvision.ops import box_iou
 
 from experiment.settings import (
     CLASS_ID_TO_NAME,
-    MISSING_GROUND_TRUTH_ID,
     MISSING_PREDICTION_CLASS_ID,
     SORTED_CLASS_IDS,
 )
@@ -29,18 +28,19 @@ def update_confusion_matrix(
 
     Returns:
       The updated confusion matrix (same object modified and returned).
-
-    Note:
-      - False positives (predictions with no matching GT) have true_class_id mapped to MISSING_GROUND_TRUTH_ID.
-      - False negatives (GTs with no matching prediction) have predicted_class_id mapped to MISSING_PREDICTION_ID.
     """
     for _, row in eval_df.iterrows():
         true = row.get("true_class_id")
         pred = row.get("predicted_class_id")
-        # Map false positives to MISSING_GROUND_TRUTH_ID
-        t = MISSING_GROUND_TRUTH_ID if pd.isna(true) else int(true)
-        # Map false negatives to MISSING_PREDICTION_ID
-        p = MISSING_PREDICTION_CLASS_ID if pd.isna(pred) else int(pred)
+
+        if pd.isna(true) or pd.isna(pred):
+            # Skip if either true or predicted class is NaN
+            # A missing true class indicates a false positive
+            # A missing predicted class indicates a false negative
+            continue
+
+        t = int(true)
+        p = int(pred)
         if t in confusion_mat.index and p in confusion_mat.columns:
             confusion_mat.loc[t, p] += 1
     return confusion_mat
@@ -183,7 +183,9 @@ def render_confusion_matrix(cm: pd.DataFrame):
     pred_names = [CLASS_ID_TO_NAME.get(cid, str(cid)) for cid in cm.columns]
 
     # Create the plot.
-    fig, ax = plt.subplots(figsize=(8, 6))
+    figsize_per_cell = 0.6  # Adjust if needed
+    rows, cols = cm.shape
+    fig, ax = plt.subplots(figsize=(cols * figsize_per_cell, rows * figsize_per_cell))
     im = ax.imshow(cm, interpolation="nearest", cmap="Blues")
 
     # Add a colorbar to provide scale reference.

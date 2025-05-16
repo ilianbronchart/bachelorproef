@@ -181,3 +181,20 @@ def get_tracked_classes(db: Session, calibration_id: int) -> list[SimRoomClass]:
     result_paths = [path for path in result_paths if len(list(path.iterdir())) > 0]
     class_ids = [int(path.stem) for path in result_paths]
     return get_classes_by_ids(db, class_ids)
+
+
+def get_tracking_result_paths(
+    db: Session, calibration_id: int, class_id: int
+) -> list[Path]:
+    """
+    Get all tracking result paths for a given calibration recording and class ID.
+    """
+    cal_rec = get_calibration_recording(db, calibration_id=calibration_id)
+    result_paths = cal_rec.tracking_result_paths
+    result_paths = [path for path in result_paths if path.stem == str(class_id)]
+    if not result_paths:
+        raise NotFoundError(
+            f"No tracking results found for calibration ID {calibration_id} and class ID {class_id}"
+        )
+
+    return list(result_paths[0].iterdir())

@@ -54,7 +54,7 @@ class TrackingJob:
             self.progress = start_frame_idx / self.frame_count
 
             # Track backwards until tracking loss:
-            for frame_idx in self.track_until_loss(start_frame_idx, reverse=True):
+            for _ in self.track_until_loss(start_frame_idx, reverse=True):
                 total_frames_tracked += 1
 
             # Track forwards until tracking loss:
@@ -81,7 +81,7 @@ class TrackingJob:
         # Remove the results directory if it already exists
         if self.results_path.exists() and self.remove_previous_results:
             shutil.rmtree(self.results_path)
-        
+
         if self.remove_previous_results or not self.results_path.exists():
             # Create the results directory
             self.results_path.mkdir(parents=True, exist_ok=True)
@@ -360,10 +360,10 @@ class Labeler:
         threading.Thread(target=job_runner).start()
 
 
-def get_class_tracking_results(cal_rec_id: int, class_id: int) -> list[Path]:
+def get_class_tracking_results(calibration_id: int, class_id: int) -> list[Path]:
     tracking_paths = []
     for tracking_results in TRACKING_RESULTS_PATH.iterdir():
-        if tracking_results.stem == str(cal_rec_id):
+        if tracking_results.stem == str(calibration_id):
             for class_results in tracking_results.iterdir():
                 if class_results.stem == str(class_id):
                     for annotation in class_results.iterdir():

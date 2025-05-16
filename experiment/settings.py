@@ -147,7 +147,6 @@ FULLY_LABELED_RECORDINGS = [
 ]
 
 MISSING_PREDICTION_CLASS_ID = -2
-MISSING_GROUND_TRUTH_ID = -3
 CLASS_ID_TO_NAME = {
     1: "naaldcontainer",
     2: "spuit",
@@ -165,8 +164,6 @@ CLASS_ID_TO_NAME = {
     14: "ampulevloeistof",
     15: "ampulepoeder",
     UNKNOWN_CLASS_ID: "unknown",
-    MISSING_PREDICTION_CLASS_ID: "missing prediction",
-    MISSING_GROUND_TRUTH_ID: "missing ground truth",
 }
 
 SORTED_CLASS_IDS = sorted(CLASS_ID_TO_NAME.keys())

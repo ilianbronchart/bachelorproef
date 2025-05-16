@@ -45,9 +45,9 @@ Het tweede deel biedt een overzicht van de huidige state-of-the-art in Computer 
 
 \section{Eyetracking}
 
-Historisch gezien steunde medische training op observatie en zelfrapportage om de prestaties van studenten te beoordelen \autocite{PAUSZEK2023100031}. 
+Historisch gezien steunde medische training op observatie en zelfrapportage om de prestaties van studenten te beoordelen \autocite{Pauszek2023}. 
 Deze methoden hebben echter beperkingen door gebrek aan nauwkeurigheid in de betrouwbare rapportage van visuele aandacht en kijkgedrag van studenten.
-Recent onderzoek door \textcite{Alasdair2017} toont aan dat individuen over het algemeen weinig bewust zijn van hun eigen oogbewegingen, 
+Recent onderzoek door \textcite{Clarke2017} toont aan dat individuen over het algemeen weinig bewust zijn van hun eigen oogbewegingen, 
 waardoor zelfrapportage een onbetrouwbare maatstaf is om na te gaan of kritische elementen tijdens een simulatie effectief zijn waargenomen.
 
 Eyetracking-technologie biedt daarentegen een objectieve methode om visuele aandacht en kijkgedrag in kaart te brengen. 
@@ -58,23 +58,23 @@ Eyetracking-technologie biedt daarentegen een objectieve methode om visuele aand
 
 \subsection{Soorten eyetrackers}
 
-Eyetrackers kunnen worden onderverdeeld in twee hoofdtypes: screen-based of mobile devices \autocite{PAUSZEK2023100031}.
+Eyetrackers kunnen worden onderverdeeld in twee hoofdtypes: screen-based of mobile devices \autocite{Pauszek2023}.
 Screen-based eyetrackers worden gebruikt in omgevingen waar de gebruiker stationair blijft en naar een monitor kijkt, zoals een computermonitor .
 Mobile eyetrackers zijn draagbare toestellen waarmee gebruikers zich vrij kunnen bewegen terwijl hun kijkgedrag nog steeds wordt gevolgd.
 
 In de context van medische training en simulatie, waarbij studenten vaak fysieke handelingen uitvoeren en zich door een ruimte verplaatsen, zijn mobile eyetrackers de meest geschikte optie.
 Hierbij zet de student de bril op en kan er na een initiële kalibratie vrij bewogen worden.
-Toch zijn er enkele nadelen verbonden aan mobile eyetrackers \autocite{PAUSZEK2023100031}. 
+Toch zijn er enkele nadelen verbonden aan mobile eyetrackers \autocite{Pauszek2023}. 
 Plotselinge bewegingen kunnen ervoor zorgen dat de bril verschuift waardoor de initiële kalibratie verstoord wordt.
 Daarnaast is het belangrijk om consistente belichting te hebben om nauwkeurige data te verkrijgen, wat in sommige omgevingen moeilijk kan zijn.
-Meer hierover in addendum \ref{best-practices}.
+Meer hierover in addendum \ref{ch:best-practices}.
 
-In het Zorglab van de HOGENT wordt specifiek gebruik gemaakt van de Tobii Pro Glasses 3 \autocite{tobii_pro_glasses_3}. 
+In het Zorglab van de HOGENT wordt specifiek gebruik gemaakt van de Tobii Pro Glasses 3 \autocite{Tobii2025a}. 
 Dit apparaat is een mobiele eyetracker die een scene camera heeft die het beeld voor de gebruiker registreert, evenals vier eye cameras die de oogbewegingen van de gebruiker opnemen.
 
 \subsection{Analyse van eyetracking data}
 
-Oogbewegingen kunnen breed worden onderverdeeld in verschillende types, waarbij fixaties en saccades de voornaamste blik-afhankelijke metrieken zijn \autocite{PAUSZEK2023100031}.
+Oogbewegingen kunnen breed worden onderverdeeld in verschillende types, waarbij fixaties en saccades de voornaamste blik-afhankelijke metrieken zijn \autocite{Pauszek2023}.
 Fixaties zijn periodes waarin de ogen relatief stabiel blijven en zich richten op een specifiek visueel doel of gebied.
 Deze duren meestal tussen de 100 en 600 milliseconden, hoewel deze duur afhankelijk is van contextuele factoren.
 Tijdens fixaties wordt visuele informatie actief gecodeerd en verwerkt, wat ze belangrijk maakt voor cognitieve functies zoals objectherkenning, lezen en besluitvorming.
@@ -84,10 +84,10 @@ Deze duren meestal tussen de 20 en 80 milliseconden en dienen om de blik te herp
 Tijdens een saccade wordt de verwerking van visuele informatie onderdrukt, een fenomeen dat bekendstaat als saccadic suppression, wat bewegingsonscherpte voorkomt en zorgt voor een vloeiende perceptie van de omgeving.
 In deze zin komen fixaties overeen met actieve informatieverwerking, terwijl saccades dienen om informatie op te zoeken door de blik naar relevante stimuli te verplaatsen.
 
-De volgorde en het patroon van fixaties en saccades over tijd, scanpaths genoemd, geven inzicht in de dynamiek van visuele aandacht en cognitieve verwerking \autocite{PAUSZEK2023100031}.
+De volgorde en het patroon van fixaties en saccades over tijd, scanpaths genoemd, geven inzicht in de dynamiek van visuele aandacht en cognitieve verwerking \autocite{Pauszek2023}.
 
 Aangezien we geïnteresseerd zijn in welke objecten worden bekeken en hoe lang, richten we ons op het detecteren van het Aandachtsgebied (Area of Interest, AOI) tijdens fixaties gedurende de opname.
-Een AOI is een geselecteerd stimulusgebied, element of regio binnen het visuele veld dat relevant is voor de onderzoeker en dient als een filter waarmee eyetracking-metrieken kunnen worden berekend en gerapporteerd \autocite{PAUSZEK2023100031}.
+Een AOI is een geselecteerd stimulusgebied, element of regio binnen het visuele veld dat relevant is voor de onderzoeker en dient als een filter waarmee eyetracking-metrieken kunnen worden berekend en gerapporteerd \autocite{Pauszek2023}.
 Een aantal concrete voorbeelden van AOI's in de context van het Zorglab zijn: een colafles op de nachtkast van een diabetespatiënt, een infuuspomp in een ziekenhuiskamer of een foto van een familielid op de kamer van een patiënt.
 % In figuur \ref{fig:voorbeeld-aoi} is een voorbeeld van een AOI te zien, in dit geval een fotokader binnen de simulatieruimte van het Zorglab.
 
@@ -95,21 +95,21 @@ Een aantal concrete voorbeelden van AOI's in de context van het Zorglab zijn: ee
 \label{sec:fovea-centralis}
 
 De fovea centralis is een klein gebied in het netvlies van het oog dat verantwoordelijk is voor het 
-scherpste zicht en de meeste visuele waarneming \autocite{REMINGTON201261}.
+scherpste zicht en de meeste visuele waarneming \autocite{Remington2012}.
 Dit gebied vertegenvoordigt slechts ongeveer 1 graad van het gezichtsveld, maar bevat een hoge concentratie van kegeltjes, 
 de fotoreceptoren die verantwoordelijk zijn voor kleurwaarneming en hoge visuele scherpte.
 Deze informatie kan belangrijk zijn voor het bepalen van de objecten die de deelnemer van een eyetracking-opname daadwerkelijk heeft gezien,
 aangezien de blikpunten maar duiden op een enkele pixel in de afbeelding. 
 Zo kunnen we AOI's selecteren die overlappen met de cirkel gedefinieerd door de fovea en eventueel de nauwkeurigheid van de eyetracker.
-Volgens de specificaties van de Tobii Pro Glasses 3 is de eyetracker nauwkeurig tot op 0.6 graden \autocite{tobii_pro_glasses_3}.
+Volgens de specificaties van de Tobii Pro Glasses 3 is de eyetracker nauwkeurig tot op 0.6 graden \autocite{Tobii2025a}.
 
 \subsection{Bestaande oplossingen voor eyetracking data-analyse}
 
 Analyse van eyetracking data is een complex proces dat verschillende stappen omvat. Daarom zijn er verschillende bestaande softwarepakketten beschikbaar die deze stappen automatiseren en visualiseren.
 
 Een van de meest gebruikte softwarepakketten is Tobii Pro Lab, die functies biedt voor het importeren, analyseren en visualiseren van eyetracking data.
-Deze software kan diverse metrieken \autocite{tobii_pro_lab_metrics} berekenen rond fixaties, 
-saccades en AOI's, en biedt een scala aan visualisaties \autocite{tobii_pro_lab_visualizations} zoals heatmaps, en scanpaths.
+Deze software kan diverse metrieken \autocite{Tobii2025b} berekenen rond fixaties, 
+saccades en AOI's, en biedt een scala aan visualisaties \autocite{Tobii2025c} zoals heatmaps, en scanpaths.
 Heatmaps tonen de dichtheid van fixaties op een bepaald gebied, terwijl scanpaths de volgorde van fixaties en saccades over tijd visualiseren.
 Tobii Pro Lab heeft echter geen functionaliteit om automatisch AOI's te detecteren, waardoor men dit handmatig moet doen voor elke opname.
 Bovendien is het een commercieel product met een jaarlijkse licentie.
@@ -134,7 +134,7 @@ Traditionele methoden maakten gebruik van \textit{features}, zoals de Scale-Inva
 SIFT identificeert en beschrijft \textit{keypoints} in een afbeelding op een manier dat deze invariant zijn voor schaal, rotatie en verlichting.
 ORB is een snellere variant van SIFT die gebruik maakt van BRIEF, een efficiente binaire descriptor die bestaat uit een reeks eenvoudige intensiteitsverschillen tussen pixelparen.
 Hoewel deze methoden goede resultaten behaalden, waren ze beperkt in hun vermogen om complexe objectvariaties en achtergrondruis aan te pakken. Bovendien vertonen \textit{keypoint}-gebaseerde algoritmen 
-zoals SIFT beperkingen zoals verminderde nauwkeurigheid bij afbeeldingen met een lage resolutie en instabiliteit in \textit{keypoint}-detectie wanneer de beeldschaal verandert of er ruis aanwezig is \autocite{Ives2015}.
+zoals SIFT beperkingen zoals verminderde nauwkeurigheid bij afbeeldingen met een lage resolutie en instabiliteit in \textit{keypoint}-detectie wanneer de beeldschaal verandert of er ruis aanwezig is \autocite{ReyOtero2015}.
 De vooruitgang in deep learning heeft geleid tot een aanzienlijke verbetering in prestaties.
 
 \begin{figure}[H]
@@ -325,7 +325,7 @@ behaalt DINOv2 segmentatieprestaties die vergelijkbaar zijn met gespecialiseerde
 
 Ten slotte is het interessant om stil te staan bij recente implementaties van Computer Vision in combinatie met eyetracking-technologie.
 
-In 2023 onderzochten \textcite{CederinBremberg2023} de mogelijkheden van bestaande computer vision modellen om automatisch te detecteren welke objecten een gebruiker bekijkt tijdens een eyetracking-sessie.
+In 2023 onderzochten \textcite{Cederin2023} de mogelijkheden van bestaande computer vision modellen om automatisch te detecteren welke objecten een gebruiker bekijkt tijdens een eyetracking-sessie.
 Net zoals deze bachelorproef gebruikten ze de Tobii Pro Glasses 3, wat hun onderzoek interessant maakt als referentie voor het omgaan met de eyetracking data van deze specifieke bril.
 Een probleem bij hoofd-gemonteerde eyetrackers is dat er vaak bewegingsruis aanwezig is, zeker als het hoofd van de gebruiker veel beweegt. Dit maakt het toepassen van computer vision modellen moeilijker.
 In hun onderzoek vergeleken ze twee ruisreductiemodellen, namelijk Restormer en DeblurGAN-v2, om de kwaliteit van de eyetracking data te verbeteren. Ze concludeerden dat DeblurGAN-v2 betere resultaten opleverde dan Restormer.

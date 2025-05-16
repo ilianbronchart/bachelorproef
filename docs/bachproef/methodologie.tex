@@ -31,7 +31,35 @@ Deze sectie beschrijft in grote lijnen de verschillende fasen van het onderzoek,
 
 \section{Literatuurstudie}
 
-TODO
+De literatuurstudie vormde een iteratief proces gedurende het gehele onderzoek, beginnend met een brede initiële verkenning en 
+later verfijnd en aangevuld naarmate specifieke vragen tijdens het project opdoken. 
+Het overkoepelende doel was een grondig en actueel inzicht te verwerven in de relevante domeinen. 
+Hierbij lag de focus op drie kerngebieden: 
+\begin{enumerate}
+\item De huidige stand van zaken in eyetracking-technologie, met specifieke aandacht voor hoofd-gemonteerde systemen zoals de Tobii Pro Glasses 3 en de analyse van de hieruit voortkomende data (fixaties, saccades, AOI's).
+\item State-of-the-art technieken binnen Computer Vision, waaronder objectdetectie (bv. YOLO, DETR, Grounding DINO), segmentatie (bv. Mask R-CNN, SAM, FastSAM) en image embedding (bv. CLIP, DINOv2).
+\item Bestaande integraties van eyetracking en Computer Vision.
+\end{enumerate}
+Wetenschappelijke publicaties, technische documentatie en relevante open-source projecten werden hiervoor systematisch 
+geraadpleegd en kritisch geanalyseerd.
+Hoofdstuk~\ref{ch:stand-van-zaken} beschrijft uitvoerig de bevindingen van deze literatuurstudie.
+
+\section{Oplossingsverkenning}
+
+Voortbouwend op de inzichten uit de literatuurstudie, richtte de tweede fase zich op het verkennen en evalueren van verschillende 
+conceptuele oplossingsstrategieën om de centrale onderzoeksvraag te beantwoorden. 
+Het doel was om een reeks potentiële benaderingen te formuleren voor het automatisch analyseren 
+van eyetrackingdata in combinatie met computervisiemodellen, en hieruit de meest veelbelovende te 
+selecteren voor de ontwikkeling van de Proof-of-Concept (PoC). 
+Dit proces omvatte het conceptueel ontwerpen van diverse pipelines, waarbij de inputs (eyetracking-opnames, objectdefinities) 
+en de gewenste outputs (geobserveerde objecten, observatieduur) als leidraad dienden. 
+De strategieën varieerden in de mate van automatisering, de typen computervisiemodellen 
+(bv. vooraf getrainde specifieke modellen, zero-shot modellen, segmentatie-gebaseerde classificatie) 
+en de rol van de blikdata in het proces. 
+Elke strategie werd kwalitatief beoordeeld op criteria zoals verwachte accuraatheid, complexiteit van implementatie, 
+computationele vereisten en flexibiliteit. 
+Deze analyse resulteerde in een beargumenteerde keuze voor de strategie die als basis diende voor de PoC, 
+zoals gedetailleerd in Hoofdstuk~\ref{ch:oplossingsstrategieen}.
 
 \section{Huisgemaakte Data}
 
@@ -48,7 +76,7 @@ Hierdoor is er sprake van mogelijke bias, wat de objectiviteit van de data in he
 
 \section{Proof of Concept Software Applicatie}
 
-De kern van dit onderzoek was de ontwikkeling van een Proof-of-Concept (PoC) softwareapplicatie. 
+Een kernonderdeel van deze bachelorproef was de ontwikkeling van een Proof-of-Concept (PoC) softwareapplicatie. 
 Het hoofddoel van deze fase was het ontwerpen en implementeren van een werkend prototype dat de beoogde workflow ondersteunt: van het importeren van ruwe eyetracking-opnames tot het genereren van geannoteerde data die als basis kan dienen voor analyse. 
 De methodologie omvatte de selectie van een passende, moderne technologie-stack (o.a. Python, FastAPI, HTMX, SQLite) gericht op modulariteit en toekomstige uitbreidbaarheid. 
 Een significant onderdeel was het ontwerp en de implementatie van een semi-automatische labeling-tool, bedoeld om de efficiëntie van het annotatieproces te verhogen. 
@@ -64,43 +92,30 @@ Op de campus werden studenten van diverse opleidingen gevraagd om deel te nemen 
 De 14 resulterende opnames werden daarna gelabeld via de labeling-tool van de PoC, met een kwaliteitscontrole om de betrouwbaarheid van de data te waarborgen.
 Voor een uitgebreide beschrijving van de opzet en uitvoering van het experiment, inclusief de gebruikte methodologieën, wordt verwezen naar Hoofdstuk~\ref{ch:experiment}.
 
-% \subsection{Opstelling van het Experiment}
+\section{Creatie van een Grondwaarheidsdataset}
 
-% Voorafgaand aan het experiment werden 15 verschillende objecten in de ruimte geplaatst, waarvan elke deelnemer er vijf diende te observeren.
-% Er werd gezorgd voor een diverse selectie van objecten, zodat de beperkingen van het systeem konden worden geëvalueerd.
-% Ook waren de objecten zo gekozen dat ze relevant waren binnen de context van echte simulaties. De concrete uitwerking hiervan wordt verder toegelicht in de sectie \ref{sec:TODO}.
-% De instructies aan de deelnemers waren op een bepaalde plaats in de ruimte te staan, hun blik te richten op de objecten en vervolgens ernaar toe stappen.
-% Dit werd voor elk van de vijf objecten herhaald.
+Om de prestaties van de geautomatiseerde analysemethoden objectief te kunnen evalueren, was de creatie van een nauwkeurige 
+grondwaarheidsdataset noodzakelijk. Het doel van deze fase was om, voor elke evaluatieopname uit het experiment, 
+frame per frame vast te stellen welke van de 15 gedefinieerde objecten daadwerkelijk door de deelnemer werden bekeken. 
+De methodologie startte met het voorbereiden van de ruwe opnamedata (video en blikdata). 
+Vervolgens werden de evaluatieopnames geannoteerd met behulp van de ontwikkelde labeling-tool (zie Hoofdstuk~\ref{ch:ontwikkeling}), 
+waarbij de onderzoeker objecten waar de blik van de deelnemer op rustte, segmenteerde met behulp van het SAM2-model en de trackingfunctionaliteit. 
+Deze initiële segmentaties werden daarna gefilterd op basis van de geregistreerde blikpunten, waarbij een cirkelvormig kijkgebied 
+(gebaseerd op foveaal zicht en eyetracker-nauwkeurigheid) moest overlappen met het segmentatiemasker. 
+Dit resulteerde in een dataset die per frame de bekeken objecten, hun bounding boxes en maskeroppervlakte specificeert. 
+De correctheid werd manueel gevalideerd. De gedetailleerde stappen van dit proces zijn beschreven in Hoofdstuk~\ref{ch:grondwaarheid}.
 
-% Daarnaast werden er twee afzonderlijke opnames gemaakt door de onderzoeker zelf met als doel het genereren van labelingdata voor het trainen van modellen.
-% In deze opnames werd gedurende 30 seconden naar elk object gekeken vanuit verschillende invalshoeken.
-% De eerste opname werd gemaakt met de objecten op dezelfde locatie als in het experiment met de deelnemers.
-% In de tweede opname werden de objecten op een andere plaats gezet, om te kunnen nagaan of veranderingen in de achtergrond een invloed hebben op de herkenbaarheid of detectie van objecten in de analysefase.
-% Deze extra data diende als grondlaag voor het labelen van de objecten en het valideren van de robuustheid van het systeem bij variërende omgevingsfactoren.
+\section{Analyse van Observatieprestaties}
+% TODO aanpassen op het einde
 
-% \subsection{Data Labeling}
-
-% De verzamelde data uit het experiment werd gelabeld met behulp van een semi-automatische labeling-tool die ontwikkeld werd binnen de PoC.
-% Binnen elke opname werd er op elk object een aantal maal geklikt, waarna de applicatie het object doorheen de video volgde.
-% Op deze manier kreeg elk object een segmentatie-masker binnen elke videoframe.
-% Daarna werden deze segmentatie-maskers gefilterd op basis van de blikpunten van de deelnemer doorheen de video.
-
-% Op die manier werd een dataset opgebouwd die voor elk frame informatie bevat over welke objecten effectief bekeken werden.
-% Aan de hand van deze informatie kon er ook berekend worden hoelang een deelnemer naar elk object gekeken had.
-
-% Ter controle van de labelingkwaliteit werd automatisch een video gegenereerd waarin per frame het segmentatiemasker, de bounding box, het objectlabel en het blikpunt visueel weergegeven werden.
-% Deze video werd manueel nagekeken om mogelijke labelingfouten op te sporen en de betrouwbaarheid van de dataset te waarborgen.
-
-% \begin{figure}[H]
-%   \centering
-%   \includegraphics[width=0.8\textwidth]{voorbeeld_labeling_validatie.png}
-%   \caption[]{\label{fig:object-detection}Voorbeeld van een frame in een video voor labeling-validatie. Hier kijkt de deelnemer naar een monitor, waarbij het segmentatiemasker, de bounding box, het blikpunt en het objectlabel weergegeven worden.}
-% \end{figure}
-
-\section{Analyse van de Experimentele Data}
-
-Tenslotte werd de verzamelde data geanalyseerd met behulp van verschillende computer vision technieken.
-De focus lag op het evalueren van de betrouwbaarheid van de analyses, door ze te vergelijken met de handmatig gelabelde grondwaarheid die tijdens het experiment was verzameld.
-De resultaten van deze evaluatie worden gepresenteerd in Hoofdstuk~\ref{ch:analyse}.
-
-TODO: dit deel uitbreiden
+De laatste fase van het onderzoek focuste op het implementeren en evalueren van een geautomatiseerde analysepipeline om observatieprestaties te meten, conform de gekozen oplossingsstrategie (Strategie 4 uit Hoofdstuk~\ref{ch:oplossingsstrategieen}). Het doel was om automatisch te bepalen welke kritische objecten werden waargenomen en hoe lang, en dit te vergelijken met de grondwaarheidsdataset. De methodologie omvatte:
+\begin{enumerate}
+  \item Het toepassen van "everything-segmentation" en tracking met FastSAM op de evaluatieopnames.
+  \item Het filteren van de resulterende segmenten op basis van objectgrootte en de geregistreerde 
+  blikdata (overlap met het blikpunt), wat resulteerde in de te classificeren object ROIs (Regions of Interest).
+  \item Het classificeren van deze ROIs met twee verschillende methoden: de eerste gebaseerd op DINOv2 image 
+  embeddings in combinatie met een Faiss vector-index voor similariteitsmatching tegenover voorbeelden uit de kalibratieopnames, 
+  en de tweede gebaseerd op een YOLO-classificatiemodel getraind op dezelfde voorbeelden.
+\end{enumerate}
+De prestaties van beide methoden werden kwantitatief beoordeeld ten opzichte van de grondwaarheid. 
+Dit proces en de resultaten worden gedetailleerd in Hoofdstuk~\ref{ch:analyse}.
