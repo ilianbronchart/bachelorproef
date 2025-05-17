@@ -12,7 +12,9 @@ RECORDINGS_PATH = DATA_PATH / "recordings"
 RECORDINGS_PATH.mkdir(exist_ok=True)
 CHECKPOINTS_PATH = Path(os.environ.get("CHECKPOINTS_PATH", "checkpoints"))
 CHECKPOINTS_PATH.mkdir(exist_ok=True)
-TRACKING_RESULTS_PATH = DATA_PATH / "labeling_results"
+TRACKING_RESULTS_PATH = Path(
+    os.environ.get("TRACKING_RESULTS_PATH", DATA_PATH / "labeling_results")
+)
 TRACKING_RESULTS_PATH.mkdir(exist_ok=True)
 STATIC_FILES_PATH = SRC_PATH / "static"
 TEMPLATES_PATH = SRC_PATH / "templates"

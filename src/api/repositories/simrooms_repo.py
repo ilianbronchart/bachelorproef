@@ -194,7 +194,8 @@ def get_tracking_result_paths(
     result_paths = [path for path in result_paths if path.stem == str(class_id)]
     if not result_paths:
         raise NotFoundError(
-            f"No tracking results found for calibration ID {calibration_id} and class ID {class_id}"
+            f"No tracking results found for calibration "
+            f"ID {calibration_id} and class ID {class_id}"
         )
 
     return list(result_paths[0].iterdir())

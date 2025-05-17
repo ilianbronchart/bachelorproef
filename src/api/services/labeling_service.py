@@ -297,9 +297,9 @@ class Labeler:
             current_frame_annotations = [
                 ann
                 for ann in current_frame_annotations
-                if ann.simroom_class_id != active_id
+                if ann.simroom_class_id == active_id
             ]
-            tracked_classes = [cls_ for cls_ in tracked_classes if cls_.id != active_id]
+            tracked_classes = [cls_ for cls_ in tracked_classes if cls_.id == active_id]
 
         # Information needed to draw the overlay (class name, color, mask, box)
         class_names = []

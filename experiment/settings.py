@@ -179,7 +179,10 @@ GAZE_SEGMENTATION_RESULTS_PATH = Path("data/gaze_segmentation_results")
 OBJECT_DATASETS_PATH = Path("data/object_datasets")
 FINAL_PREDICTIONS_PATH = Path("data/final_predictions")
 TRAINING_DATASETS_PATH = Path("data/training_datasets")
+RECORDING_FRAMES_PATH = Path("data/recording_frames")
 YOLO_MODELS_PATH = Path("data/yolo_models")
+RECORDINGS_PATH = Path("data/recordings")
+PROCESSED_TRACKING_RESULTS_PATH = Path("data/processed_tracking_results")
 
 # Database
 SIMROOM_ID = 1
