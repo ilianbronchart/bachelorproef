@@ -1,7 +1,12 @@
+import tempfile
+from pathlib import Path
+
 from sqlalchemy.orm import Session
 
 from src.api.models.pydantic import CalibrationRecordingDTO, SimRoomClassDTO, SimRoomDTO
 from src.api.repositories import simrooms_repo
+from src.config import RECORDINGS_PATH
+from src.utils import extract_frames_to_dir
 
 
 def get_class_id_to_name_map(db: Session, simroom_id: int) -> dict[int, str]:
@@ -52,3 +57,20 @@ def get_calibration_recording(
     """
     calibration_recording = simrooms_repo.get_calibration_recording(db, calibration_id)
     return CalibrationRecordingDTO.from_orm(calibration_recording)
+
+
+def extract_tmp_frames(
+    recording_id: str,
+    recordings_path: Path = RECORDINGS_PATH,
+):
+    recording_path = recordings_path / f"{recording_id}.mp4"
+    tmp_frames_dir = tempfile.TemporaryDirectory()
+    tmp_frames_path = Path(tmp_frames_dir.name)
+    extract_frames_to_dir(
+        video_path=recording_path,
+        frames_path=tmp_frames_path,
+        print_output=False,
+    )
+    frames = sorted(tmp_frames_path.glob("*.jpg"), key=lambda x: int(x.stem))
+
+    return frames, tmp_frames_dir

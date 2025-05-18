@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 from src.api.models.gaze import GazeData, GazePoint
-from src.config import VIEWED_RADIUS
+from src.config import VIEWED_RADIUS, TOBII_GLASSES_FPS, TOBII_GLASSES_RESOLUTION, RECORDINGS_PATH
 from src.utils import clamp
 
 
@@ -129,11 +129,11 @@ def match_frames_to_gaze(
 
         frame_gaze_mapping.append(frame_gazes)
 
-    gaze_counts = {len(points) for points in frame_gaze_mapping}
-    if 3 in gaze_counts:
-        raise Warning(
-            "Detected 3 gaze points for a frame in the video. This is unexpected."
-        )
+    for points in frame_gaze_mapping:
+        if len(points) >= 3:
+            print(
+                f"Warning: Detected {len(points)} gaze points for a frame in the video. This is unexpected."
+            )
 
     return frame_gaze_mapping
 
@@ -167,3 +167,19 @@ def get_gaze_point_per_frame(
     }
 
     return gaze_point_per_frame
+
+def get_gaze_position_per_frame(
+    recording_id: str, frame_count: int, resolution: tuple[int, int] = TOBII_GLASSES_RESOLUTION, fps: float = TOBII_GLASSES_FPS
+) -> dict[int, tuple[int, int]]:
+    gaze_data_path = RECORDINGS_PATH / f"{recording_id}.tsv"
+    gaze_point_per_frame = get_gaze_point_per_frame(
+        gaze_data_path=gaze_data_path,
+        resolution=resolution,
+        frame_count=frame_count,
+        fps=fps,
+    )
+    gaze_position_per_frame = {
+        frame_idx: (gaze_point.x, gaze_point.y)
+        for frame_idx, gaze_point in gaze_point_per_frame.items()
+    }
+    return gaze_position_per_frame

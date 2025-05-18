@@ -147,6 +147,7 @@ FULLY_LABELED_RECORDINGS = [
 ]
 
 MISSING_PREDICTION_CLASS_ID = -2
+MISSING_GROUND_TRUTH_CLASS_ID = -3
 CLASS_ID_TO_NAME = {
     1: "naaldcontainer",
     2: "spuit",
@@ -164,7 +165,10 @@ CLASS_ID_TO_NAME = {
     14: "ampulevloeistof",
     15: "ampulepoeder",
     UNKNOWN_CLASS_ID: "unknown",
+    MISSING_PREDICTION_CLASS_ID: "geen voorspelling",
+    MISSING_GROUND_TRUTH_CLASS_ID: "geen grondwaarheid"
 }
+NAME_TO_CLASS_ID = {name: class_id for class_id, name in CLASS_ID_TO_NAME.items()}
 
 SORTED_CLASS_IDS = sorted(CLASS_ID_TO_NAME.keys())
 CLASS_NAMES = sorted(CLASS_ID_TO_NAME.values())
@@ -178,11 +182,17 @@ DIFF_BACKGROUND_INDEXES_PATH = VECTOR_INDEXES_PATH / "diff_background"
 GAZE_SEGMENTATION_RESULTS_PATH = Path("data/gaze_segmentation_results")
 OBJECT_DATASETS_PATH = Path("data/object_datasets")
 FINAL_PREDICTIONS_PATH = Path("data/final_predictions")
+OBJECT_DETECTION_PREDICTIONS_PATH = FINAL_PREDICTIONS_PATH / "object_detection"
+FINAL_PREDICTION_VIDEOS_PATH = Path("data/final_prediction_videos")
 TRAINING_DATASETS_PATH = Path("data/training_datasets")
 RECORDING_FRAMES_PATH = Path("data/recording_frames")
 YOLO_MODELS_PATH = Path("data/yolo_models")
 RECORDINGS_PATH = Path("data/recordings")
 PROCESSED_TRACKING_RESULTS_PATH = Path("data/processed_tracking_results")
+BLUR_METRICS_PATH = Path("data/blur_metrics")
+MODELS_PATH = Path("data/models")
+OBJECT_DETECTION_MODELS_PATH = MODELS_PATH / "object_detection"
+COMPARISON_SETS_PATH = Path("data/comparison_sets")
 
 # Database
 SIMROOM_ID = 1

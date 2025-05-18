@@ -503,6 +503,8 @@ in de service-laag (geïmplementeerd in \texttt{src.api.services.gaze\_service})
 Deze functionaliteit omvat het laden, verwerken en synchroniseren van de blikdata met de videoframes.
 Hier worden de kernstappen van deze functionaliteit besproken.
 
+% TODO: Belang van zelfde video decoder overal te gebruiken! (enkel ffmpeg)
+
 \subsubsection{Parseren van Blikdatabestanden}
 
 De blikdata van de eyetracker wordt opgeslagen in een \texttt{.tsv}-bestand.
@@ -653,6 +655,7 @@ De Tobii Pro Glasses 3 registreert blikdata met hogere frequentie (50Hz) dan de 
 Dit betekent dat er meerdere blikpunten kunnen corresponderen met een enkele videoframe.
 
 De functie \texttt{match\_frames\_to\_gaze} implementeert de logica voor deze synchronisatie:
+% TODO aanpassen en fixen
 \begin{listing}[H]
   \begin{minted}{python}
     def match_frames_to_gaze(

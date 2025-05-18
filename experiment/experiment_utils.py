@@ -9,8 +9,35 @@ from experiment.settings import (
     CLASS_ID_TO_NAME,
     MISSING_PREDICTION_CLASS_ID,
     SORTED_CLASS_IDS,
+    OBJECT_DATASETS_PATH,
+    GROUND_TRUTH_PATH,
+    MISSING_GROUND_TRUTH_CLASS_ID
 )
 
+def get_object_df(
+    recording_id: str,
+    drop_embedding: bool = False,
+) -> pd.DataFrame:
+    object_df_path = OBJECT_DATASETS_PATH / f"{recording_id}.csv"
+    if not object_df_path.exists():
+        raise ValueError(
+            f"Object df path {object_df_path} does not exist. Please run the object detection pipeline first."
+        )
+    object_df = pd.read_csv(object_df_path)
+
+    if drop_embedding:
+        object_df = object_df.drop(columns=["embedding"])
+    
+    return object_df
+
+def get_ground_truth_df() -> pd.DataFrame:
+    if not GROUND_TRUTH_PATH.exists():
+        raise ValueError(
+            f"Ground truth df path {GROUND_TRUTH_PATH} does not exist. Please run the ground truth pipeline first."
+        )
+    gt_df = pd.read_csv(GROUND_TRUTH_PATH)
+    
+    return gt_df
 
 def create_confusion_matrix() -> pd.DataFrame:
     return pd.DataFrame(0, index=SORTED_CLASS_IDS, columns=SORTED_CLASS_IDS, dtype=int)
@@ -33,11 +60,13 @@ def update_confusion_matrix(
         true = row.get("true_class_id")
         pred = row.get("predicted_class_id")
 
-        if pd.isna(true) or pd.isna(pred):
-            # Skip if either true or predicted class is NaN
-            # A missing true class indicates a false positive
-            # A missing predicted class indicates a false negative
-            continue
+        if pd.isna(true):
+            if pred == UNKNOWN_CLASS_ID:
+                continue
+            true = MISSING_GROUND_TRUTH_CLASS_ID
+
+        if pd.isna(pred):
+            pred = MISSING_PREDICTION_CLASS_ID
 
         t = int(true)
         p = int(pred)
@@ -46,7 +75,7 @@ def update_confusion_matrix(
     return confusion_mat
 
 
-def calculate_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
+def confusion_matrix_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
     """
     Calculate evaluation metrics from a confusion matrix.
 
@@ -70,14 +99,9 @@ def calculate_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
            * "per_class": Per-class metrics.
            * "known_accuracy": Accuracy computed only on known predictions.
     """
-    # Overall accuracy from all instances.
+
     total = confusion_matrix.to_numpy().sum()
-    # Sum up true positives properly using label matching (not np.diag, which might be misaligned).
-    overall_tp = sum(
-        confusion_matrix.at[cls, cls]
-        for cls in confusion_matrix.index
-        if cls in confusion_matrix.columns
-    )
+    overall_tp = np.diag(confusion_matrix).sum()
     overall_accuracy = overall_tp / total if total > 0 else 0.0
 
     # Global (micro-averaged) counts.
@@ -86,8 +110,11 @@ def calculate_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
     global_fp = 0
 
     per_class_metrics = {}
-
     for cls in confusion_matrix.index:
+        if cls < 0:
+            # skip special classes
+            continue
+
         # True positives (if there is a corresponding predicted column).
         tp = confusion_matrix.at[cls, cls] if cls in confusion_matrix.columns else 0
         # Support is the sum of the row.
@@ -167,6 +194,25 @@ def calculate_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
         "known_accuracy": known_accuracy,
     }
 
+def print_confusion_matrix_metrics(metrics: dict[str, any]):
+    print(f"Overall accuracy: {metrics['overall_accuracy']:.4f}")
+    print(f"Known accuracy: {metrics['known_accuracy']:.4f}")
+    print("Micro-averaged metrics:")
+    print(f"  Precision: {metrics['micro']['precision']:.4f}")
+    print(f"  Recall: {metrics['micro']['recall']:.4f}")
+    print(f"  F1: {metrics['micro']['f1']:.4f}")
+
+    # Show per class metrics in table format
+    print("\nPer-class metrics:")
+    print(f"{'Class ID':<10} {'Precision':<10} {'Recall':<10} {'F1':<10} {'Support':<10} {'Unknown Rate':<15}")
+    print("-" * 70)
+    for cls, metrics in metrics["per_class"].items():
+        print(
+            f"{cls:<10} {metrics['precision']:<10.4f} {metrics['recall']:<10.4f} "
+            f"{metrics['f1']:<10.4f} {metrics['support']:<10} {metrics['unknown_rate']:<15.4f}"
+        )
+    print("-" * 70)
+
 
 def render_confusion_matrix(cm: pd.DataFrame):
     """
@@ -187,9 +233,6 @@ def render_confusion_matrix(cm: pd.DataFrame):
     rows, cols = cm.shape
     fig, ax = plt.subplots(figsize=(cols * figsize_per_cell, rows * figsize_per_cell))
     im = ax.imshow(cm, interpolation="nearest", cmap="Blues")
-
-    # Add a colorbar to provide scale reference.
-    cbar = ax.figure.colorbar(im, ax=ax)
 
     # Set tick marks and labels using the mapped class names.
     ax.set_xticks(np.arange(cm.shape[1]))
