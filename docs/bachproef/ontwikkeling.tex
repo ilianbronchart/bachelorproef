@@ -261,6 +261,11 @@ Voor het decoderen van een opname wordt gebruik gemaakt van \texttt{ffmpeg}, een
 functies biedt voor het verwerken van video- en audiobestanden.
 Zo worden alle afzonderlijke frames opgeslagen in een map, met als naam het indexnummer van het frame.
 
+Doorheen zowel de applicatie als de analyses is het heel belangrijk om dezelfde video-decoder te gebruiken.
+Verschillende decoders (zoals \texttt{ffmpeg} of \texttt{OpenCV}) kunnen verschillen hebben in frame- en tijdsindexering.
+Als men bijvoorbeeld een frame-index van 100 opgeeft, kan dit in de ene decoder overeenkomen met de 100ste frame, terwijl het in een andere decoder de 101ste frame is.
+Dit kan leiden tot inconsistenties in de resultaten van de analyses, en dus werd er gekozen om steeds \texttt{ffmpeg} te gebruiken.
+
 \subsubsection{Annotaties en Tracking}
 
 Om te verstaan waarom we manuele annotaties nodig hebben, en hoe de geautomatiseerde tracking werkt, moeten we eerst begrijpen hoe het achterliggende machine-learning model werkt.
@@ -392,7 +397,6 @@ De machine in het Zorglab is een Dell Precision 7550 met de volgende specificati
     \item \textbf{Processor:} Intel Core i9-10885H CPU @ 2.40 GHz (16 cores)
     \item \textbf{Geheugen:} 32GB
     \item \textbf{Grafische Kaart:} Geen
-    \item \textbf{Opslag:} Niet gekend % TODO: mss opzoeken
 \end{itemize}
 
 \paragraph{Verschil tussen CPU en GPU}
@@ -407,8 +411,6 @@ Zowel het model zelf (de parameters of 'gewichten') als de te verwerken data (in
 in het VRAM geladen kunnen worden voor efficiënte verwerking.
 Pogingen om dergelijke modellen uitsluitend op een CPU uit te voeren, resulteren in onpraktisch lange verwerkingstijden, 
 waardoor de interactiviteit van de labeling tool verloren zou gaan.
-
-% TODO voeg analyse toe van verschil CPU en GPU?
 
 \paragraph{Analyse van de prestaties}
 
@@ -493,8 +495,6 @@ De oplossing werkt als volgt:
 Merk op dat de buffer van 16 frames hier hardgecodeerd is. 
 In de toekomst kan het nuttig zijn om deze waarde aanpasbaar te maken door middel van een configuratieparameter binnen de \texttt{SAM2VideoPredictor} klasse.
 
-% TODO: veranderingen in AsyncVideoLoader ook beschrijven?
-
 \subsection{Omgaan met Blikdata}
 \label{sec:omgaan-met-blikdata}
 
@@ -502,8 +502,6 @@ Om de analyses in Hoofdstuk~\ref{ch:analyse} te vergemakkelijken, en voor het bo
 in de service-laag (geïmplementeerd in \texttt{src.api.services.gaze\_service}) ook functionaliteit om de blikdata van de eyetracker te verwerken.
 Deze functionaliteit omvat het laden, verwerken en synchroniseren van de blikdata met de videoframes.
 Hier worden de kernstappen van deze functionaliteit besproken.
-
-% TODO: Belang van zelfde video decoder overal te gebruiken! (enkel ffmpeg)
 
 \subsubsection{Parseren van Blikdatabestanden}
 
@@ -655,7 +653,6 @@ De Tobii Pro Glasses 3 registreert blikdata met hogere frequentie (50Hz) dan de 
 Dit betekent dat er meerdere blikpunten kunnen corresponderen met een enkele videoframe.
 
 De functie \texttt{match\_frames\_to\_gaze} implementeert de logica voor deze synchronisatie:
-% TODO aanpassen en fixen
 \begin{listing}[H]
   \begin{minted}{python}
     def match_frames_to_gaze(
@@ -687,13 +684,12 @@ De functie \texttt{match\_frames\_to\_gaze} implementeert de logica voor deze sy
 
             frame_gaze_mapping.append(frame_gazes)
 
-        # Controleer of er frames zijn met meer dan 2 blikpunten
-        # Dit is ongebruikelijk en kan duiden op een probleem
-        gaze_counts = {len(points) for points in frame_gaze_mapping}
-        if 3 in gaze_counts:
-            raise Warning(
-                "Detected 3 gaze points for a frame in the video. This is unexpected."
-            )
+        # Controleer of er onverwacht veel blikpunten per frame zijn
+        for points in frame_gaze_mapping:
+            if len(points) >= 3:
+                print(
+                    f"Warning: Detected {len(points)} gaze points for a frame in the video. This is unexpected."
+                )
 
         return frame_gaze_mapping
   \end{minted}
@@ -712,9 +708,12 @@ en de framerate (fps) van de video, doorloopt deze functie elke frame-index:
   \item Dit resulteert in een mapping waarbij elke frame-index wordt geassocieerd met een lijst van één of meerdere 
   \texttt{GazePoint}-objecten die tijdens de duur van dat frame zijn geregistreerd. 
   Typisch zullen dit, afhankelijk van de sampling rates, nul, één of twee blikpunten per frame zijn. 
-  Een waarschuwing wordt gegenereerd indien er onverwacht drie of meer blikpunten aan een frame worden toegewezen, 
-  wat kan duiden op inconsistenties in de inputdata of aannames.
+  Een waarschuwing wordt gegenereerd indien er onverwacht drie of meer blikpunten aan een frame worden toegewezen.
 \end{enumerate}
+
+Bij sommige opnames is het heel zelden mogelijk dat er meer dan twee blikpunten worden geregistreerd binnen een frame.
+Hoewel dit onverwacht is, zullen hier geen problemen door ontstaan, aangezien de 
+applicatie het vroegste blikpunt dat overeenkomt met de frame-index zal gebruiken.
 
 \subsection{Database}
 

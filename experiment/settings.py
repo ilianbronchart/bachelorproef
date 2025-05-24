@@ -196,7 +196,6 @@ OBJECT_DETECTION_PREDICTIONS_PATH = FINAL_PREDICTIONS_PATH / "object_detection"
 FINAL_PREDICTION_VIDEOS_PATH = Path("data/final_prediction_videos")
 TRAINING_DATASETS_PATH = Path("data/training_datasets")
 RECORDING_FRAMES_PATH = Path("data/recording_frames")
-YOLO_MODELS_PATH = Path("data/yolo_models")
 RECORDINGS_PATH = Path("data/recordings")
 PROCESSED_TRACKING_RESULTS_PATH = Path("data/processed_tracking_results")
 BLUR_METRICS_PATH = Path("data/blur_metrics")
