@@ -18,12 +18,18 @@ window.labelingCanvas = {
     this.ctx = this.canvas.getContext('2d');
     this.fetchCurrentFrame();
 
-    window.addEventListener('labeling-seek', this.fetchCurrentFrame.bind(this));
-    window.addEventListener('annotation-deleted', this.fetchCurrentFrame.bind(this));
+    window.addEventListener('labeling-seek', event => {
+      this.fetchCurrentFrame();
+    });
+    window.addEventListener('annotation-deleted', event => {
+      this.fetchCurrentFrame()
+    });
     window.addEventListener('classes-loaded', event => {
       this.selectedClassId = event.detail.selectedClassId;
     })
-    window.addEventListener('render-canvas', this.fetchCurrentFrame.bind(this));
+    window.addEventListener('render-canvas', event => {
+      this.fetchCurrentFrame()
+    });
   },
 
   getMousePos(event) {

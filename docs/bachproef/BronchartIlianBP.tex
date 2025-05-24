@@ -5,12 +5,6 @@
 
 \documentclass[dutch,dit,thesis]{hogentreport}
 
-% TODO:
-% - If necessary, replace the option `dit`' with your own department!
-%   Valid entries are dbo, dbt, dgz, dit, dlo, dog, dsa, soa
-% - If you write your thesis in English (remark: only possible after getting
-%   explicit approval!), remove the option "dutch," or replace with "english".
-
 \usepackage{lipsum} % For blind text, can be removed after adding actual content
 
 \usepackage{subcaption} % For subfigures
@@ -158,6 +152,20 @@
 
 \appendix
 
+\chapter{Onderzoeksvoorstel}
+
+Het onderwerp van deze bachelorproef is gebaseerd op een onderzoeksvoorstel dat vooraf werd beoordeeld door de promotor. Dat voorstel is opgenomen in deze bijlage.
+
+% TODO: 
+%\section*{Samenvatting}
+
+% Kopieer en plak hier de samenvatting (abstract) van je onderzoeksvoorstel.
+
+% Verwijzing naar het bestand met de inhoud van het onderzoeksvoorstel
+\input{../voorstel/voorstel-inhoud}
+
+\appendix 
+
 \chapter{Best-practices voor het werken met de Tobii Pro Glasses 3}
 \label{ch:best-practices}
 
@@ -166,25 +174,8 @@ TODO
 % TODO: Dit hoofdstuk bevat een samenvatting van de best-practices voor het werken met
 % de Tobii Pro Glasses 3, en andere interessante opmerkingen die gemaakt werden tijdens de bachelorproef.
 
-\chapter{Onderzoeksvoorstel}
-
-Het onderwerp van deze bachelorproef is gebaseerd op een onderzoeksvoorstel dat vooraf werd beoordeeld door de promotor. Dat voorstel is opgenomen in deze bijlage.
-
-%% TODO: 
-%\section*{Samenvatting}
-
-% Kopieer en plak hier de samenvatting (abstract) van je onderzoeksvoorstel.
-
-% Verwijzing naar het bestand met de inhoud van het onderzoeksvoorstel
-\input{../voorstel/voorstel-inhoud}
-
-%%---------- Andere bijlagen --------------------------------------------------
-% TODO: Voeg hier eventuele andere bijlagen toe. Bv. als je deze BP voor de
-% tweede keer indient, een overzicht van de verbeteringen t.o.v. het origineel.
-%\input{...}
 
 %%---------- Backmatter, referentielijst ---------------------------------------
-
 \backmatter{}
 
 \setlength\bibitemsep{2pt} %% Add Some space between the bibliograpy entries

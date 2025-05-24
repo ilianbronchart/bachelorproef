@@ -144,6 +144,13 @@ FULLY_LABELED_RECORDINGS = [
     "67b71a70-da64-467a-9fb6-91bc29265fd1",
     "32f02db7-adc0-4556-a2da-ed2ba60a58c9",
     "b8eeecc0-06b1-47f7-acb5-89aab3c1724d",
+    "d50c5f3b-2822-4462-9880-5a8f0dd46bfb",
+    "9fa3e3b8-ed94-4b06-ba49-e66e3997d710",
+    "98128cdc-ffeb-40cb-9528-573e25028e87",
+    "89b60530-e0e4-4f5d-9ee6-af85c8d99ff4",
+    "2fe01600-c057-40ee-8434-4e9e0688ca2d",
+    "67823ccd-a1f0-4cde-b954-3b9e5fe160c1",
+    "b8f453aa-5a12-4cbb-a0ec-20eb503f8797",
 ]
 
 MISSING_PREDICTION_CLASS_ID = -2
@@ -169,6 +176,9 @@ CLASS_ID_TO_NAME = {
     MISSING_GROUND_TRUTH_CLASS_ID: "geen grondwaarheid"
 }
 NAME_TO_CLASS_ID = {name: class_id for class_id, name in CLASS_ID_TO_NAME.items()}
+IGNORED_CLASS_IDS = [
+    NAME_TO_CLASS_ID["ampulepoeder"]
+]
 
 SORTED_CLASS_IDS = sorted(CLASS_ID_TO_NAME.keys())
 CLASS_NAMES = sorted(CLASS_ID_TO_NAME.values())

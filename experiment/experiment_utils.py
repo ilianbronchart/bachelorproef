@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -30,17 +31,25 @@ def get_object_df(
     
     return object_df
 
-def get_ground_truth_df() -> pd.DataFrame:
+def get_ground_truth_df(ignored_class_ids: list[int]) -> pd.DataFrame:
     if not GROUND_TRUTH_PATH.exists():
         raise ValueError(
             f"Ground truth df path {GROUND_TRUTH_PATH} does not exist. Please run the ground truth pipeline first."
         )
     gt_df = pd.read_csv(GROUND_TRUTH_PATH)
+
+    # drop rows where class_id is in ignored_class_ids
+    gt_df = gt_df[~gt_df["class_id"].isin(ignored_class_ids)]
     
     return gt_df
 
-def create_confusion_matrix() -> pd.DataFrame:
-    return pd.DataFrame(0, index=SORTED_CLASS_IDS, columns=SORTED_CLASS_IDS, dtype=int)
+def create_confusion_matrix(ignored_class_ids: list[int]) -> pd.DataFrame:
+    class_ids = [
+        class_id
+        for class_id in SORTED_CLASS_IDS
+        if class_id not in ignored_class_ids and class_id != UNKNOWN_CLASS_ID
+    ]
+    return pd.DataFrame(0, index=class_ids, columns=class_ids, dtype=int)
 
 
 def update_confusion_matrix(
@@ -56,24 +65,40 @@ def update_confusion_matrix(
     Returns:
       The updated confusion matrix (same object modified and returned).
     """
+
     for _, row in eval_df.iterrows():
         true = row.get("true_class_id")
         pred = row.get("predicted_class_id")
 
         if pd.isna(true):
             if pred == UNKNOWN_CLASS_ID:
+                # This is a true negative (TN) for the unknown class.
                 continue
-            true = MISSING_GROUND_TRUTH_CLASS_ID
 
-        if pd.isna(pred):
-            pred = MISSING_PREDICTION_CLASS_ID
+            # This is a false positive (FP) for the predicted class.
+            true = MISSING_GROUND_TRUTH_CLASS_ID
 
         t = int(true)
         p = int(pred)
         if t in confusion_mat.index and p in confusion_mat.columns:
+            # This is a true positive (TP) for the predicted class.
             confusion_mat.loc[t, p] += 1
-    return confusion_mat
 
+@dataclass
+class ClassMetrics:
+    class_id: int
+    precision: float
+    recall: float
+    f1: float
+    support: int
+
+@dataclass
+class CMMetrics:
+    overall_accuracy: float
+    micro_precision: float
+    micro_recall: float
+    micro_f1: float
+    per_class_metrics: list[ClassMetrics]
 
 def confusion_matrix_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
     """
@@ -85,19 +110,12 @@ def confusion_matrix_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
       - micro (global) metrics: Precision, Recall, and F1 computed based on the global counts
         (global TP, FP, FN). This way, each instance is weighted equally.
       - per_class metrics: For each true class (row), computes Precision, Recall, F1, and Support.
-      - known_accuracy: Accuracy computed only from the known predictions (i.e. excluding predictions
-        labeled as unknown).
 
     Parameters:
         confusion_matrix (pd.DataFrame): Confusion matrix with rows as ground truth classes and
-                                         columns as predicted classes (which may include unknown).
+                                         columns as predicted classes.
 
-    Returns:
-        dict[str, any]: Dictionary containing:
-           * "overall_accuracy": Overall accuracy (global TP divided by total instances).
-           * "micro": Global (micro-averaged) precision, recall, and F1.
-           * "per_class": Per-class metrics.
-           * "known_accuracy": Accuracy computed only on known predictions.
+    Returns: CMMetrics
     """
 
     total = confusion_matrix.to_numpy().sum()
@@ -109,7 +127,7 @@ def confusion_matrix_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
     global_fn = 0
     global_fp = 0
 
-    per_class_metrics = {}
+    per_class_metrics = []
     for cls in confusion_matrix.index:
         if cls < 0:
             # skip special classes
@@ -124,18 +142,6 @@ def confusion_matrix_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
         # False positives: predictions of cls (column sum) minus true positives.
         fp = confusion_matrix[cls].sum() - tp if cls in confusion_matrix.columns else 0
 
-        # unknown_rate: ratio of ground truth instances of cls that were predicted as unknown.
-        unknown_rate = (
-            (
-                confusion_matrix.at[cls, UNKNOWN_CLASS_ID]
-                if UNKNOWN_CLASS_ID in confusion_matrix.columns
-                else 0
-            )
-            / support
-            if support > 0
-            else 0.0
-        )
-
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         f1 = (
@@ -144,13 +150,15 @@ def confusion_matrix_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
             else 0.0
         )
 
-        per_class_metrics[cls] = {
-            "precision": precision,
-            "recall": recall,
-            "f1": f1,
-            "support": support,
-            "unknown_rate": unknown_rate,
-        }
+        per_class_metrics.append(
+            ClassMetrics(
+                class_id=cls,
+                precision=precision,
+                recall=recall,
+                f1=f1,
+                support=support,
+            )
+        )
 
         global_tp += tp
         global_fn += fn
@@ -168,53 +176,37 @@ def confusion_matrix_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
         else 0.0
     )
 
-    # Known-only accuracy: exclude the unknown column.
-    known_columns = [
-        col for col in confusion_matrix.columns if col not in [UNKNOWN_CLASS_ID]
-    ]
-    if known_columns:
-        known_total = confusion_matrix[known_columns].to_numpy().sum()
-        known_tp = sum(
-            confusion_matrix.at[cls, cls]
-            for cls in confusion_matrix.index
-            if cls in known_columns
-        )
-        known_accuracy = known_tp / known_total if known_total > 0 else 0.0
-    else:
-        known_accuracy = None
+    return CMMetrics(
+        overall_accuracy=overall_accuracy,
+        micro_precision=micro_precision,
+        micro_recall=micro_recall,
+        micro_f1=micro_f1,
+        per_class_metrics=per_class_metrics,
+    )
 
-    return {
-        "overall_accuracy": overall_accuracy,
-        "micro": {
-            "precision": micro_precision,
-            "recall": micro_recall,
-            "f1": micro_f1,
-        },
-        "per_class": per_class_metrics,
-        "known_accuracy": known_accuracy,
-    }
+def print_confusion_matrix_metrics(metrics: CMMetrics):
+    """
+    Print confusion matrix metrics in a readable format.
 
-def print_confusion_matrix_metrics(metrics: dict[str, any]):
-    print(f"Overall accuracy: {metrics['overall_accuracy']:.4f}")
-    print(f"Known accuracy: {metrics['known_accuracy']:.4f}")
-    print("Micro-averaged metrics:")
-    print(f"  Precision: {metrics['micro']['precision']:.4f}")
-    print(f"  Recall: {metrics['micro']['recall']:.4f}")
-    print(f"  F1: {metrics['micro']['f1']:.4f}")
+    Parameters:
+        metrics (CMMetrics): The metrics object containing overall and per-class metrics.
+    """
+    print(f"Overall Accuracy: {metrics.overall_accuracy:.4f}")
+    print(f"Micro Precision: {metrics.micro_precision:.4f}")
+    print(f"Micro Recall: {metrics.micro_recall:.4f}")
+    print(f"Micro F1: {metrics.micro_f1:.4f}\n")
 
-    # Show per class metrics in table format
-    print("\nPer-class metrics:")
-    print(f"{'Class ID':<10} {'Precision':<10} {'Recall':<10} {'F1':<10} {'Support':<10} {'Unknown Rate':<15}")
-    print("-" * 70)
-    for cls, metrics in metrics["per_class"].items():
+    print("Per Class Metrics:")
+    # print in table format
+    print(f"{'Class Name':<10} {'Precision':<10} {'Recall':<10} {'F1':<10} {'Support':<10}")
+    for class_metric in metrics.per_class_metrics:
         print(
-            f"{cls:<10} {metrics['precision']:<10.4f} {metrics['recall']:<10.4f} "
-            f"{metrics['f1']:<10.4f} {metrics['support']:<10} {metrics['unknown_rate']:<15.4f}"
+            f"{CLASS_ID_TO_NAME[class_metric.class_id]:<10} {class_metric.precision:<10.4f} "
+            f"{class_metric.recall:<10.4f} {class_metric.f1:<10.4f} "
+            f"{class_metric.support:<10}"
         )
-    print("-" * 70)
 
-
-def render_confusion_matrix(cm: pd.DataFrame):
+def render_confusion_matrix(cm: pd.DataFrame, show_absolute_counts: bool = False):
     """
     Render a confusion matrix using matplotlib.
 
@@ -224,6 +216,17 @@ def render_confusion_matrix(cm: pd.DataFrame):
 
     The function maps the class IDs to their names (if available) and displays the matrix as a heatmap.
     """
+    # Ensure the confusion matrix is square and has class IDs as both index and columns.
+    if cm.shape[0] != cm.shape[1]:
+        raise ValueError(
+            "Confusion matrix must be square with class IDs as both index and columns."
+        )
+
+
+    # if show_absolute_counts is false, normalize the confusion matrix
+    if not show_absolute_counts:
+        cm = cm.div(cm.sum(axis=1), axis=0).fillna(0)
+
     # Map ground truth (rows) and predictions (columns) to class names.
     true_names = [CLASS_ID_TO_NAME.get(cid, str(cid)) for cid in cm.index]
     pred_names = [CLASS_ID_TO_NAME.get(cid, str(cid)) for cid in cm.columns]
@@ -251,133 +254,168 @@ def render_confusion_matrix(cm: pd.DataFrame):
         for j in range(cm.shape[1]):
             cell_value = cm.iloc[i, j]
             color = "white" if cell_value > thresh else "black"
-            ax.text(j, i, format(cell_value, "d"), ha="center", va="center", color=color)
+            
+            # Handle zero values as integers
+            if cell_value == 0:
+                text = "0"
+            else:
+                format_str = ".2f" if not show_absolute_counts else "d" if isinstance(cell_value, (int, np.integer)) else ".2f"
+                text = format(cell_value, format_str)
+                
+            ax.text(j, i, text, ha="center", va="center", color=color)
 
     plt.tight_layout()
     plt.show()
 
-
-def create_per_class_metrics_df(grid_search_metrics):
-    per_class_metrics_rows = []
-    for grid_key, metrics in grid_search_metrics.items():
-        labeling_set, sample_count, k, confidence, min_mask_area_size = grid_key
-
-        for class_id, per_class_metric in metrics["per_class"].items():
-            per_class_metrics_rows.append({
-                "labeling_set": labeling_set,
-                "sample_count": sample_count,
-                "k": k,
-                "confidence": confidence,
-                "min_mask_area_size": min_mask_area_size,
-                "class_id": class_id,
-                **per_class_metric,
-            })
-
-    return pd.DataFrame(per_class_metrics_rows)
-
-
 def evaluate_predictions(
-    predictions_df: pd.DataFrame, gt_df: pd.DataFrame, iou_threshold: float = 0.5
+    predictions_df: pd.DataFrame, gt_df: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Evaluate detection predictions against ground truth, labeling each prediction as:
-      - TP: true positive (correct class match & IoU >= threshold)
-      - FP: false positive (incorrect class or unmatched prediction)
-      - TN: true negative (unknown-class prediction with no GT overlap)
-      - FN: false negative (ground truth with no matching prediction) as MISSING_PREDICTION_CLASS_ID
+    Evaluate detection predictions against ground truth
+    Labels each prediction as:
+      - TP: true positive (predicted_class_id matches a true_class_id from an available GT
+            in the same frame, assigned greedily by prediction confidence).
+      - FP: false positive (unmatched prediction, not UNKNOWN_CLASS_ID).
+      - TN: true negative (unmatched prediction of UNKNOWN_CLASS_ID).
+      - FN: false negative (ground truth with no matching prediction).
 
-    Returns a DataFrame combining prediction rows (with new 'label', 'true_class_id', 'predicted_class_id')
+    Returns a DataFrame combining prediction rows (with new 'label', 'true_class_id')
     and additional FN rows for unmatched ground truths.
 
     predictions_df must include:
-      ['frame_idx','object_id','confidence','mask_area',
-       'x1','y1','x2','y2','predicted_class_id','predicted_confidence']
+      ['frame_idx', 'predicted_class_id', 'predicted_confidence']
+      (Other columns like 'object_id', 'x1', 'y1', 'x2', 'y2' are preserved if present)
 
     gt_df must include:
-      ['frame_idx','class_id','mask_area','laplacian_variance','x1','y1','x2','y2']
+      ['frame_idx', 'class_id']
+      (Other columns like 'x1', 'y1', 'x2', 'y2' are used for FN records if present)
     """
     records = []
 
     preds = predictions_df.reset_index(drop=True)
     gts = gt_df.reset_index(drop=True)
 
-    all_frames = sorted(set(preds["frame_idx"]).union(gts["frame_idx"]))
+    # Determine all unique frames present in either predictions or ground truths
+    pred_frames = set(preds["frame_idx"]) if not preds.empty else set()
+    gt_frames = set(gts["frame_idx"]) if not gts.empty else set()
+    all_frames = sorted(list(pred_frames.union(gt_frames)))
+
     for frame in all_frames:
         preds_f = preds[preds["frame_idx"] == frame].reset_index(drop=True)
         gts_f = gts[gts["frame_idx"] == frame].reset_index(drop=True)
 
-        if len(preds_f) and len(gts_f):
-            # compute IoU
-            boxes_preds = torch.tensor(
-                preds_f[["x1", "y1", "x2", "y2"]].values, dtype=torch.float
-            )
-            boxes_gts = torch.tensor(
-                gts_f[["x1", "y1", "x2", "y2"]].values, dtype=torch.float
-            )
-            iou_mat = box_iou(boxes_preds, boxes_gts).cpu().numpy()
-
-            # greedy matching
-            pairs = [
-                (i, j, iou_mat[i, j])
-                for i in range(iou_mat.shape[0])
-                for j in range(iou_mat.shape[1])
-                if iou_mat[i, j] >= iou_threshold
-            ]
-            pairs.sort(key=lambda x: -x[2])
-
-            matched_preds, matched_gts = set(), set()
-            for i, j, _ in pairs:
-                if i in matched_preds or j in matched_gts:
-                    continue
-                matched_preds.add(i)
-                matched_gts.add(j)
-                p = preds_f.iloc[i].to_dict()
-                p["true_class_id"] = gts_f.iloc[j]["class_id"]
-                p["label"] = (
-                    "TP" if p["predicted_class_id"] == p["true_class_id"] else "FP"
-                )
-                records.append(p)
-
-            # unmatched predictions
+        if len(preds_f) > 0 and len(gts_f) > 0:
+            # Create potential pairs based on class match
+            potential_pairs = []  # Stores (pred_confidence, pred_idx, gt_idx)
             for i in range(len(preds_f)):
-                if i in matched_preds:
-                    continue
-                p = preds_f.iloc[i].to_dict()
-                p["true_class_id"] = np.nan
-                p["label"] = "TN" if p["predicted_class_id"] == UNKNOWN_CLASS_ID else "FP"
-                records.append(p)
+                pred_class = preds_f.iloc[i]["predicted_class_id"]
+                # Ensure 'predicted_confidence' column exists and is used
+                pred_conf = preds_f.iloc[i].get("predicted_confidence", preds_f.iloc[i].get("confidence", 0.0))
 
-            # unmatched ground truths -> FN with MISSING_PREDICTION_CLASS_ID
+                for j in range(len(gts_f)):
+                    gt_class = gts_f.iloc[j]["class_id"]
+                    if pred_class == gt_class:
+                        potential_pairs.append((pred_conf, i, j))
+
+            # Sort potential pairs by prediction confidence (descending)
+            potential_pairs.sort(key=lambda x: x[0], reverse=True)
+
+            matched_pred_indices = set()
+            matched_gt_indices = set()
+
+            # Greedy assignment for TP
+            for pred_conf, pred_idx, gt_idx in potential_pairs:
+                if pred_idx in matched_pred_indices or gt_idx in matched_gt_indices:
+                    continue  # This prediction or GT is already matched
+
+                matched_pred_indices.add(pred_idx)
+                matched_gt_indices.add(gt_idx)
+
+                p_dict = preds_f.iloc[pred_idx].to_dict()
+                p_dict["true_class_id"] = gts_f.iloc[gt_idx]["class_id"]
+                # Since pairs are formed on class equality, this is always a TP
+                p_dict["label"] = "TP"
+                records.append(p_dict)
+
+            # Handle unmatched predictions (become FP or TN)
+            for i in range(len(preds_f)):
+                if i not in matched_pred_indices:
+                    p_dict = preds_f.iloc[i].to_dict()
+                    p_dict["true_class_id"] = np.nan  # No matched GT
+                    if p_dict["predicted_class_id"] == UNKNOWN_CLASS_ID:
+                        p_dict["label"] = "TN"
+                    else:
+                        p_dict["true_class_id"] = MISSING_GROUND_TRUTH_CLASS_ID
+                        p_dict["label"] = "FP"
+                    records.append(p_dict)
+
+            # Handle unmatched ground truths (become FN)
             for j in range(len(gts_f)):
-                if j in matched_gts:
-                    continue
-                gt = gts_f.iloc[j]
-                fn = {col: np.nan for col in predictions_df.columns}
-                for col in ["frame_idx", "x1", "y1", "x2", "y2", "mask_area"]:
-                    fn[col] = gt[col]
-                fn["predicted_class_id"] = MISSING_PREDICTION_CLASS_ID
-                fn["predicted_confidence"] = 0.0
-                fn["true_class_id"] = gt["class_id"]
-                fn["label"] = "FN"
-                records.append(fn)
+                if j not in matched_gt_indices:
+                    gt_row = gts_f.iloc[j]
+                    # Create a base FN record with columns from predictions_df for consistency
+                    fn_record = {col: np.nan for col in predictions_df.columns}
 
-        elif len(preds_f):  # no ground truths
+                    fn_record["frame_idx"] = gt_row["frame_idx"]
+                    fn_record["true_class_id"] = gt_row["class_id"]
+                    fn_record["predicted_class_id"] = MISSING_PREDICTION_CLASS_ID
+                    fn_record["predicted_confidence"] = 0.0 # Default for missing preds
+                    fn_record["label"] = "FN"
+
+                    # Carry over spatial info or other GT columns if present
+                    for col in gt_df.columns:
+                        if col not in fn_record or pd.isna(fn_record[col]): # Prioritize already set values
+                             if col in gt_row:
+                                fn_record[col] = gt_row[col]
+                    records.append(fn_record)
+
+        elif len(preds_f) > 0:  # Only predictions, no ground truths in this frame
             for i in range(len(preds_f)):
-                p = preds_f.iloc[i].to_dict()
-                p["true_class_id"] = np.nan
-                p["label"] = "TN" if p["predicted_class_id"] == UNKNOWN_CLASS_ID else "FP"
-                records.append(p)
+                p_dict = preds_f.iloc[i].to_dict()
+                p_dict["true_class_id"] = np.nan
+                if p_dict["predicted_class_id"] == UNKNOWN_CLASS_ID:
+                    p_dict["label"] = "TN"
+                else:
+                    p_dict["true_class_id"] = MISSING_GROUND_TRUTH_CLASS_ID
+                    p_dict["label"] = "FP"
+                records.append(p_dict)
 
-        else:  # no predictions
-            for _, gt in gts_f.iterrows():
-                fn = {col: np.nan for col in predictions_df.columns}
-                for col in ["frame_idx", "x1", "y1", "x2", "y2", "mask_area"]:
-                    fn[col] = gt[col]
-                fn["predicted_class_id"] = MISSING_PREDICTION_CLASS_ID
-                fn["predicted_confidence"] = 0.0
-                fn["true_class_id"] = gt["class_id"]
-                fn["label"] = "FN"
-                records.append(fn)
+        elif len(gts_f) > 0:  # Only ground truths, no predictions in this frame
+            for j in range(len(gts_f)):
+                gt_row = gts_f.iloc[j]
+                fn_record = {col: np.nan for col in predictions_df.columns}
 
-    eval_df = pd.DataFrame(records)
+                fn_record["frame_idx"] = gt_row["frame_idx"]
+                fn_record["true_class_id"] = gt_row["class_id"]
+                fn_record["mask_area"] = gt_row["mask_area"]
+                fn_record["predicted_class_id"] = MISSING_PREDICTION_CLASS_ID
+                fn_record["predicted_confidence"] = 0.0
+                fn_record["label"] = "FN"
+
+                for col in gt_df.columns:
+                    if col not in fn_record or pd.isna(fn_record[col]):
+                        if col in gt_row:
+                            fn_record[col] = gt_row[col]
+                records.append(fn_record)
+        # If both preds_f and gts_f are empty for a frame, nothing happens for this frame.
+
+    eval_df = pd.DataFrame(records) if records else pd.DataFrame(columns=list(predictions_df.columns) + ['label', 'true_class_id'])
+    
+    # Ensure standard output columns exist, even if records list was empty
+    expected_cols = list(predictions_df.columns)
+    if 'label' not in expected_cols: expected_cols.append('label')
+    if 'true_class_id' not in expected_cols: expected_cols.append('true_class_id')
+
+    # Add missing expected columns with NaN if they don't exist after DataFrame creation
+    for col in expected_cols:
+        if col not in eval_df.columns:
+            eval_df[col] = np.nan
+
+    # Raise an error if any true class or predicted class is nan
+    pred_class_missing = eval_df["predicted_class_id"].isna()
+    if pred_class_missing.any():
+        raise ValueError(
+            f"Some predicted class IDs are missing in the evaluation DataFrame:\n{eval_df[pred_class_missing]}"
+        )
+
     return eval_df

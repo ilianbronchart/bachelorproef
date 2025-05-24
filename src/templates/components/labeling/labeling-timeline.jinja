@@ -6,6 +6,7 @@
      hx-select="#script-container"
      hx-target="#script-container"
      hx-swap="outerHTML">
+  <span id="current-frame-idx"></span>
   <button id="btn-track"
           class="btn btn-primary btn-square"
           hx-post="/labeling/tracking"
@@ -37,7 +38,7 @@
     <div id="timeline-position" class="rounded"></div>
     <div id="tracking-progress" class="position-absolute h-100 rounded"></div>
   </div>
-  <div id="script-container" hx-on::after-settle="initialize(event)">
+  <div id="script-container" hx-on::after-swap="initialize(event)">
     <script>
 frameCount = parseInt({{ frame_count }});
 currentFrameIdx = parseInt({{ current_frame_idx }});
@@ -76,6 +77,9 @@ function updateProgress() {
 }
 
 function setTimelinePosition(event) {
+  const frameIdxElement = document.getElementById("current-frame-idx");
+  frameIdxElement.textContent = `${currentFrameIdx}`;
+
   const position = document.getElementById("timeline-position");
   position.style.left = `${currentFrameIdx / frameCount * 100}%`;
   position.style.transform = 'translateX(-50%)';
