@@ -5,7 +5,6 @@ import shutil
 import subprocess
 from collections.abc import Generator
 from pathlib import Path
-from typing import cast
 
 import aiohttp
 import cv2

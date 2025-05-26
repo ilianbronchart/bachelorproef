@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from src.config import UNKNOWN_CLASS_ID
-
 TRIAL_RECORDING_IDS = [
     "67b71a70-da64-467a-9fb6-91bc29265fd1",
     "32f02db7-adc0-4556-a2da-ed2ba60a58c9",
@@ -153,6 +151,7 @@ FULLY_LABELED_RECORDINGS = [
     "b8f453aa-5a12-4cbb-a0ec-20eb503f8797",
 ]
 
+UNKNOWN_CLASS_ID = -1
 MISSING_PREDICTION_CLASS_ID = -2
 MISSING_GROUND_TRUTH_CLASS_ID = -3
 CLASS_ID_TO_NAME = {
@@ -173,12 +172,10 @@ CLASS_ID_TO_NAME = {
     15: "ampulepoeder",
     UNKNOWN_CLASS_ID: "unknown",
     MISSING_PREDICTION_CLASS_ID: "geen voorspelling",
-    MISSING_GROUND_TRUTH_CLASS_ID: "geen grondwaarheid"
+    MISSING_GROUND_TRUTH_CLASS_ID: "geen grondwaarheid",
 }
 NAME_TO_CLASS_ID = {name: class_id for class_id, name in CLASS_ID_TO_NAME.items()}
-IGNORED_CLASS_IDS = [
-    NAME_TO_CLASS_ID["ampulepoeder"]
-]
+IGNORED_CLASS_IDS = [NAME_TO_CLASS_ID["ampulepoeder"]]
 
 SORTED_CLASS_IDS = sorted(CLASS_ID_TO_NAME.keys())
 CLASS_NAMES = sorted(CLASS_ID_TO_NAME.values())

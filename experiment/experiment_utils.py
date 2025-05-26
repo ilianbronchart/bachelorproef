@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-from src.config import UNKNOWN_CLASS_ID
 from torchvision.ops import box_iou
 
 from experiment.settings import (
@@ -12,8 +11,10 @@ from experiment.settings import (
     SORTED_CLASS_IDS,
     OBJECT_DATASETS_PATH,
     GROUND_TRUTH_PATH,
-    MISSING_GROUND_TRUTH_CLASS_ID
+    MISSING_GROUND_TRUTH_CLASS_ID,
+    UNKNOWN_CLASS_ID
 )
+
 
 def get_object_df(
     recording_id: str,
@@ -28,8 +29,9 @@ def get_object_df(
 
     if drop_embedding:
         object_df = object_df.drop(columns=["embedding"])
-    
+
     return object_df
+
 
 def get_ground_truth_df(ignored_class_ids: list[int]) -> pd.DataFrame:
     if not GROUND_TRUTH_PATH.exists():
@@ -40,8 +42,9 @@ def get_ground_truth_df(ignored_class_ids: list[int]) -> pd.DataFrame:
 
     # drop rows where class_id is in ignored_class_ids
     gt_df = gt_df[~gt_df["class_id"].isin(ignored_class_ids)]
-    
+
     return gt_df
+
 
 def create_confusion_matrix(ignored_class_ids: list[int]) -> pd.DataFrame:
     class_ids = [
@@ -84,6 +87,7 @@ def update_confusion_matrix(
             # This is a true positive (TP) for the predicted class.
             confusion_mat.loc[t, p] += 1
 
+
 @dataclass
 class ClassMetrics:
     class_id: int
@@ -92,6 +96,7 @@ class ClassMetrics:
     f1: float
     support: int
 
+
 @dataclass
 class CMMetrics:
     overall_accuracy: float
@@ -99,6 +104,7 @@ class CMMetrics:
     micro_recall: float
     micro_f1: float
     per_class_metrics: list[ClassMetrics]
+
 
 def confusion_matrix_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
     """
@@ -184,6 +190,7 @@ def confusion_matrix_metrics(confusion_matrix: pd.DataFrame) -> dict[str, any]:
         per_class_metrics=per_class_metrics,
     )
 
+
 def print_confusion_matrix_metrics(metrics: CMMetrics):
     """
     Print confusion matrix metrics in a readable format.
@@ -198,13 +205,16 @@ def print_confusion_matrix_metrics(metrics: CMMetrics):
 
     print("Per Class Metrics:")
     # print in table format
-    print(f"{'Class Name':<10} {'Precision':<10} {'Recall':<10} {'F1':<10} {'Support':<10}")
+    print(
+        f"{'Class Name':<10} {'Precision':<10} {'Recall':<10} {'F1':<10} {'Support':<10}"
+    )
     for class_metric in metrics.per_class_metrics:
         print(
             f"{CLASS_ID_TO_NAME[class_metric.class_id]:<10} {class_metric.precision:<10.4f} "
             f"{class_metric.recall:<10.4f} {class_metric.f1:<10.4f} "
             f"{class_metric.support:<10}"
         )
+
 
 def render_confusion_matrix(cm: pd.DataFrame, show_absolute_counts: bool = False):
     """
@@ -221,7 +231,6 @@ def render_confusion_matrix(cm: pd.DataFrame, show_absolute_counts: bool = False
         raise ValueError(
             "Confusion matrix must be square with class IDs as both index and columns."
         )
-
 
     # if show_absolute_counts is false, normalize the confusion matrix
     if not show_absolute_counts:
@@ -254,18 +263,25 @@ def render_confusion_matrix(cm: pd.DataFrame, show_absolute_counts: bool = False
         for j in range(cm.shape[1]):
             cell_value = cm.iloc[i, j]
             color = "white" if cell_value > thresh else "black"
-            
+
             # Handle zero values as integers
             if cell_value == 0:
                 text = "0"
             else:
-                format_str = ".2f" if not show_absolute_counts else "d" if isinstance(cell_value, (int, np.integer)) else ".2f"
+                format_str = (
+                    ".2f"
+                    if not show_absolute_counts
+                    else "d"
+                    if isinstance(cell_value, (int, np.integer))
+                    else ".2f"
+                )
                 text = format(cell_value, format_str)
-                
+
             ax.text(j, i, text, ha="center", va="center", color=color)
 
     plt.tight_layout()
     plt.show()
+
 
 def evaluate_predictions(
     predictions_df: pd.DataFrame, gt_df: pd.DataFrame
@@ -310,7 +326,9 @@ def evaluate_predictions(
             for i in range(len(preds_f)):
                 pred_class = preds_f.iloc[i]["predicted_class_id"]
                 # Ensure 'predicted_confidence' column exists and is used
-                pred_conf = preds_f.iloc[i].get("predicted_confidence", preds_f.iloc[i].get("confidence", 0.0))
+                pred_conf = preds_f.iloc[i].get(
+                    "predicted_confidence", preds_f.iloc[i].get("confidence", 0.0)
+                )
 
                 for j in range(len(gts_f)):
                     gt_class = gts_f.iloc[j]["class_id"]
@@ -359,13 +377,15 @@ def evaluate_predictions(
                     fn_record["frame_idx"] = gt_row["frame_idx"]
                     fn_record["true_class_id"] = gt_row["class_id"]
                     fn_record["predicted_class_id"] = MISSING_PREDICTION_CLASS_ID
-                    fn_record["predicted_confidence"] = 0.0 # Default for missing preds
+                    fn_record["predicted_confidence"] = 0.0  # Default for missing preds
                     fn_record["label"] = "FN"
 
                     # Carry over spatial info or other GT columns if present
                     for col in gt_df.columns:
-                        if col not in fn_record or pd.isna(fn_record[col]): # Prioritize already set values
-                             if col in gt_row:
+                        if col not in fn_record or pd.isna(
+                            fn_record[col]
+                        ):  # Prioritize already set values
+                            if col in gt_row:
                                 fn_record[col] = gt_row[col]
                     records.append(fn_record)
 
@@ -399,12 +419,20 @@ def evaluate_predictions(
                 records.append(fn_record)
         # If both preds_f and gts_f are empty for a frame, nothing happens for this frame.
 
-    eval_df = pd.DataFrame(records) if records else pd.DataFrame(columns=list(predictions_df.columns) + ['label', 'true_class_id'])
-    
+    eval_df = (
+        pd.DataFrame(records)
+        if records
+        else pd.DataFrame(
+            columns=list(predictions_df.columns) + ["label", "true_class_id"]
+        )
+    )
+
     # Ensure standard output columns exist, even if records list was empty
     expected_cols = list(predictions_df.columns)
-    if 'label' not in expected_cols: expected_cols.append('label')
-    if 'true_class_id' not in expected_cols: expected_cols.append('true_class_id')
+    if "label" not in expected_cols:
+        expected_cols.append("label")
+    if "true_class_id" not in expected_cols:
+        expected_cols.append("true_class_id")
 
     # Add missing expected columns with NaN if they don't exist after DataFrame creation
     for col in expected_cols:

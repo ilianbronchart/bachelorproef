@@ -3,21 +3,21 @@
 
 Bij het ontwerpen van een oplossing voor de gestelde problematiek, is het belangrijk om de 
 kernfunctionaliteit van het systeem te beschouwen in termen van zijn inputs en outputs. 
-Het systeem dient de eyetracking-opnames als input te verwerken en als output de relevante metrieken te leveren.
+Het systeem dient de eyetracking-opnames als input te verwerken en als output de relevante metrieken op te leveren.
 Hoewel verschillende strategieën zullen leiden tot een proof-of-concept systeem met verschillende eisen, 
 zullen ze allemaal grotendeels voldoen aan dezelfde input-output specificatie.
 
 % TODO: hier een figuur toevoegen die de input-output specificatie visualiseert?
 
-\section{Inputs voor het Systeem}
+\section{Inputs van het Systeem}
 
 \subsubsection{Opnames}
 
 De tobii eyetracking-opnamen bevatten verschillende gegevens, waarvan de volgende nuttig zijn voor de 
-doeleinden van ons specifieke probleem \autocite{Tobii2023}:
+doeleinden van het probleem \autocite{Tobii2023}:
 \begin{itemize}
-    \item \textbf{Video-opname}: De video-opname van de eyetracking-bril, met een resolutie van 1920x1080 pixels en een framerate van 30 fps (frames per seconde).
-    \item \textbf{Blikdata}: De blikdata van de eyetracking-bril, die de coördinaten het blikpunt 
+    \item \textbf{Video-opname}: De video-opname van de eyetracking-bril, met een resolutie van 1920x1080 pixels en een framerate van 25 fps (frames per seconde).
+    \item \textbf{Blikdata}: De blikdata van de eyetracking-bril, die de coördinaten van het blikpunt 
     (het punt gedefinieerd door de samenkomst van de twee ooglijnen) bevat in de vorm van een 2D-coördinaatssysteem.
     Deze worden opgenomen met een frequentie van 50 Hz, wat betekent dat er 50 blikpunten per seconde worden geregistreerd.
     \item \textbf{Metadata}: Metadata van de opname, zoals ID van de opname, naam van de deelnemer, tijdstempel, en andere relevante informatie.
@@ -43,32 +43,32 @@ uit de ruwe eyetracking-data kunnen worden geëxtraheerd.
 Om deze doelmetrieken te kunnen berekenen, moet het systeem eerst een meer fundamentele, primaire output genereren. 
 Deze primaire output bestaat, voor elke individuele frame van de video-opname, uit een identificatie van het (de) object(en) 
 waarop de blik van de deelnemer op dat specifieke moment gericht was. Met andere woorden, gegeven alle frames uit een opname, 
-is het de taak van het systeem om per frame te bepalen welk(e) relevant(e) object(en) zich in het blikveld bevonden en daadwerkelijk werden aangekeken.
+is het de taak van het systeem om per frame te bepalen welk(e) relevant(e) object(en) zich in het blikveld bevonden en daadwerkelijk werden bekeken.
 
 Vanuit deze frame-per-frame objectidentificatie kunnen vervolgens de twee beoogde hoofdmetrieken worden afgeleid:
 \begin{itemize}
     \item \textbf{Geobserveerde objecten:} Een lijst van alle unieke objecten die gedurende de opname minstens één keer zijn bekeken.
-    \item \textbf{Observatieduur per object:} Voor elk geobserveerd object, de cumulatieve tijd (of het aantal frames) die de blik van de deelnemer op dat object gericht was.
+    \item \textbf{Observatieduur per object:} Voor elk geobserveerd object, de cumulatieve tijd (of het aantal frames) waarop de blik van de deelnemer gericht was.
 \end{itemize}
 
 \section{Oplossingsstrategieën}
 
-De uitdaging is om een systeem te ontwerpen die als brug fungeert tussen de inputgegevens en de outputmetrieken.
-Zoals eerder gezien in de stand van zaken, zijn er binnen computervisie verschillende technieken beschikbaar.
+De uitdaging is om een systeem te ontwerpen dat als brug fungeert tussen de inputgegevens en de outputmetrieken.
+Zoals eerder aangegeven in Hoofdstuk~\ref{ch:stand-van-zaken}, zijn er binnen computervisie verschillende technieken beschikbaar.
 Op basis van deze technieken werden verschillende oplossingsstrategieën geformuleerd, elk met hun eigen voor- en nadelen.
 Bij elk van deze strategieën is de laatste stap de koppeling van de blikdata aan de objectdetectie-output, 
 waarbij enkel de objecten die ook daadwerkelijk bekeken zijn, worden behouden.
 
-\subsection{Strategie 1: Objectdetectie met Vooraf Getrainde Specifieke Modellen}
+\subsection{Strategie 1: Objectdetectie met Vooraf Getrainde Specifieke\\ Modellen}
 
 Deze strategie is gebaseerd op het trainen van een objectdetectiemodel, zoals een variant van YOLO (zie ~\ref{sec:yolo}), 
 op de voorgedefiniëerde objecten.
 
 \paragraph{Conceptuele Werking:}
 \begin{enumerate}
-    \item \textbf{Dataverzameling \& Annotatie}: Er wordt een uitgebreide dataset gecreëerd met beelden van elk te detecteren object. 
+    \item \textbf{Dataverzameling \& Labeling}: Er wordt een uitgebreide dataset gecreëerd met beelden van elk te detecteren object. 
     Deze beelden dienen de objecten vanuit verschillende hoeken, onder variërende belichtingscondities en tegen diverse achtergronden te tonen. 
-    Elk object in deze trainingsbeelden wordt vervolgens geannoteerd met bounding boxes.
+    Elk object in deze trainingsbeelden wordt vervolgens gelabeld met bounding boxes.
     \item \textbf{Modeltraining}: Een objectdetectiemodel wordt getraind op deze dataset.
     \item \textbf{Analyse van Evaluatieopnames:} Tijdens de analyse van een eyetracking-opname wordt het getrainde model frame-per-frame 
     toegepast op de videobeelden. 
@@ -78,31 +78,32 @@ op de voorgedefiniëerde objecten.
 \paragraph{Voordelen:}
 \begin{itemize}
     \item \textbf{Snelheid tijdens Analyse:} Zoals vermeld in de stand van zaken, zijn YOLO-modellen geoptimaliseerd voor snelheid.
-    \item \textbf{Eenvoudige Analyse:} Deze methode maakt gebruik van een enkel model, tegenover andere strategieën die meerdere modellen combineren.
+    \item \textbf{Eenvoudige Analyse:} Deze methode maakt gebruik van een enkel model, tegenover andere strategieën die meerdere modellen combineren. % todo "een" accentuering toevoegen
 \end{itemize}
 
 \paragraph{Nadelen:}
 \begin{itemize}
-    \item \textbf{Dataverzameling:} Het creëren van een dataset met voldoende variatie in objecten en annotaties kan tijdrovend zijn.
+    \item \textbf{Dataverzameling:} Het creëren van een dataset met voldoende variatie in objecten kan tijdrovend zijn.
     \item \textbf{Modeltraining:} Het trainen van een model vereist aanzienlijke rekenkracht en tijd.
 \end{itemize}
 
 \subsection{Strategie 2: Zero-Shot Objectdetectie en Tracking}
 
 Deze aanpak maakt gebruik van recente ontwikkelingen in zero-shot objectdetectie, zoals Grounding DINO, gecombineerd met segmentatie- en trackingmodellen zoals SAM 2.
+Met zero-shot wordt bedoeld dat het model geen specifieke training vereist voor de objecten die het moet detecteren.
 
 \paragraph{Conceptuele Werking:}
 \begin{enumerate}
-    \item \textbf{Zero-Shot Detectie:} Een model zoals Grounding DINO wordt gebruikt om objecten in de videoframes te detecteren op basis van tekstuele prompts (bv. de namen van objecten). Dit vereist geen voorafgaande training op de specifieke objecten.
-    \item \textbf{Segmentatie en Initialisatie Tracking:} De output van Grounding DINO (bounding boxes en labels) kan worden gebruikt om initiële segmentatiemaskers te verkrijgen, eventueel verfijnd met SAM. Deze maskers dienen als input voor een trackingalgoritme.
+    \item \textbf{Zero-Shot Detectie:} Een model zoals Grounding DINO wordt gebruikt om objecten in de videoframes te detecteren op basis van tekstuele prompts (bv. de namen van objecten).
+    \item \textbf{Segmentatie en Initialisatie van Tracking:} De output van Grounding DINO (bounding boxes en labels) kan worden gebruikt om initiële segmentatiemaskers te verkrijgen, eventueel verfijnd met SAM. Deze maskers dienen als input voor een trackingalgoritme.
     \item \textbf{Object Tracking:} Een model zoals SAM 2, dat videosegmentatie ondersteunt, wordt gebruikt om de gedetecteerde en gesegmenteerde objecten doorheen de videosequentie te volgen.
     \item \textbf{Koppeling met Blikdata}
 \end{enumerate}
 
 \paragraph{Voordelen:}
 \begin{itemize}
-    \item \textbf{Geen Specifieke Training Nodig:} Elimineert de noodzaak voor het verzamelen van een uitgebreide, geannoteerde dataset en het trainen van een specifiek model voor de Zorglab-objecten.
-    \item \textbf{Potentieel Hogere Robuustheid en Generaliseerbaarheid:} Foundation models zoals Grounding DINO zijn getraind op zeer grote en diverse datasets, waardoor ze potentieel beter omgaan met variaties in omgeving en objectuiterlijk, en makkelijker generaliseren naar nieuwe objecten.
+    \item \textbf{Geen Specifieke Training Nodig:} Dit elimineert de noodzaak voor het verzamelen van een uitgebreide, gelabelde dataset en het trainen van een specifiek model voor de Zorglab-objecten.
+    \item \textbf{Potentieel Hogere Generaliseerbaarheid:} Foundation models zoals Grounding DINO zijn getraind op zeer grote en diverse datasets, waardoor ze potentieel beter omgaan met variaties in omgeving en object\-uiterlijk, en makkelijker generaliseren naar nieuwe objecten.
 \end{itemize}
 
 \paragraph{Nadelen:}
@@ -114,36 +115,36 @@ Deze aanpak maakt gebruik van recente ontwikkelingen in zero-shot objectdetectie
 
 \subsection{Strategie 3: Handmatige Initialisatie Gevolgd door Tracking}
 
-Deze strategie minimaliseert de afhankelijkheid van automatische objectdetectie door een menselijke operator de initiële objecten te laten aanwijzen, waarna een trackingalgoritme het overneemt.
+Deze strategie minimaliseert de afhankelijkheid van automatische objectdetectie, door een menselijke operator de initiële objecten te laten aanwijzen, waarna een trackingalgoritme het overneemt.
 
 \paragraph{Conceptuele Werking:}
 \begin{enumerate}
-    \item \textbf{Handmatige Initialisatie:} In één of meerdere keyframes van de video klikt een operator handmatig op de te volgen objecten. Deze interactie kan gebruikt worden om een initiële bounding box of segmentatiemasker te genereren, eventueel met hulp van SAM.
-    \item \textbf{Object Tracking:} Vanaf deze initiële handmatige definitie wordt een trackingalgoritme (bv. SAM 2 of een traditioneler trackingmodel) ingezet om de objecten door de rest van de video te volgen.
+    \item \textbf{Handmatige Initialisatie:} In één of meerdere keyframes van de video klikt een operator handmatig op de te volgen objecten.
+    \item \textbf{Object Tracking:} Vanaf deze initiële handmatige definitie wordt een trackingalgoritme ingezet om de objecten doorheen de rest van de video te volgen.
     \item \textbf{Koppeling met Blikdata}
 \end{enumerate}
 
 \paragraph{Voordelen:}
 \begin{itemize}
-    \item \textbf{Hoge Accuraatheid bij Initialisatie:} Hoge accuraatheid bij handmatige annotatie vermindert de kans op fout-positieven.
-    \item \textbf{Geen Model Training Nodig:} Elimineert de noodzaak voor het trainen van een detectiemodel.
+    \item \textbf{Hoge Accuraatheid bij Initialisatie:} Hoge accuraatheid bij handmatige initialisatie vermindert de kans op fout-positieven.
+    \item \textbf{Geen Model Training Nodig:} Elimineert de noodzaak voor het trainen van een gespecialiseerd detectiemodel.
 \end{itemize}
 
 \paragraph{Nadelen:}
 Het handmatig initialiseren van objecten in elke video is extreem tijdrovend en schaalt slecht bij een groot aantal opnames.
 
-\subsection{Strategie 4: Blikgestuurde Segmentatie Gevolgd door Classificatie}
+\subsection{Strategie 4: Blikgestuurde Segmentatie Gevolgd door\\ Classificatie}
 
 Deze strategie stelt de eyetracking-data centraal in het segmentatieproces, waarna diverse modellen kunnen worden toegepast voor classificatie.
-Het maakt gebruik van de "segment everything" capaciteit van moderne segmentatiemodellen, waarbij de blikdata vervolgens wordt ingezet om de voor classificatie relevante segmenten te identificeren.
+Het maakt gebruik van de `segment everything' capaciteit van moderne segmentatiemodellen, waarbij de blikdata vervolgens wordt ingezet om de voor classificatie relevante segmenten te identificeren.
 
 \paragraph{Conceptuele Werking:}
 \begin{enumerate}
-    \item \textbf{"Segment Everything" en Object Tracking:} Een model zoals SAM 2 of FastSAM wordt toegepast om in elk frame van de video alle potentiële objecten te segmenteren. 
+    \item \textbf{Segment Everything en Object Tracking:} Een model zoals SAM 2 of FastSAM wordt toegepast om in elk frame van de video alle potentiële objecten te segmenteren. 
     Deze gesegmenteerde objecten krijgen een unieke identifier en worden over de frames heen getrackt. Dit resulteert in een verzameling van segmentatiemaskers met bijbehorende object-ID's per frame.
-    \item \textbf{Koppeling met Blikdata:} Per frame wordt het blikpunt gebruikt om te bepalen welk(e) van de gesegmenteerde en getrackte objecten daadwerkelijk door de deelnemer worden aangekeken. 
+    \item \textbf{Koppeling met Blikdata:} Per frame wordt het blikpunt gebruikt om te bepalen welk(e) van de gesegmenteerde en getrackte objecten daadwerkelijk door de deelnemer worden bekeken. 
     Dit kan bijvoorbeeld door te controleren of het blikpunt binnen een bepaald segmentatiemasker valt, rekening houdend met de inherente onnauwkeurigheid van de eyetracker.
-    \item \textbf{Segment Uitsnijden en Classificatie:} Enkel de segmenten die als "aangekeken" zijn geïdentificeerd, worden uit het frame geknipt.
+    \item \textbf{Segment Uitsnijden en Classificatie:} Enkel de segmenten die als `bekeken' zijn geïdentificeerd, worden uit het frame geknipt.
     Deze uitsnedes kunnen vervolgens geclassificeerd worden met verschillende mogelijke modellen.
 \end{enumerate}
 
@@ -154,13 +155,13 @@ Hier is het mogelijk om verschillende benaderingen te gebruiken voor de classifi
     \item \textbf{Keypoint-gebaseerde Classificatie:} Een keypoint-gebaseerd model, zoals SIFT of ORB, kan worden gebruikt om de segmenten te classificeren op basis van hun visuele kenmerken.
     \item \textbf{Feature-gebaseerde Classificatie:} Voorgetrainde modellen zoals DINOv2 kunnen in combinatie met een vector-database worden gebruikt om de segmenten te classificeren op basis van hun visuele kenmerken.
     Deze modellen genereren een vingerafdruk (feature vector) van elk segment, die vervolgens kan worden vergeleken met een database van gekende objecten.
-    \item \textbf{Classificatie met Vision-API}: Voor classificatie kan ook eventueel gebruik gemaakt worden van een bestaande foundation-model gebaseerde computer-vision diensten (Google, OpenAI, ... APIs).
+    \item \textbf{Classificatie met Vision-API}: Voor classificatie kan ook eventueel gebruik gemaakt worden van bestaande foundation-model gebaseerde computer-vision diensten (Google, OpenAI, ... APIs).
 \end{itemize}
 
 \paragraph{Voordelen:}
 \begin{itemize}
     \item \textbf{Potentieel Robuustere Segmentatie en Tracking:} Door alle objecten te segmenteren en te tracken, kan het systeem stabieler zijn tegen kortstondige 
-    occlusies of snelle blikverschuivingen. Een object dat even niet wordt aangekeken, blijft toch getrackt en kan later opnieuw als "aangekeken" worden geïdentificeerd zonder nieuwe segmentatie-initiatie.
+    occlusies of snelle blikverschuivingen. Een object dat even niet wordt bekeken, blijft toch getrackt en kan later opnieuw als `bekeken' worden geïdentificeerd zonder nieuwe segmentatie-initiatie.
 \end{itemize}
 
 \paragraph{Nadelen:}
@@ -168,28 +169,28 @@ Hier is het mogelijk om verschillende benaderingen te gebruiken voor de classifi
     \item \textbf{Beheer van Groot Aantal Segmenten:} Het tracken en beheren van ID's voor potentieel veel segmenten per frame kan complex zijn, vooral in drukke omgevingen.
     \item \textbf{Complexe Pipeline:} Het combineren van segmentatie, tracking en classificatie kan leiden tot een complexe implementatie.
     \item \textbf{Trager dan Directe Objectdetectie:} Het toepassen van meerdere modellen (segmentatie/tracking, classificatie) kan de snelheid van de analyse verminderen in vergelijking met een directe objectdetectie-aanpak.
-    \item \textbf{Unknown Objecten:} Het systeem zal veel objecten segmenteren die niet relevant zijn voor de analyse, wat kan leiden tot eventuele fout-positieven in de uiteindelijke classificatie.
 \end{itemize}
 
 \section{Keuze van de Oplossingsstrategie}
 
 Na een zorgvuldige afweging van de hierboven beschreven strategieën, elk met hun inherente voor- en nadelen, is voor de ontwikkeling van de PoC 
-applicatie gekozen voor \textbf{Strategie 4: "Segment Everything" Gevolgd door Blikselectie en Diverse Classificatiemethoden}.
+applicatie gekozen voor \textbf{Strategie 4: `Segment Everything' Gevolgd door Blikselectie en Diverse Classificatiemethoden}.
 
 Deze keuze is primair ingegeven door de veelbelovende resultaten uit initiële, exploratieve tests. 
-Waar zero-shot objectdetectie (Grounding DINO), in eerste experimenten nog geen consistent robuuste resultaten opleverden 
+Waar zero-shot objectdetectie (Grounding DINO), in eerste experimenten nog geen consistent robuuste resultaten opleverde
 (met name wat betreft fout-positieven en generalisatie naar sommige van de specifieke Zorglab-objecten), 
-toonden de "segment everything" en tracking-capaciteiten FastSAM direct indrukwekkende prestaties.
+toonde de `segment everything' en tracking-capaciteiten van FastSAM direct indrukwekkende prestaties.
 Veel van de door de eyetracker geregistreerde objecten konden effectief worden gesegmenteerd en gevolgd. 
 De uitdaging verschoof daarmee naar het vinden van een betrouwbare methode om deze dynamisch geïdentificeerde segmenten correct te classificeren.
 
 \begin{itemize}
     \item Strategie 1 (Trainen van een Objectdetector) kon op dit punt in het onderzoekproces niet worden overwogen, omdat er nog geen dataset beschikbaar was.
-    \item Strategie 3 (Handmatige Initialisatie) werd als te arbeidsintensief en niet schaalbaar voor de beoogde toepassing beschouwd.
+    \item Strategie 2 (Zero-Shot Objectdetectie) werd wel overwogen, maar de initiële resultaten waren niet robuust genoeg voor de beoogde toepassing.
+    \item Strategie 3 (Handmatige Initialisatie) werd als te arbeidsintensief en niet schaalbaar beschouwd.
 \end{itemize}
 
-De gekozen Strategie 4 biedt de flexibiliteit om verschillende classificatietechnieken te exploreren voor de aangekeken segmenten.
+De gekozen Strategie 4 biedt de flexibiliteit om verschillende classificatietechnieken te exploreren voor de bekeken segmenten.
 Dit maakt een iteratieve ontwikkeling en optimalisatie van de PoC mogelijk zonder de onderliggende pipeline aanzienlijk te hoeven aanpassen.
 Hoewel het efficiënt beheren van vele segmenten en de complexiteit van de pipeline potentiële uitdagingen kent, 
-wogen de initiële positieve resultaten van de segmentatie- en trackingcomponenten en de modulaire opzet voor de classificatiestap zwaarder in de besluitvorming.
-De de PoC applicatie is uitgewerkt in functie van deze gekozen oplossingsstrategie, en zal in het volgende hoofdstuk verder worden toegelicht.
+wogen de initiële positieve resultaten van de segmentatie- en trackingcomponenten en de modulaire opzet voor de classificatiestap zwaarder door in de besluitvorming.
+De PoC applicatie werd uitgewerkt in functie van deze gekozen oplossingsstrategie, en zal in het volgende hoofdstuk verder worden toegelicht.

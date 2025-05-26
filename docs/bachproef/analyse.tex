@@ -8,19 +8,29 @@ van experimentele data, en het creëren van een grondwaarheidsdataset uitvoerig 
 Dit hoofdstuk richt zich op de kern van het onderzoek: de geautomatiseerde analyse van de 
 observatieprestaties van studenten aan de hand van de verzamelde eyetracking-opnames.
 
-Het hoofddoel van de hier beschreven analyse is om, op basis van de videofeed en blikdata van de Tobii Pro Glasses 3, 
+Het hoofddoel van de hier beschreven analyse is, om op basis van de videofeed en blikdata van de Tobii Pro Glasses 3, 
 automatisch te bepalen (1) welke van de vooraf gedefinieerde kritische objecten door een student zijn waargenomen en (2) 
 hoe lang de aandacht op elk van deze objecten gericht was. 
 Om dit te realiseren, werd een analysepipeline ontworpen en geïmplementeerd, die de output van verschillende computervisiemodellen combineert.
 
 De ontwikkelde analysepipeline, zoals conceptueel voorgesteld in Strategie 4 van Hoofdstuk~\ref{ch:oplossingsstrategieen}, 
-transformeert de ruwe video- en blikdata frame per frame tot een identificatie van bekeken, kritische objecten. 
+transformeert de ruwe video- en blikdata, frame-per-frame tot een identificatie van bekeken, kritische objecten. 
 Dit proces omvat drie hoofdfasen: (1) het segmenteren en tracken van alle potentiële objecten in beeld, 
 (2) het filteren van deze segmenten op basis van objectgrootte en daadwerkelijke observatie door de student, en 
 (3) het classificeren van de overgebleven objectsegmenten. 
-Er worden twee verschillende benaderingen voor de classificatiestap geëvalueerd: één op basis van image embeddings (DINOv2) en een vector-index (Faiss), 
-en een tweede die gebruikmaakt van een getraind YOLO-classificatiemodel. 
-De prestaties van deze methoden zullen worden beoordeeld aan de hand van de in Hoofdstuk~\ref{ch:grondwaarheid} gecreëerde grondwaarheid.
+Er werden drie verschillende benaderingen voor de classificatiestap geëvalueerd:
+\begin{enumerate}
+  \item \textbf{Vector-Index Classificatie:} Hierbij worden eerst image embeddings van de bekeken segmenten gegenereerd met DINOv2.
+  Hierna worden deze embeddings vergeleken met voorbeelden van de kritische objecten binnen een \texttt{Faiss (Facebook AI Similarity Search)} vector-index.
+  \item \textbf{YOLOv11 Classificatie:} In deze benadering wordt een YOLOv11-model getraind om de segmenten te classificeren.
+  \item \textbf{YOLOv11 Object Detectie:} Deze aanpak verschilt van de vorige doordat het model niet enkel classificeert, 
+  maar ook de locatie van de objecten in het frame bepaalt. 
+  De objectdetector genereert bounding boxes, die vervolgens worden gecombineerd met de trackingresultaten van FastSAM om tot een definitieve classificatie te komen van elk bekeken object.
+\end{enumerate}
+Merk op dat het bij de eerste fase niet enkel over frame-per-frame segmentatie gaat, maar ook over het tracken van deze segmenten doorheen de video.
+Deze aanpak maakt het mogelijk om na classificatie van de individuele segmenten, de resultaten te aggregeren over de volledige tracking-sessie van elk object. 
+
+De ontwikkelde methoden werden beoordeeld aan de hand van de in Hoofdstuk~\ref{ch:grondwaarheid} gecreëerde grondwaarheid.
 
 Figuur~\ref{fig:analyse-pipeline-visualisatie} illustreert de fasen van dit proces aan de hand van illustratieve beelden.
 
@@ -47,38 +57,37 @@ Figuur~\ref{fig:analyse-pipeline-visualisatie} illustreert de fasen van dit proc
     \begin{subfigure}[b]{0.75\textwidth}
         \centering
         \includegraphics[width=1\textwidth]{classification-example.png}
-        \caption{Classificatiestap*}
+        \caption{Classificatiestap}
         \label{fig:pipeline_stap_c}
     \end{subfigure}
     \caption[Visualisatie van de Analysepipeline]{
         \label{fig:analyse-pipeline-visualisatie}
         Visualisatie van de stappen in de analysepipeline.
-        (\subref{fig:pipeline_stap_a}) FastSAM identificeert en segmenteert alle potentiële objecten in het frame.
+        (\subref{fig:pipeline_stap_a}) FastSAM segmenteert alle objecten in het beeld en volgt deze doorheen de video.
         (\subref{fig:pipeline_stap_b}) De segmenten worden gefilterd; enkel de segmenten die daadwerkelijk met de blik van de gebruiker overlappen worden behouden.
         (\subref{fig:pipeline_stap_c}) De overgebleven segmenten worden uit de originele frame geknipt en dienen als input voor een classificatiemodel.
-        *De afbeelding voor de classificatiestap in dit voorbeeld is afkomstig uit een labeling-validatie video.
     }
 \end{figure}
 
-\section{Everything-Segmentatie en Objectfiltering}
+\section{Tracking en Segmentatie van Objecten}
 
 De eerste fase van de analysepipeline is erop gericht om uit de continue videostroom alle potentieel relevante objectregio's 
 te isoleren die daadwerkelijk door de student zijn bekeken. 
 De implementatie van dit proces werd vastgelegd in de python-notebook \texttt{04\_gaze\_segmentation.ipynb},
 en wordt hieronder toegelicht.
-Alle besproken code is te vinden binnen de \texttt{GazeSegmentationJob} klasse in de notebook.
+De besproken code binnen deze fase is terug te vinden in de \texttt{GazeSegmentationJob} klasse in de notebook.
 
-\subsection{Tracking en Segmentatie met FastSAM}
+Voor deze fase werd gekozen om gebruik te maken van het FastSAM-model, vanwege zijn hoge snelheid.
+Dit maakte het mogelijk om snel de aanpak te optimaliseren en de pipeline te testen, zonder dat de tijdsduur van de analyse een beperkende factor werd.
+Het model komt in twee varianten: een `large' (\texttt{FastSAM-x}) en een `small' (\texttt{FastSAM-s}) versie.
+Er werd gekozen om de `large' versie te gebruiken, vanwege de betere segmentatiekwaliteit.
+FastSAM is beschikbaar via de \texttt{ultralytics}\footnote{\url{https://docs.ultralytics.com/models/fast-sam/}} python-bibliotheek,
+die een \texttt{track} functie bevat die het mogelijk maakt om alle objecten in een video zowel te segmenteren als te tracken.
 
-Het FastSAM-model komt in twee varianten: een `large' (\texttt{FastSAM-x}) en een `small' (\texttt{FastSAM-s}) versie.
-Hier werd gekozen om de `large' versie te gebruiken, vanwege de betere prestaties in termen van segmentatie en tracking.
-Dit model is beschikbaar via de \texttt{ultralytics}\footnote{\url{https://docs.ultralytics.com/models/fast-sam/}} python-bibliotheek,
-en bevat een \texttt{track} functie die het mogelijk maakt om alle objecten in een video zowel te segmenteren als te tracken.
-
-\subsubsection{Tracking en Segmentatie van Objecten}
+\subsection{Tracking en Segmentatie van Objecten}
 
 In een eerste stap worden alle frames van de evaluatieopname geëxtraheerd naar een tijdelijke map met behulp van \texttt{ffmpeg}.
-Daarna is het mogelijk om de \texttt{track} functie aan te roepen op deze frames:
+Daarna is het mogelijk om de \texttt{track} functie toe te passen op deze frames:
 
 \begin{listing}[H]
   \begin{minted}{python}
@@ -103,22 +112,24 @@ Hier zijn volgende zaken belangrijk om op te merken:
     Deze parameter heeft zowel invloed op de snelheid van de segmentatie als op de kwaliteit ervan.
     \item Het is belangrijk om de \texttt{persist} parameter op \texttt{True} te zetten, 
     zodat het model de tracking-informatie kan behouden tussen opeenvolgende frames.
-    \item De \texttt{track} functie retourneert een lijst van \texttt{Results}-objecten maar bevat hier slechts één element.
+    \item De \texttt{track} functie levert een lijst op van \texttt{Results}-objecten, maar bevat hier slechts één element, aangezien de functie telkens een enkele frame behandelt.
     Dit \texttt{Results}-object bevat de segmentatiemaskers, bounding boxes, en tracking-informatie voor elk object in het frame.
 \end{itemize}
 
-\subsubsection{Filteren van Tracking-Resultaten}
+% TODO: IOU? CONF?
+
+\subsection{Filteren van Tracking-Resultaten}
 
 Na het uitvoeren van de tracking en segmentatie, worden de resultaten gefilterd op basis van twee criteria:
 \begin{itemize}
     \item \textbf{Objectgrootte:} Segmenten die een onrealistisch groot deel van het beeld beslaan (bijvoorbeeld muren, vloeren, of de gehele achtergrond) worden weggelaten.
-    \item \textbf{Blikdata:} Met behulp van de \texttt{mask\_was\_viewed} functie (zie Sectie~\ref{sec:omgaan-met-blikdata}) 
+    \item \textbf{Blikdata:} Met behulp van de \texttt{mask\_was\_viewed} functie (zie Sectie~\ref{sec:filtering-annotaties}) 
     wordt voor elk overgebleven segment gecontroleerd of het blikveld van de student daadwerkelijk overlapt met het segmentatiemasker in dat specifieke frame. 
     Enkel de `bekeken' segmenten worden behouden voor verdere analyse.
 \end{itemize}
 
-Aangezien we het al eerder hebben gehad over de \texttt{mask\_was\_viewed} functie, 
-zal hier enkel de \texttt{mask\_too\_large} functie worden besproken:
+Hier zullen we enkel de \texttt{mask\_too\_large} functie toelichten.
+Codefragment~\ref{listing:filteren-segmenten-grootte} toont de implementatie hiervan.
 
 \begin{listing}[H]
   \begin{minted}{python}
@@ -131,7 +142,10 @@ zal hier enkel de \texttt{mask\_too\_large} functie worden besproken:
         mask_area = mask.sum()
         return mask_area >= max_mask_area
     \end{minted}
-  \caption[Filteren van segmenten op basis van grootte]{}
+  \caption[Filteren van segmenten op basis van grootte]{
+    \label{listing:filteren-segmenten-grootte}  
+    Deze functie controleert of een segment te groot is op basis van de oppervlakte van het segmentatiemasker. 
+  }
 \end{listing}
 
 Hier wordt een som berekend van alle pixels in het segmentatiemasker (aangezien het masker binair is).
@@ -140,9 +154,9 @@ De maximale oppervlakte van een segment wordt gedefinieerd als 10\% van de total
 Dit is momenteel een arbitraire waarde, maar kan in de toekomst verder geoptimaliseerd worden, of zelfs 
 dynamisch worden ingesteld op basis van objecten binnen kalibratieopnames in de applicatie.
 
-\subsubsection{Opslaan van de Resultaten}
+\subsection{Opslaan van de Resultaten}
 
-Na het filteren van de segmenten, worden de resultaten opgeslagen in gecomprimeerde numpy-bestanden 
+Na het filteren van de segmenten, worden de resultaten van elke frame opgeslagen in gecomprimeerde numpy-bestanden 
 (\texttt{.npz}) onder \texttt{data/gaze\_segmentation\_results}.
 
 \begin{listing}[H]
@@ -159,7 +173,11 @@ Na het filteren van de segmenten, worden de resultaten opgeslagen in gecomprimee
         confidences=confidences,
     )
     \end{minted}
-  \caption[Opslaan van segmentatie-resultaten]{}
+  \caption[Opslaan van segmentatie-resultaten]{
+    \label{listing:opslaan-segmentatie-resultaten}
+    Deze code slaat de resultaten van de segmentatie en tracking op in een gecomprimeerd numpy-bestand.
+    De resultaten worden opgeslagen per frame, met de relevante metadata.
+  }
 \end{listing}
 
 De volgende gegevens worden opgeslagen:
@@ -167,58 +185,186 @@ De volgende gegevens worden opgeslagen:
     \item \textbf{boxes:} De bounding boxes van de segmenten, handig voor het visualiseren van de segmenten in de video.
     \item \textbf{rois:} De ROI's (Region of Interest) van de segmenten. Deze worden later gebruikt bij de classificatiestap om de objecten te identificeren.
     \item \textbf{masks:} De segmentatiemaskers van de objecten, die ook worden gebruikt voor visualisatie.
-    \item \textbf{object\_ids:} De unieke ID's van de objecten, die worden toegewezen door het FastSAM-model.
+    \item \textbf{object\_ids:} De unieke ID's van de objecten, die worden toegewezen door het FastSAM-model. Deze ID's blijven consistent voor elk specifiek object over meerdere frames,
+    tenzij de tracking verloren gaat (bijvoorbeeld wanneer het object tijdelijk uit beeld is). Wanneer dit gebeurt, wordt een nieuwe ID toegewezen aan het object als het opnieuw in beeld komt.
+    Deze ID maakt het mogelijk om de resultaten van de classificatiestap te aggregeren over meerdere frames, om zo een beter resultaat te krijgen.
     \item \textbf{frame\_idx:} De index van het frame, die wordt gebruikt om de resultaten te koppelen aan het juiste frame in de video.
-    \item \textbf{gaze\_position:} De blikpositie van de student in dat specifieke frame.
+    \item \textbf{gaze\_position:} De blikpositie van de student in dat specifieke frame (indien beschikbaar).
     \item \textbf{confidences:} De vertrouwensscore van het model voor elk segment, die aangeeft hoe zeker het model is dat het segment correct is.
     Dit kan nuttig zijn voor het filteren van segmenten die een lage vertrouwensscore hebben, 
     of het vinden van correlaties tussen de vertrouwensscore en de uiteindelijke classificatie.
 \end{itemize}
-Aangezien het opslaan van de resultaten IO-intensief is, wordt dit proces uitgevoerd met behulp van multithreading.
+Aangezien het opslaan van de resultaten IO-intensief is, wordt dit proces uitgevoerd met behulp van multithreading (\texttt{executor.submit}).
 
-\section{Classificatie van Objecten}
+\subsection{Voorbereiding van de Tracking Resultaten voor Classificatie}
 
-\subsection{Voorbereiding van Data voor Classificatie}
-
-De output van de voorgaande fase bestaat uit een reeks \texttt{.npz}-bestanden, één per frame, 
+De output van de vorige stap bestaat uit een reeks \texttt{.npz}-bestanden, één per frame, 
 die de gefilterde segmenten, ROIs, en bijbehorende metadata bevatten. 
 Om deze data efficiënt te kunnen gebruiken als input voor de classificatiestrategieën, werd een aanvullende voorbereidingsstap uitgevoerd. 
 Deze stap werd geïmplementeerd in de notebook \texttt{05\_create\_object\_datasets.ipynb} en consolideert de frame-per-frame 
 resultaten tot een gestructureerde dataset per evaluatieopname. 
-Deze dataset, hierna "object-dataset" genoemd, vormt de directe input voor zowel de classificatie met een vector-index als de 
-classificatie met een YOLO-model.
+Deze dataset, hierna `object-dataset' genoemd, aggregeert alle metadata van de bekeken segmenten binnen een enkele tabel.
+Hoewel veel van deze metadata ook in de individuele \texttt{.npz}-bestanden te vinden zijn, resulteert de consolidatie 
+naar één \texttt{.csv}-bestand per opname in een efficiëntere dataverwerking tijdens de classificatiefase. 
+Het vermijdt het herhaaldelijk openen en parsen van potentieel honderden of duizenden afzonderlijke \texttt{.npz}-bestanden.
 
 Het creëren van de object-dataset omvat het itereren over de \texttt{.npz}-bestanden van elke opname. 
-Voor elk gedetecteerd en gefilterd object (ROI) binnen een frame worden de volgende kenmerken geëxtraheerd en samengevoegd:
+Voor elk gedetecteerd en gefilterd object (ROI) binnen een frame worden de volgende kenmerken geëxtraheerd en samengevoegd tot een rij in een \texttt{Pandas DataFrame}:
 \begin{itemize}
     \item \texttt{frame\_idx}: De index van het frame waarin het object oorspronkelijk werd gedetecteerd. 
     Dit koppelt het object aan een specifiek tijdstip in de video.
     \item \texttt{object\_id}: De unieke, tijdelijke ID die door het FastSAM-model aan het getrackte object 
     is toegewezen binnen de scope van die specifieke tracking-sessie.
-    \item \texttt{confidence}: De confidencescore van het FastSAM-model voor de detectie van dit specifieke segment. 
+    \item \texttt{confidence}: De vertrouwensscore van het FastSAM-model voor de detectie van dit specifieke segment. 
     Deze score geeft een indicatie van hoe zeker het model was van zijn segmentatie.
     \item \texttt{embedding}: Een dense vectorrepresentatie (embedding) van de visuele kenmerken van de ROI, 
     gegenereerd met het DINOv2-model. 
     Deze embedding dient als input voor de op similariteit gebaseerde classificatie met een vector-index.
-    Meer hierover in de sectie dat volgt.
+    Meer hierover in de volgende sectie.
     \item \texttt{mask\_area}: De totale oppervlakte van het segmentatiemasker van het object in pixels. 
     Dit geeft een maat voor de (schijnbare) grootte van het object in het frame.
     \item \texttt{x1, y1, x2, y2}: De coördinaten die de bounding box rondom het gedetecteerde object definiëren. 
 \end{itemize}
 
-Deze geëxtraheerde informatie wordt per opname samengevoegd in een \texttt{Pandas DataFrame} en vervolgens opgeslagen 
+De resulterende \texttt{DataFrame} wordt vervolgens opgeslagen 
 als een \texttt{.csv}-bestand onder \texttt{data/object\_datasets/<recording\_id>}. 
 Het resultaat is een set van tabelvormige datasets die klaar zijn voor de daadwerkelijke classificatietaken.
-Hoewel veel van deze metadata ook in de individuele \texttt{.npz}-bestanden te vinden is, resulteert de consolidatie 
-naar één \texttt{.csv}-bestand per opname in een efficiëntere dataverwerking tijdens de classificatiefase. 
-Het vermijdt het herhaaldelijk openen en parsen van potentieel honderden of duizenden afzonderlijke \texttt{.npz}-bestanden.
 
-\subsection{Classificatie met Vector-Index}
+\section{Classificatie van Objecten}
 
-TODO
+De vorige fase leverde een dataset op met bekeken objectsegmenten (ROIs) per evaluatieopname.
+Deze kregen echter nog geen label toegewezen, dat aangeeft tot welk van de kritische objecten ze behoren.
+Om dit te realiseren, werd een classificatiestap geïmplementeerd die de ROIs labelt op basis van hun visuele kenmerken.
 
-\subsection{Classificatie met YOLOv11}
+\subsection{Data Labeling}
 
-TODO
+Voor het initialiseren en trainen van de classificatiestrategieën was het noodzakelijk om een dataset te hebben met gelabelde objecten.
+Zoals eerder beschreven in Hoofdstuk~\ref{ch:experiment} (Sectie~\ref{sec:kalibratieopnames}), werden hiertoe 
+twee specifieke kalibratieopnames gemaakt door de onderzoeker.
+De eerste opname bevatte de objecten in hun oorspronkelijke posities en achtergrond, identiek aan de evaluatieopnames.
+De tweede opname toonde dezelfde objecten tegen een significant afwijkende achtergrond, 
+primair bedoeld om de invloed van contextvariatie te onderzoeken.
 
-\subsection{Objectdetectie met Yolov11}
+Bij de analyses die in dit hoofdstuk worden gepresenteerd, is uitsluitend gebruik gemaakt 
+van de data uit de kalibratieopname met de originele achtergrond.
+De beslissing om de tweede kalibratieopname buiten beschouwing te laten, werd genomen om de scope van deze bachelorproef beheersbaar te houden.
+Een discussie over het potentieel van deze tweede dataset voor verder onderzoek is terug te vinden in Hoofdstuk~\ref{ch:conclusie}.
+% TODO: toevoegen aan conclusie
+
+\paragraph{Labeling voor Classificatie}
+Voor de initiële, op ROI-gebaseerde classificatiepogingen, was de labelingstrategie relatief eenvoudig.
+Het volstond om voor elk van de objecten een representatief aantal ROIs te verzamelen en te labelen gedurende de 
+tijdsvensters van 30 seconden waarin elk object centraal werd bekeken. 
+Dit leverde voldoende voorbeelden van elk object op voor het trainen van de classificatiemodellen.
+
+\paragraph{Labeling voor Objectdetectie}
+Voor het trainen van het objectdetectiemodel was echter een meer omvattende aanpak vereist.
+In tegenstelling tot ROI-classificatie die op geïsoleerde objectsegmenten werkt, wordt een objectdetector 
+getraind om objecten te lokaliseren binnen een breder beeld.
+Tijdens de training analyseert het model `crops' (vierkante regio's van het beeld) en leert het model om objecten te detecteren binnen zulke regio's.
+Hierbij is het belangrijk dat binnen de labeling alle objecten in het beeld worden gemarkeerd, die potentieel binnen een crop kunnen vallen
+(zie Figuur~\ref{fig:voorbeeld_crop_yolo_training} voor een conceptuele visualisatie van een crop).
+De manier waarop deze crops worden gedefinieerd binnen de trainingsdataset, komt later in dit hoofdstuk aan bod.
+% TODO: verwijzen naar sectie
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{yolo_training_crop.png}
+    \caption[Voorbeeld van een crop voor objectdetectie]{
+        \label{fig:voorbeeld_crop_yolo_training}
+        Voorbeeld van een frame uit de labeling tool. 
+        Hier wordt een voorbeeld van een crop getoond die gebruikt kan worden voor het trainen van een objectdetectiemodel.
+        Het is dus belangrijk dat alle objecten die binnen deze crop kunnen vallen,
+        worden gelabeld, zelfs als ze niet volledig zichtbaar zijn.
+        Merk op dat dit niet de enige mogelijke crop is binnen deze afbeelding, men kan ook andere regio's selecteren met andere objecten.
+    }
+\end{figure}
+
+\paragraph{Opmerking: Ampule Poeder Niet Gelabeld}
+Het object `ampule poeder' werd in de labeling niet opgenomen. 
+Origineel werd het object gekozen omwille van zijn doorschijnende karakter (glazen ampule).
+Het werd ook naast een andere groep objecten geplaatst om de detectie alsnog te bemoeilijken (zie Figuur~\ref{fig:ampulepoeder}).
+Echter, tijdens de labeling bleek het object te moeilijk voor het SAM2 model om te segmenteren en te tracken.
+Dit resulteerde in een lage labelingkwaliteit, waarbij de segmenten inaccuraat waren.
+Soms werden zelfs ook foutief aangrenzende objecten meegenomen in de segmentaties.
+Om deze reden werd besloten om het object niet mee te nemen in de labeling en de uiteindelijke analyse. 
+Een ander object, de `ampule vloeistof', werd wel opgenomen ondanks zijn sterk doorschijnende karakter.
+Dit object bleek veel gemakkelijker te volgen en te segmenteren door het FastSAM-model, vermoedelijk omdat het afgezonderd was van andere, 
+potentieel verwarrende objecten.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{ampulepoeder.png}
+    \caption[Voorbeeld van de ampule poeder in de kalibratieopname]{
+        \label{fig:ampulepoeder}
+        Locatie van de ampule poeder in de kalibratieopname, aangeduid met een rode cirkel.
+        De ampule vloeistof werd wel opgenomen in de labeling, en is hier aangeduid met een groene cirkel.
+    }
+\end{figure}
+
+
+
+\subsection{Initiële Classificatiepogingen en Uitdagingen}
+
+Nadat de object-datasets waren aangemaakt en de referentiedata uit de kalibratieopname was gelabeld, was de volgende stap het 
+toewijzen van een label aan elk gedetecteerd en door de student bekeken objectsegment (ROI). 
+Er werden initieel twee strategieën onderzocht voor het classificeren van deze ROIs, waarvan de relevante data beschikbaar waren in de object-datasets:
+\begin{enumerate}
+    \item \textbf{Vector-Index Classificatie:} Hierbij werden de DINOv2-embeddings van de ROIs vergeleken met referentie-embeddings van de kritische objecten afkomstig uit de kalibratieopname.
+    Er werd een Faiss (Facebook AI Similarity Search) index gebruikt om de meest vergelijkbare referentie-embeddings te vinden.
+    Faiss is een bibliotheek die het mogelijk maakt om snel zoekopdrachten uit te voeren op grote datasets van vectoren.
+    \item \textbf{YOLOv11 Classificatie:} Een YOLO-model werd getraind, niet voor detectie in het volledige frame, maar specifiek voor het classificeren van de reeds 
+    geïsoleerde ROIs uit de evaluatieopnames.
+\end{enumerate}
+
+Deze twee benaderingen zullen hier echter niet diepgaand worden behandeld, 
+aangezien beiden al in een vroeg stadium van evaluatie een fundamenteel gebrek vertoonden, 
+namelijk een onacceptabel hoge mate van vals-positieven. 
+Het probleem lag niet zozeer in de specifieke modelkeuzes, maar in een verkeerde definitie van het classificatieprobleem.
+De gekozen classificatietechnieken zijn inherent ontworpen voor \textit{gesloten-set} scenario's. 
+In dergelijke scenario's  wordt aangenomen dat elke te classificeren input (elke bekeken ROI)
+daadwerkelijk tot één van de vooraf gedefinieerde klassen behoort. 
+
+De realiteit van de observaties is echter complexer en sluit veel beter aan bij het concept van \textit{Open Set Recognition (OSR)}. 
+Zoals \textcite{Wang2023} beschrijven in hun overzichtsartikel, is het 
+``doorgaans moeilijk om, wanneer men een herkenner of classificator traint, trainingsvoorbeelden te verzamelen die alle (mogelijke) klassen omvatten''.
+OSR beschrijft een scenario waarin 
+``er ten tijde van de training onvolledige kennis van de wereld bestaat, en onbekende klassen tijdens het testen aan een algoritme kunnen worden voorgelegd''.
+Dit vereist dat een classificatiemodel ``niet alleen de geziene klassen accuraat classificeert, maar ook effectief omgaat met de ongeziene'' (citaten uit \textcite{Wang2023}, eigen vertaling).
+
+In de context van dit onderzoek betekende dit dat de studenten talloze objecten en achtergrondelementen bekeken die \textit{niet} tot de kritische objecten behoorden.
+De geïmplementeerde ROI-classificatiemodellen waren niet in staat om deze `onbekende' inputs effectief te herkennen en te verwerpen.
+In plaats daarvan waren ze geneigd elke ROI te classificeren als één van de objecten, wat resulteerde in de waargenomen overvloed aan vals-positieven.
+
+Gezien deze mismatch tussen de aard van het probleem en de gekozen aanpak, werd besloten deze classificatiestrategieën niet verder te optimaliseren.
+De focus verschoof naar een methode die beter is uitgerust om specifieke, bekende objecten te identificeren: objectdetectie.
+
+\subsection{Objectdetectie met YOLOv11} 
+
+Bij de voorgaande classificatiestrategieën lag de focus op het classificeren van geïsoleerde objectsegmenten afkomstig uit de FastSAM everything-segmentatie.
+% TODO: intro tot dit deel (nu not niet doen)
+% Nu wil ik mijn introductie tot objectdetectie subsectie schrijven. Ik wil het volgende vermelden:
+% - Objectdetectie is iets meer complex omdat we niet enkel de ROIs rechtstreeks gaan classificeren, maar ook de objectdetectieresultaten moeten linken aan de originele FastSAM bounding boxes. 
+% - Hoewel het technisch gezien om objectdetectie gaat, wordt dit nog steeds gezien als classificatie aangezien we uiteindelijk een label toekennen aan de originele segmenten.
+
+\subsubsection{Creatie van de Objectdetectie Trainingsdataset}
+
+Gebaseerd op de gelabelde kalibratieopname die eerder werd besproken, werd een trainingsdataset voor objectdetectie gecreëerd.
+Deze dataset moest bestaan uit beelduitsnedes (hierna `crops' genoemd) waarin de kritische objecten gelabeld zijn met bounding boxes.
+De creatie van deze dataset werd geïmplementeerd in de python notebook \texttt{12\_prepare\_object\_detection\_datasets.ipynb} en omvatte de volgende stappen:
+
+% TODO: waarom crops? (gecenterd op het blikpunt)
+\paragraph{1. Verzamelen van Gelabelde Data uit de Kalibratieopname}
+
+De basis voor de trainingsdataset werd gevormd door de kalibratieopname waarbij de objecten 
+tegen dezelfde achtergrond als de evaluatieopnames gefilmd werden.
+
+
+
+\subsubsection{Training van YOLOv11 Modellen}
+
+\subsubsection{Combineren van Objectdetectie en FastSAM Tracking}
+
+\subsubsection{Resultaten van de Objectdetectie}
+
+\section{Samenvatting van de Gehele Analysepipeline}

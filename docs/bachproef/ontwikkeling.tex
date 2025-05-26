@@ -4,7 +4,7 @@
 \section{Inleiding}
 
 Dit hoofdstuk dient als een uitgebreide toelichting op de softwareoplossing die binnen deze bachelorproef is ontwikkeld.
-Eerst zullen de verschillende componenten van de applicatie worden besproken, gevolgd door een gedetailleerde uitleg over hoe een gebruiker de applicatie kan gebruiken.
+Eerst zullen de verschillende componenten van de applicatie worden besproken, gevolgd door een gedetailleerde uitleg hoe de applicatie kan worden gebruikt.
 Aangezien er rekening gehouden werd met het effectief inzetten van de applicatie in de praktijk, zullen ook de gebruikte technologieën en technische keuzes worden toegelicht.
 Zo kan de software bij opeenvolgende bachelorproeven iteratief verder ontwikkeld worden voor nieuwe toepassingen en verbeteringen.
 
@@ -13,18 +13,19 @@ Zo kan de software bij opeenvolgende bachelorproeven iteratief verder ontwikkeld
 De workflow die bedacht werd voor de proof-of-concept applicatie, om van ruwe data naar bruikbare metrieken te gaan, kan als volgt worden samengevat:
 \begin{enumerate}
     \item Er worden één of meerdere `kalibratie-opnames' gemaakt met de eyetrackingbril, waarbij elk object dat onderdeel is van het onderzoek, vanuit verschillende hoeken wordt gefilmd.
-    \item Ook worden er opnames gemaakt die daarna geanalyseerd worden, waarbij de studenten in de simulatieomgeving met de eyetrackingbril rondlopen.
+    \item Ook worden er evaluatieopnames gemaakt van studenten die de simulatieomgeving gebruiken, waarbij de eyetracker op het hoofd van de student wordt geplaatst.
     \item De opnames worden geïmporteerd in de applicatie via de WiFi-verbinding van de eyetrackingbril.
     \item Men geeft een naam aan de simulatieomgeving (bijvoorbeeld `Zorglab Zorgkamer') binnen de applicatie en defininieert de objecten.
-    \item Daarna kan men beginnen met het labelen van de objecten in de kalibratie-opnames via de ingebouwde labeling-tool. De labeling-data dient als een basis voor het trainen of initialiseren van de analysemodellen.
-    \item De applicatie is nu in staat de eyetracking-opnames van de studenten te analyseren en de metrieken te visualiseren. Het visualisatiegedeelte werd niet verder uitgewerkt binnen deze bachelorproef omdat er geen betrouwbaar analysemodel kon worden bekomen; maar verder hierover in Hoofdstuk~\ref{ch:experiment}.
+    \item Daarna kan men beginnen met het labelen van de objecten in de kalibratie-opnames via de ingebouwde labeling-tool. De labeling-data dienen als basis voor het trainen of initialiseren van de analysemodellen.
+    \item De applicatie is nu in staat de eyetracking-opnames van de studenten te analyseren en de metrieken te visualiseren. 
+    Het visualisatiegedeelte viel buiten scope voor deze bachelorproef.
 \end{enumerate}
 De applicatie is dus opgebouwd uit verschillende componenten die samen een stapsgewijs proces vormen. Deze zullen hieronder verder worden toegelicht.
 
 \subsection{Opnames Maken}
 
-Voordat de applicatie ontwikkeld kon worden, waren er eerst een aantal video-opnames nodig. 
-In deze fase werd de Tobii eyetracking-bril van het Zorglab ontleend om vertrouwd te geraken met het maken van opnames. 
+Alvorens de applicatie ontwikkeld kon worden, waren er eerst een aantal video-opnames nodig. 
+In deze fase werd de Tobii eyetracking-bril van het Zorglab ontleend om vertrouwd te raken met het maken van opnames. 
 Deze opnames werden thuis uitgevoerd en dienden zowel als basis voor de applicatie zelf als voor initiële experimenten met de computer vision-modellen die later zouden worden ingezet in de labeling-tool en de analyses.
 Om een opname te maken hebben we twee zaken nodig: de eyetracker zelf met bijbehorende accessoires, en een laptop of computer waarop de `Tobii Pro Glasses 3 Controller'\footnote{\url{https://www.tobii.com/products/eye-trackers/wearables/tobii-pro-glasses-3/controller-app}} app is geïnstalleerd.
 
@@ -34,10 +35,12 @@ Om een opname te maken hebben we twee zaken nodig: de eyetracker zelf met bijbeh
   \caption[]{\label{fig:todo} TODO: Foto met de benodigdheden: eyetracker, hub, laptop met app zichtbaar (eyetracker niet geconnecteerd), batterijlader, kalibratiekaart
  }
 \end{figure}
+% TODO: Foto met de benodigdheden: eyetracker, hub, laptop met app zichtbaar (eyetracker niet geconnecteerd), batterijlader, kalibratiekaart
 
-De eyetracker zelf bestaat uit een hub die stroom levert aan de bril en de opnames opslaat op een SD-kaart. Daarnaast is er de bril zelf die op het hoofd van de gebruiker wordt geplaatst.
+De eyetracker zelf bestaat uit een hub die stroom levert aan de bril en de opnames opslaat op een SD-kaart. 
+Deze hub is verbonden met de bril zelf via een ingebouwde HDMI-kabel.
 De hub heeft een batterij die opgeladen kan worden met de bijgeleverde oplader. 
-Eens de bril geconnecteerd is met de hub via de ingebouwde HDMI-kabel en de hub aan staat met een groen LED-lampje, zou er een WiFi-verbinding moeten verschijnen op de laptop of computer.
+Eenmaal de hub ingeschakeld is, verschijnt er een WiFi-verbinding op de laptop of computer.
 Deze verbinding start met `TG', gevolgd door het serienummer van de bril. Het wachtwoord voor de verbinding is `TobiiGlasses'. 
 Open de Tobii Pro Glasses 3 Controller-app en observeer of het camerabeeld van de bril zichtbaar is in de app.
 
@@ -47,22 +50,23 @@ Open de Tobii Pro Glasses 3 Controller-app en observeer of het camerabeeld van d
   \caption[]{\label{fig:todo} TODO: Foto van de app met camerabeeld zichtbaar, en de knoppen om opnames te maken
  }
 \end{figure}
+% TODO: Foto van de app met camerabeeld zichtbaar, en de knoppen om opnames te maken
 
-Na het invoegen van de naam van de opname (of participant), druk op de knop `Record' om de opname te starten.
+Na het invoegen van de naam van de opname (of participant), drukt men op de knop `Record' om de opname te starten.
 Voordat de opname kan starten, zal de app vragen om de bril te kalibreren. 
 Dit kan gedaan worden met de bijgeleverde kalibratiekaart, die op armlengte afstand van de bril dient gehouden te worden.
 Aan de participant wordt gevraagd om naar de centrale stip op de kaart te kijken, en vervolgens wordt er op de knop `Calibrate' gedrukt.
-De app zal nu beginnen met het opnemen van de video, en de participant kan nu vrij rondlopen in de simulatieomgeving.
+De app begint nu met het opnemen van de video, en de participant kan nu vrij rondlopen in de simulatieomgeving.
 
 % TODO: Best-practices toevoegen?
 
 \subsection{Importeren van Eyetracking-Opnames}
 
 Zoals eerder vermeld heeft de Tobii eyetracker twee componenten: de bril zelf en een `hub' die stroom levert aan de bril en de opnames opslaat op een SD-kaart.
-Het zou dus mogelijk zijn om de opnames via de SD-kaart te importeren, maar dit is niet praktisch omdat de SD-kaart steeds uit de hub dient gehaald te worden.
+Het zou dus mogelijk zijn om de opnames via de SD-kaart te importeren, maar dit is niet praktisch aangezien de SD-kaart steeds uit de hub gehaald dient te worden.
 Daarom biedt de hub ook een WiFi-verbinding aan, zodat de opnames via een netwerkverbinding kunnen worden geïmporteerd. 
 
-Wanneer men de proof-of-concept applicatie opent op de pagina `Browse Recordings' via de navigatiekolom, worden er twee tabellen getoond (zie figuur \ref{fig:browse-recordings})
+Wanneer men de applicatie opent op de pagina `Browse Recordings' via de navigatiekolom, worden er twee tabellen getoond (zie figuur \ref{fig:browse-recordings})
 
 \begin{figure}[H]
   \centering
@@ -71,11 +75,11 @@ Wanneer men de proof-of-concept applicatie opent op de pagina `Browse Recordings
 \end{figure}
 
 
-De bovenstaande tabel `Local Recordings' toont de opnames die lokaal zijn opgeslagen op de computer, en de onderste tabel `Recordings on Tobii Glasses' toont de opnames die zijn opgeslagen op de hub.
+De eerste tabel `Local Recordings' toont de opnames die lokaal zijn opgeslagen op de computer, en de onderste tabel `Recordings on Tobii Glasses' toont de opnames die zijn opgeslagen op de hub.
 Indien een tabel geen opnames bevat, wordt er een passend bericht getoond.
 De opnames worden getoond in tabellen met de naam van elke opname, de datum en tijd waarop deze werd gemaakt, evenals de duur van de opname. 
 Het is mogelijk om opnames te verwijderen uit de `Local Recordings'-tabel door op de rode knop met het prullenbakje te klikken naast een opname. Dit heeft geen invloed op de opnames die zijn opgeslagen op de hub.
-Ook kan men zoeken naar opnames via de zoekbalk bovenaan de tabellen, en kan men ze sorteren op naam, datum of duur door op de bijbehorende kolomkop te klikken.
+Ook kan men zoeken naar opnames via de zoekbalk bovenaan de tabellen, en kan men deze sorteren op naam, datum of duur door op de bijbehorende kolomkop te klikken.
 
 Wanneer de bril niet verbonden is met de computer, wordt er een aangepaste melding getoond, met een knop om opnieuw te verbinden. Figuur \ref{fig:browse-recordings} toont een voorbeeld van de interface van de applicatie, waar de bril niet verbonden is met de computer.
 Linksonder in de interface toont de applicatie de huidige status van de verbinding met de bril, inclusief de batterijstatus. Bij figuur \ref{fig:browse-recordings-connected} is de bril wel verbonden met de computer. 
@@ -84,13 +88,13 @@ Elke rij in de onderste tabel bevat een blauwe knop met een pijl naar beneden, w
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{browse-recordings-connected.png}
-  \caption[]{\label{fig:browse-recordings-connected} Bij dit voorbeeld is de bril wel verbonden met de computer. Men ziet linksonder de batterlijstatus van de bril. In de onderste tabel is het mogelijk om opnames te importeren vanuit de bril naar de computer. }
+  \caption[]{\label{fig:browse-recordings-connected} Bij dit voorbeeld is de bril wel verbonden met de computer. Men ziet linksonder de batterijstatus van de bril. In de onderste tabel is het mogelijk om opnames te importeren vanuit de bril naar de computer. }
 \end{figure}
 
 \subsection{Simulatieruimten en Objecten}
 
 Eens de opnames zijn geïmporteerd, kunnen we overgaan tot het definiëren van de objecten in de kalibratie-opnames. Één van de design-keuzes was om met zogenaamde `simulatieruimten` te werken die verschillende omgevingen voorstellen, elk met hun eigen objecten.
-Men kan zich dus voorstellen dat men niet enkel in het Zorglab werkt, maar bijvoorbeeld ook in een echt ziekenhuis of een woonzorgcentrum. Het doel was dus om de applicatie zo gebruiksvriendelijk mogelijk te maken, om het werk van de trainers te vergemakkelijken.
+Men kan zich dus voorstellen dat men niet enkel in het Zorglab werkt, maar bijvoorbeeld ook in een echt ziekenhuis of een woonzorgcentrum. Het doel was dus om de applicatie zo gebruiksvriendelijk mogelijk te maken, om het werk van de trainers te vereenvoudigen.
 
 \begin{figure}[H]
   \centering
@@ -102,27 +106,27 @@ In figuur \ref{fig:simrooms} is een voorbeeld te zien van de pagina waar simulat
 Deze pagina heeft drie kolommen:
 \begin{itemize}
     \item De eerste kolom toont de reeds gedefinieërde simulatieomgevingen, met hun naam, een knop om deze te verwijderen, en een invoerveld om meer simulatieomgevingen toe te voegen.
-    \item Wanneer een simulatieomgeving is geselecteerd, worden de bijbehorende objecten getoond in de tweede kolom. Elk object krijgt automatisch een kleur toegewezen die ook gebruikt zal worden in de labeling-tool, en eventueel de visualisatie van de metrieken.
+    \item Wanneer een simulatieomgeving is geselecteerd, worden de bijbehorende objecten getoond in de tweede kolom. Elk object krijgt automatisch een kleur toegewezen die ook gebruikt zal worden in de labeling-tool en eventueel de visualisatie van de metrieken.
     \item In de derde kolom kan men geïmporteerde opnames selecteren om deze te gebruiken als kalibratie-opnames. Elke kalibratie-opname heeft een knop `Start Labeling'. Wanneer men hierop klikt, wordt de labeling-tool geopend met de geselecteerde opname.
 \end{itemize}
 
-Merk op dat het mogelijk is om welke opname dan ook te selecteren als kalibratie-opname, waardoor ook praktijkopnames kunnen worden gebruikt!
+Merk op dat het mogelijk is om om het even welke opname te selecteren als kalibratie-opname, waardoor ook evaluatieopnames kunnen worden gebruikt!
 Zo kunnen we reeds gemaakte opnames van studenten ook gebruiken om de analysemodellen te trainen.
-Dit stelt de applicatie eventueel in staat om de opnames te analyseren op basis van manuele annotaties door de trainers.
+Dit maakt het mogelijk om de opnames te analyseren op basis van manuele labels door de trainers.
 Deze aanpak zal meer tijd vergen, maar is veel nauwkeuriger dan een automatische analyse. Aangezien het in deze bachelorproef gaat om geautomatiseerde analyse, werd deze optie niet verder uitgewerkt.
 
 Wanneer men een kalibratie-opname verwijdert, heeft dit geen invloed op de opname zelf, maar enkel op de associatie met de simulatieomgeving.
-Indien er met de opname werd gelabeld binnen deze simulatieomgeving, worden deze annotaties wel verwijderd. 
-Hetzelfde geldt voor de objecten: indien een object wordt verwijderd, worden ook de annotaties die gemaakt werden met dit object in alle kalibratie-opnames verwijderd.
+Indien er in de opname werd gelabeld binnen deze simulatieomgeving, worden deze labels wel verwijderd. 
+Hetzelfde geldt voor de objecten: indien een object wordt verwijderd, worden ook de labels die gemaakt werden met dit object in alle kalibratie-opnames verwijderd.
 
 \subsection{Labeling Tool}
 
 We hebben het al eerder gehad over de labeling-tool, maar hoe werkt deze nu precies? Dit is één van de belangrijkste onderdelen van de applicatie, en ook het meest complexe.
 De labeler kunnen we openen door op de knop `Start Labeling' te klikken van een kalibratie-opname binnen de `Manage Sim Rooms'-pagina.
-In de achtergrond worden alle individuele frames uit de opname gehaald en in een map opgeslagen, waardoor het enige tijd kan duren voor de tool opent. De specifieke implementatieredenen hiervoor komen later aan bod.
-Het doel van de labeler is om een masker (en een `bounding box') te verkrijgen binnen elke frame van de opname waarin een object zich bevindt.
-Natuurlijk zou dit een grote tijdsinvestering vragen bij een volledig manuele tool: aangezien de framerate van de eyetracker 25 FPS (Frames per Second) is, zou dit betekenen dat we 1500 frames moeten labelen voor een opname van 1 minuut, en dit voor elk object dat we willen labelen.
-Het probleem werd opgelost met een semi-automatische labeling-tool. Daarbij hoeft men enkel in minder dan tien frames per object te klikken. De tool volgt vervolgens elk object automatisch doorheen de hele opname.
+Bij het laden van de labeler worden alle individuele frames uit de opname gehaald en in een map opgeslagen, waardoor het enige tijd kan duren voor de tool opent. De specifieke implementatieredenen hiervoor komen later aan bod.
+Het doel van de labeler is om een masker en een `bounding box' te verkrijgen binnen elke frame van de opname waarin een object zich bevindt.
+Natuurlijk zou dit een grote tijdsinvestering vragen bij een volledig manuele tool: aangezien de framerate van de eyetracker 25fps (Frames per Second) is, zou dit betekenen dat we 1500 frames moeten labelen voor een opname van 1 minuut, en dit voor elk object dat we willen labelen.
+Het probleem werd opgelost met een semi-automatische labeling-tool. Daarbij hoeft men enkel objecten een aantal keer aan te klikken. De tool volgt vervolgens elk object automatisch doorheen de hele opname.
 De functies van de labeling-tool worden hieronder verder toegelicht.
 
 \begin{figure}[H]
@@ -137,6 +141,7 @@ Binnen deze canvas kunnen we objecten labelen door eerst een object in de lijst 
 Hierbij kunnen we een linkermuisklik gebruiken om aan te geven welke delen van de afbeelding deel uitmaken van het object dat we willen labelen (zie de stethoscoop in figuur \ref{fig:labeler}). Met de rechtermuisklik geven we aan welke regio's buiten het object vallen.
 Deze zijn respectievelijk gemarkeerd met een groene en een rode stip. Als we met de muis over een stip gaan, wordt deze gemarkeerd. Vervolgens kunnen we erop klikken om de stip te verwijderen.
 Na elke muisklik worden het masker en de bijbehorende \textit{bounding box} automatisch geüpdatet om feedback te geven aan de gebruiker.
+
 Onder de tijdlijn zien we een reeks annotaties die we hebben gemaakt, van links naar rechts gesorteerd op tijd. Men kan op deze annotaties klikken om naar de bijbehorende frame te gaan, en ze ook verwijderen door met de muis erover te gaan en op de rode knop te klikken.
 Indien men alle stippen verwijdert, wordt de annotatie ook verwijderd.
 Eens we tevreden zijn met de annotaties, kunnen we op de blauwe `tracking'-knop klikken aan de linkerkant van de tijdlijn.
@@ -148,7 +153,7 @@ Dit start de automatische tracking van het huidige geselecteerde object doorheen
   \caption[]{\label{fig:labeler-tracking} In deze screenshot zien we dat er een tracking-opdracht gaande is. Hier is ook de optie `Show inactive classes' uitgevinkt, waardoor enkel het actieve object wordt getoond. }
 \end{figure}
 
-Om prestatieredenen zullen niet alle frames bekeken worden binnen deze tracking-opdracht. Een annotatie wordt als basis gebruikt voor tracking, en wanneer het object voor een bepaalde tijd uit het beeld verdwijnt, wordt de trackingopdracht stopgezet tenzij er nog annotaties overblijven.
+Uit praktische overweging worden niet alle frames bekeken binnen een tracking-opdracht. Een annotatie wordt als basis gebruikt voor tracking, en wanneer het object voor een bepaalde tijd uit het beeld verdwijnt, wordt de trackingopdracht stopgezet tenzij er nog annotaties overblijven.
 Over het algemeen hebben we slechts één annotatie nodig voor elk gedeelte van de video waarin het object voortdurend in beeld is. Soms zijn echter meerdere annotaties per gedeelte nodig om het trackingresultaat te optimaliseren.
 Het specifieke algoritme dat bedacht werd voor de tracking komt aan bod in de technische sectie van dit onderdeel.
 Tenslotte bestaat de mogelijkheid dat er veel objecten in beeld zijn waardoor maskers, bounding boxes en labels elkaar overlappen. Om deze reden kunnen we rechtsboven een optie `Show inactive classes', uitvinken om enkel het actieve object te tonen in het canvas.
@@ -156,10 +161,10 @@ Tenslotte bestaat de mogelijkheid dat er veel objecten in beeld zijn waardoor ma
 \subsection{Analyse van Eyetracking-Opnames}
 
 Hoewel het aanvankelijk de bedoeling was, werd in de context van deze bachelorproef, geen werkende analyse-tool ontwikkeld maar enkel een proof-of-concept.
-De labeling-tool was in dit opzicht de belangrijkste component, omdat deze de annotaties genereert die nodig zijn voor de analyse.
-Aangezien de resultaten van de analyses niet betrouwbaar waren, werd hier ook geen pagina voor ontwikkeld.
+De labeling-tool was in dit opzicht de belangrijkste component, omdat deze de labels genereert die nodig zijn voor de analyse.
+Aangezien de het hier enkel een proof-of-concept betrof, werd hier ook geen pagina voor ontwikkeld.
 Indien men in de toekomst een betrouwbaar analysemodel kan ontwikkelen, bestaat de mogelijkheid om een nieuwe pagina te maken die de resultaten van de analyses toont.
-Naast de pagina dient dan ook een bijbehorende optie in de navigatiekolom aangemaakt te worden.
+Naast de pagina zelf dient dan ook een bijbehorende optie in de navigatiekolom aangemaakt te worden.
 De analyses die uitgevoerd werden in deze bachelorproef komen aan bod in Hoofdstuk~\ref{ch:experiment}.
 
 \section{Technische Specificaties}
@@ -171,18 +176,20 @@ met als doel de keuzes te verduidelijken en eventuele nieuwe developers wegwijs 
 \subsection{Softwarearchitectuur}
 
 Voor de ontwikkeling van de applicatie werd een lichtgewicht, modulaire softwarestack gekozen, afgestemd op de specifieke noden van het project.
-Er is geopteerd voor een web-applicatie die lokaal kan draaien op een laptop (met een degelijke GPU) of een desktop computer, en die via een browser toegankelijk is.
+Er is geopteerd voor een web-applicatie die via een browser toegankelijk is en lokaal kan draaien op een laptop (met een degelijke grafische kaart) of een desktop computer.
 
 \begin{itemize}
-    \item \textbf{Backend Framework:} Python met \texttt{FastAPI} werd gekozen omwille van zijn hoge prestaties, asynchrone mogelijkheden (belangrijk voor I/O-intensieve taken zoals data-import en analyse), automatische documentatie en type hinting-integratie.
+    \item \textbf{Backend Framework:} Python met \texttt{FastAPI} werd gekozen omwille van zijn gebruiksvriendelijkheid, asynchrone mogelijkheden (belangrijk voor I/O-intensieve taken zoals data-import en analyse), automatische documentatie en type hinting-integratie.
     \item \textbf{Frontend Aanpak:} In plaats van een zwaar JavaScript-framework, werd geopteerd voor \texttt{HTMX}. Dit laat toe om dynamische interacties te bouwen door HTML direct uit te wisselen met de server, wat de complexiteit van de frontend aanzienlijk reduceert. \texttt{Jinja2} dient als templating engine om deze HTML server-side te genereren. Tenslotte werd \texttt{Bootstrap} gebruikt voor de opmaak van de applicatie.
-    \item \textbf{Database:} Een \texttt{SQLite} database werd gebruikt vanwege de eenvoud en het feit dat de applicatie bedoeld is voor lokaal gebruik, waardoor een complexe database server overbodig is. \texttt{SQLAlchemy} werd ingezet als ORM (Object-Relational Mapping) voor een gestructureerde interactie met de database vanuit Python.
+    \item \textbf{Database:} Een \texttt{SQLite} database werd geselecteerd vanwege de eenvoud en het feit dat de applicatie bedoeld is voor lokaal gebruik, waardoor een complexe database server overbodig is. \texttt{SQLAlchemy} werd ingezet als ORM (Object-Relational Mapping) voor een gestructureerde interactie met de database vanuit Python.
     \item \textbf{Hardware Communicatie:} Voor de interactie met de Tobii Pro Glasses 3 werd de officiële \texttt{g3pylib} SDK gebruikt, die toegang biedt tot opnames en statusinformatie via de WiFi-verbinding.
     \item \textbf{Development \& Kwaliteitsborging:} \texttt{Poetry} werd gebruikt voor dependency management. Strikte type hinting met \texttt{Mypy} en code linting/formatting met \texttt{Ruff} dragen bij aan de robuustheid en onderhoudbaarheid van de code. \texttt{Docker} werd ingezet om de applicatie te containeriseren, wat zorgt voor een consistente uitvoeringsomgeving en eenvoudige deployment.
 \end{itemize}
 
+% TODO: voetnoten toevoegen naar SDK en stuff
+
 Deze keuzes resulteerden in een applicatie die relatief eenvoudig te onderhouden en verder te ontwikkelen is, conform de doelstelling om iteratieve verbeteringen in volgende bachelorproeven mogelijk te maken.
-Er werd gewerkt met een gelaagde architectuur om een duidelijke scheiding van verantwoordelijkheden (Separation of Concerns) te waarborgen en de onderhoudbaarheid en testbaarheid te verhogen. 
+Er werd gewerkt met een gelaagde architectuur om een duidelijke scheiding van verantwoordelijkheden (Separation of Concerns) te waarborgen en onderhoud en testing te vereenvoudigen. 
 De data en requests vloeien doorgaans van de \texttt{frontend} via de \texttt{routes} naar de \texttt{services}, die vervolgens de \texttt{repositories} aanroepen voor databasetoegang (zie figuur \ref{fig:software-architectuur}).
 
 \begin{figure}[H]
@@ -198,7 +205,7 @@ De gebruikersinterface (UI) wordt weergegeven in de browser en is opgebouwd uit 
 Deze engine maakt het mogelijk om inhoud (data vanuit de Backend) te integreren in de HTML-pagina's door gebruik te maken van variabelen en controle-structuren.
 Voor de dynamische aspecten van de applicatie, waaronder het bijwerken van de UI zonder de volledige pagina te herladen, wordt \texttt{HTMX} ingezet.
 
-\texttt{HTMX} maakt het mogelijk om via HTML-attributen aanroepen te doen naar de backend (vb: als een knop wordt ingedrukt).
+\texttt{HTMX} maakt het mogelijk om via HTML-attributen oproepen te doen naar de backend (vb: als een knop wordt ingedrukt).
 De backend genereert vervolgens het gevraagde HTML-fragment---zoals een tabel met opnames of een lijst van objecten---die HTMX vervolgens injecteert in de huidige pagina.
 Op deze manier kunnen eenvoudige interacties worden gerealiseerd zonder de noodzaak van een volledig JavaScript-framework zoals React of Vue.js.
 
@@ -206,16 +213,16 @@ Binnen de `Browse Recordings'-en `Manage Sim Rooms'-pagina's is HTMX grotendeels
 De labeling-tool vergt immers complexe interacties die niet eenvoudig gerealiseerd kunnen worden met enkel HTML en HTMX.
 Zo werd de labeling-tool opgesplitst in vijf componenten die elk hun eigen verantwoordelijkheden hebben:
 \begin{itemize}
-    \item De \texttt{labeling-canvas} die de huidige frame toont en het mogelijk maakt om objecten te labelen.
-    \item De \texttt{tijdlijn} die de voortgang van de opname toont en het mogelijk maakt om naar een specifieke frame te navigeren.
-    \item De \texttt{objectenlijst} die de beschikbare objecten toont en het mogelijk maakt om objecten te beheren en te selecteren.
-    \item De \texttt{annotatielijst} die de gemaakte annotaties van het momenteel geselecteerde object toont.
-    \item De \texttt{labeling settings} die instellingen van de labeling-tool toont (`Show inactive classes').
+    \item De \textbf{labeling-canvas} die de huidige frame toont en het mogelijk maakt om objecten te labelen.
+    \item De \textbf{tijdlijn} die de voortgang van de opname toont en het mogelijk maakt om naar een specifieke frame te navigeren.
+    \item De \textbf{objectenlijst} die de beschikbare objecten toont en het mogelijk maakt om objecten te beheren en te selecteren.
+    \item De \textbf{annotatielijst} die de gemaakte annotaties van het momenteel geselecteerde object toont.
+    \item De \textbf{labeling settings} die instellingen van de labeling-tool toont (`Show inactive classes').
 \end{itemize}
 Elk van deze componenten communiceert apart via HTMX-attributen met de backend, en kunnen onafhankelijk van elkaar worden geladen.
 Wanneer toch communicatie nodig is tussen de componenten, gebeurt dit via \texttt{Events} die door de componenten worden uitgezonden en opgevangen.
 Een voorbeeld hiervan is wanneer de gebruiker klikt op de tijdlijn om naar een specifieke frame te navigeren.
-De tijdlijn stuurt een event naar de labeling-canvas, die vervolgens een aanroep doet naar de backend om de juiste frame op te halen.
+De tijdlijn stuurt een event naar de labeling-canvas, die vervolgens een oproep doet naar de backend om de juiste frame op te halen.
 
 Aangezien het gaat om een single-user applicatie, is het toch mogelijk om een groot deel van de logica over te dragen aan de backend.
 De frontend is dus voornamelijk verantwoordelijk voor de presentatie van de data en de interactie met de gebruiker.
@@ -238,7 +245,7 @@ Voor HTMX-requests is dit typisch een HTML-fragment gerenderd met Jinja2; voor a
 De \texttt{services}-laag bevat de kernlogica van de applicatie.
 Services coördineren operaties en implementeren de business rules. 
 Ze zijn ontkoppeld van de HTTP-laag en de directe database-implementatie. 
-In plaats daarvan gebruiken ze methoden uit de \texttt{repositories}-laag voor datatoegang en -persistentie, 
+In plaats daarvan gebruiken ze methoden uit de \texttt{repositories}-laag voor datatoegang- en persistentie, 
 en kunnen ze andere utilities of externe bibliotheken aanroepen (bv. \texttt{g3pylib} voor communicatie met de Tobii-bril, of \texttt{SAM2ImagePredictor} voor segmentatie).
 
 \paragraph{Repositories (Data Access)}
@@ -254,7 +261,7 @@ In deze sectie gaan we dieper in op wat er in de achtergrond gebeurt wanneer de 
 
 \subsubsection{Decoderen van Video-opnames}
 
-Voordat de gebruiker kan beginnen met labelen, moeten eerst de frames van de opname worden geëxtraheerd.
+Alvorens de gebruiker kan beginnen met labelen, moeten eerst de frames van de opname worden geëxtraheerd.
 Op deze manier moeten niet alle frames in het geheugen geladen worden, wat onmogelijk zou zijn voor lange opnames.
 Ook neemt het enige tijd om een enkele frame te extraheren uit een video-opname, wat de gebruikerservaring zou beïnvloeden.
 Voor het decoderen van een opname wordt gebruik gemaakt van \texttt{ffmpeg}, een populaire open-source tool die verschillende 
@@ -262,13 +269,13 @@ functies biedt voor het verwerken van video- en audiobestanden.
 Zo worden alle afzonderlijke frames opgeslagen in een map, met als naam het indexnummer van het frame.
 
 Doorheen zowel de applicatie als de analyses is het heel belangrijk om dezelfde video-decoder te gebruiken.
-Verschillende decoders (zoals \texttt{ffmpeg} of \texttt{OpenCV}) kunnen verschillen hebben in frame- en tijdsindexering.
+Verschillende decoders (zoals \texttt{ffmpeg} of \texttt{OpenCV}) kunnen andere frame- en tijdsindexering gebruiken.
 Als men bijvoorbeeld een frame-index van 100 opgeeft, kan dit in de ene decoder overeenkomen met de 100ste frame, terwijl het in een andere decoder de 101ste frame is.
 Dit kan leiden tot inconsistenties in de resultaten van de analyses, en dus werd er gekozen om steeds \texttt{ffmpeg} te gebruiken.
 
 \subsubsection{Annotaties en Tracking}
 
-Om te verstaan waarom we manuele annotaties nodig hebben, en hoe de geautomatiseerde tracking werkt, moeten we eerst begrijpen hoe het achterliggende machine-learning model werkt.
+Voor een beter begrip van het waarom van manuele annotaties, en hoe de geautomatiseerde tracking werkt, moeten we eerst begrijpen hoe het achterliggende machine-learning model werkt.
 Er werd gekozen om het Segment Anything Model 2 (SAM2) van Meta te gebruiken, dat in staat is om objecten te segmenteren (een masker genereren) in zowel een afbeelding als een video.
 
 Via het `promptable-segmentation'-mechanisme van SAM2 kunnen we een object segmenteren door een aantal punten te geven die het object beschrijven.
@@ -300,10 +307,10 @@ De \texttt{TrackingJob} klasse initieert vanuit deze `ankerpunten' het trackingp
           start_frame_idx = annotations_frame_idx[last_tracked_annotation + 1]
           self.progress = start_frame_idx / self.frame_count
 
-          # Track backwards until tracking loss:
+          # Voorwaarts tracken tot tracking verlies:
           list(self.track_until_loss(start_frame_idx, reverse=True))
 
-          # Track forwards until tracking loss:
+          # Achterwaarts tracken tot tracking verlies:
           for frame_idx in self.track_until_loss(start_frame_idx):
               self.progress = frame_idx / self.frame_count
               if frame_idx in annotations_frame_idx:
@@ -320,8 +327,8 @@ De strategie is als volgt:
 \item De \texttt{TrackingJob} ontvangt een lijst van manuele annotaties, die eerst gesorteerd worden op frame-index.
 \item Vervolgens wordt er over deze annotaties geïtereerd. Voor elke nog niet verwerkte annotatie (\texttt{start\_frame\_idx}) 
 wordt de functie \texttt{track\_until\_loss} aangeroepen, eerst in achterwaartse richting (\texttt{reverse=True}) en daarna in voorwaartse richting.
-\item Dit zorgt ervoor dat de tracking zich vanuit elk betrouwbaar, manueel gelabeld punt uitspreidt, 
-maar enkel over segmenten waar het object vermoedelijk aanwezig is. Dit reduceert het totaal aantal te verwerken frames aanzienlijk.
+\item Dit zorgt ervoor dat de tracking zich vanuit elk betrouwbaar, manueel gelabeld punt propageert over videosegmenten waar het object vermoedelijk aanwezig is. 
+Dit reduceert het totaal aantal te verwerken frames aanzienlijk.
 \end{enumerate}
 
 De kern van het daadwerkelijke volgen binnen deze segmenten zit in de \texttt{track\_until\_loss} methode. 
@@ -363,17 +370,17 @@ Deze methode maakt gebruik van de \texttt{propagate\_in\_video} functionaliteit 
 
   \end{minted}
   \caption[Gelokaliseerde tracking met tolerantieperiode]{
-    De \texttt{track\_until\_loss} methode propageert het masker frame per frame binnen een beperkt segment. 
+    De \texttt{track\_until\_loss} methode propageert het masker frame-per-frame binnen een beperkt segment. 
     De \texttt{GRACE\_PERIOD} helpt om de tracking robuust te houden tegen kortstondige detectieproblemen binnen dit segment.
   }
 \end{listing}
 
 \paragraph{Waarom geen FastSAM?}
 
-Men zou zich kunnen afvragen waarom het FastSAM-model niet werd gebruikt, dat ook in staat is om objecten te segmenteren in video-opnames en bovendien veel sneller is.
+Men zou zich kunnen afvragen waarom het FastSAM-model niet werd gebruik, aangezien het ook in staat is om objecten te segmenteren in video-opnames en bovendien veel sneller is.
 Het probleem is dat de gegenereerde maskers van FastSAM minder nauwkeurig zijn dan die van SAM2 \autocite{Zhao2023}. 
 Aangezien het om labeling gaat, is het belangrijk dat de maskers zo nauwkeurig mogelijk zijn.
-Het is mogelijk dat dit verschil in context van de noden van deze bachelorproef niet zo belangrijk is, maar het is moeilijk om dit te zeggen zonder de verschillen in detail te analyseren.
+Het is mogelijk dat dit verschil in de context van deze bachelorproef niet zo belangrijk is, maar het zou onnauwkeurig zijn om dit te stellen zonder de verschillen in detail te analyseren.
 Hoewel het testen van FastSAM binnen de labeling-tool niet verder werd uitgewerkt, werd dit model wel gebruikt voor de analyses in Hoofdstuk~\ref{ch:experiment}.
 Zo zijn er voorbeelden van het gebruik van beide modellen binnen de codebase terug te vinden, en kan de labeling-tool overschakelen naar FastSAM indien gewenst.
 
@@ -406,7 +413,7 @@ Een GPU daarentegen is ontworpen met duizenden kleinere cores (de RTX 4090 heeft
 om een grote hoeveelheid relatief eenvoudigere taken parallel uit te voeren. 
 Dit parallellisme is ideaal voor de matrixoperaties die de ruggengraat vormen van neurale netwerken zoals SAM2.
 
-Niet enkel het aantal cores is bepalend, maar ook de hoeveelheid en snelheid van het toegewijde geheugen op de GPU (VRAM).
+Niet enkel het aantal cores is bepalend, maar ook de hoeveelheid en snelheid van het geheugen op de GPU (VRAM).
 Zowel het model zelf (de parameters of 'gewichten') als de te verwerken data (in dit geval de videoframes) moeten tegelijkertijd 
 in het VRAM geladen kunnen worden voor efficiënte verwerking.
 Pogingen om dergelijke modellen uitsluitend op een CPU uit te voeren, resulteren in onpraktisch lange verwerkingstijden, 
@@ -414,7 +421,7 @@ waardoor de interactiviteit van de labeling tool verloren zou gaan.
 
 \paragraph{Analyse van de prestaties}
 
-Het SAM2-model komt in vier verschillende varianten, elk met een andere hoeveelheid parameters en dus ook andere geheugeneisen.
+Het SAM2-model komt in vier verschillende varianten, elk met een andere hoeveelheid parameters en dus ook andere geheugenvereisten.
 Via de \texttt{torch.profiler} module werd het geheugengebruik van elk model gemeten tijdens het laden van de parameters.
 De resultaten hiervan zijn als volgt:
 
@@ -425,11 +432,11 @@ De resultaten hiervan zijn als volgt:
     \item \texttt{sam2.1\_hiera\_tiny.pt}: 288 MB
 \end{itemize}
 
-Aangezien geheugenvereisten matig zijn, werd besloten om het grootste model te gebruiken, dat ook de beste resultaten oplevert.
+Aangezien geheugenvereisten relatief laag zijn, werd besloten om het grootste model te gebruiken, dat ook de beste resultaten oplevert.
 
-Naast de modelparameters is het ook belangrijk om te meten hoeveel geheugen gebruikt wordt bij de tracking-opdracht.
-Zo werd er doorheen een tracking-opdracht gemeten hoeveel videogeheugen er werd gebruikt door het SAM2 model.
-Het ging om een totaal van 360 getrackede frames aan een snelheid van 10.5 FPS, met een piek geheugenverbruik van 1599 MB (zie figuur \ref{fig:sam-mem-usage}).
+Naast de modelparameters is het ook belangrijk het geheugengebruik te meten bij de tracking-opdracht.
+Zo werd doorheen een tracking-opdracht gemeten hoeveel videogeheugen er werd gebruikt door het SAM2 model.
+Het ging om een totaal van 360 getrackede frames aan een snelheid van 10.5fps, met een piek geheugenverbruik van 1599 MB (zie figuur \ref{fig:sam-mem-usage}).
 
 \begin{figure}[H]
   \centering
@@ -442,12 +449,12 @@ Deze analyses zijn terug te vinden in de file \texttt{experiment/12\_performance
 
 \subsubsection{Optimalisatie van Geheugenbeheer in de SAM2-bibliotheek}
 
-Naast de inherente VRAM-vereisten van het SAM2-model, werd tijdens de ontwikkeling van de tracking-functionaliteit een probleem met 
+Tijdens de ontwikkeling van de tracking-functionaliteit werd een probleem met 
 toenemend GPU-geheugenverbruik in de originele SAM2-bibliotheek van Meta geïdentificeerd \autocite{Hu2024facebookresearch}. 
 Bij langdurige tracking-opdrachten, bleek dat de bibliotheek intermediaire 
 resultaten of toestanden van reeds verwerkte frames in het GPU-geheugen vasthield. 
 Dit leidde tot een lineaire toename van het VRAM-gebruik naarmate de tracking vorderde. 
-Uiteindelijk kon dit de beschikbare GPU-geheugenlimiet overschrijden, resulterend in een crash van de applicatie. 
+Uiteindelijk kon dit de beschikbare GPU-geheugenlimiet overschrijden, en zo doende resulteren in een crash van de applicatie. 
 
 Om dit probleem aan te pakken en het GPU-geheugenverbruik te stabiliseren, werd er een fork gemaakt van de originele 
 SAM2-bibliotheek waarin een aanpassing is doorgevoerd \autocite{Hu2025ilianbronchart}.
@@ -488,8 +495,8 @@ De volgende code-snippet bevat de logica die werd toegevoegd binnen de propagati
 
 De oplossing werkt als volgt:
 \begin{enumerate}
-  \item De code richt zich op specifieke dictionaries binnen de \texttt{inference\_state} waar frame-gerelateerde data wordt opgeslagen.
-  \item Er wordt een buffer rond de huidige \texttt{frame\_idx} gedefinieerd. Data van frames die buiten dit venster vallen, worden beschouwd als "oud" en komen in aanmerking voor verwijdering.
+  \item De code richt zich op specifieke dictionaries binnen de \texttt{inference\_state} waar frame-gerelateerde data worden opgeslagen.
+  \item Er wordt een buffer rond de huidige \texttt{frame\_idx} gedefinieerd. Data van frames die buiten dit venster vallen, worden beschouwd als `oud' en komen in aanmerking voor verwijdering.
   \item De geïdentificeerde \texttt{old\_frame\_idxs} worden vervolgens uit de relevante cache-dictionaries verwijderd. Dit gebeurt zowel voor de algemene frame outputs als voor de object-specifieke outputs.
 \end{enumerate}
 Merk op dat de buffer van 16 frames hier hardgecodeerd is. 
@@ -505,8 +512,8 @@ Hier worden de kernstappen van deze functionaliteit besproken.
 
 \subsubsection{Parseren van Blikdatabestanden}
 
-De blikdata van de eyetracker wordt opgeslagen in een \texttt{.tsv}-bestand.
-Hoewel men er van uit zou gaan dat het hier om tab-separated values gaat (tsv), blijkt dit niet het geval te zijn.
+De blikdata van de eyetracker worden opgeslagen in een \texttt{.tsv}-bestand.
+Hoewel men er kan van uitgaan dat het hier om tab-separated values gaat (tsv), blijkt dit niet het geval te zijn.
 In de werkelijkheid bestaan deze bestanden uit een reeks van \texttt{json}-objecten, waarbij elke regel metadata bevat over een bepaald blikpunt.
 De \texttt{parse\_gazedata\_file} functie is verantwoordelijk voor het inlezen van de bestanden, 
 en levert een lijst aan \texttt{GazeData} objecten op.
@@ -562,7 +569,7 @@ Het volgende is een voorbeeld van een regel uit een blikdatabestand:
   }
 \end{listing}
 
-Zoals men kan zien bevat elke regel van het bestand de volgende metadata, waarvan de uitleg afkomstig is van de Tobii Glasses 3 Developer Guide \autocite{Tobii2023}:
+Zoals men kan zien bevat elke regel van het bestand de volgende metadata, waarvan de uitleg afkomstig is uit de Tobii Glasses 3 Developer Guide \autocite{Tobii2023}:
 \begin{itemize}
     \item \texttt{type}: het type van de data (in dit geval `gaze').
     \item \texttt{timestamp}: de tijdstempel van de data in seconden.
@@ -572,15 +579,15 @@ Zoals men kan zien bevat elke regel van het bestand de volgende metadata, waarva
       waarbij (0, 0) de linkerbovenhoek van de video-opname is en (1, 1) de rechteronderhoek.
       \item \texttt{gaze3d}: Dit is een 3D-coördinaat in millimeters, dat de positie van de blik in de ruimte weergeeft tegenover de positie van de camera.
       \item \texttt{eyeleft} en \texttt{eyeright}: metadata over het linker en rechter oog, waaronder de oorsprong van de blik, de richting van de blik, en de pupilgrootte.
-      Het is mogelijk dat één van deze velden leeg is wanneer er geen data beschikbaar is voor dat oog. Indien beide velden leeg zijn, betekent dit dat er geen blikdata beschikbaar is (het `data' veld is dan ook volledig leeg).
+      Het is mogelijk dat één van deze velden leeg is wanneer er geen data beschikbaar is voor dat oog. Indien beide velden leeg zijn, betekent dit dat er geen blikdata beschikbaar zijn (het `data' veld is dan ook volledig leeg).
     \end{itemize}
 \end{itemize}
 
 \subsubsection{Converteren naar Bruikbare Blikpunten}
 
-Nadat de ruwe blikdata is geparsed, wordt deze verder verwerkt door de \texttt{get\_gaze\_points} functie.
-Het resultaat van deze functie is een lijst van \texttt{GazePoint}-objecten, die elk een x-coördinaat, y-coördinaat, 
-de geschatte diepte, en de oorspronkelijke timestamp bevatten.
+Nadat de ruwe blikdata zijn geparsed, worden deze verder verwerkt door de \texttt{get\_gaze\_points} functie.
+Het resultaat van deze functie is een lijst van \texttt{GazePoint}-objecten, die elk een x- en y-coördinaat, 
+de geschatte diepte, en de oorspronkelijke tijdstempel bevatten.
 Hoewel de diepte binnen de analyses in Hoofdstuk~\ref{ch:analyse} niet verder wordt gebruikt, kan deze in de 
 toekomst nuttig zijn voor andere analyses.
 
@@ -625,24 +632,24 @@ toekomst nuttig zijn voor andere analyses.
   \end{minted}
   \caption[\texttt{get\_gaze\_points} functie]{
     De \texttt{get\_gaze\_points} functie verwerkt de ruwe blikdata en zet deze om naar bruikbare blikpunten.
-    Het resultaat is een lijst van \texttt{GazePoint} objecten met de x- en y-coördinaten, de geschatte diepte, en de oorspronkelijke timestamp.
+    Het resultaat is een lijst van \texttt{GazePoint} objecten met de x- en y-coördinaten, de geschatte diepte, en de oorspronkelijke tijdstempel.
   }
 \end{listing}
 
 De functie heeft twee hoofddoelen:
 \begin{enumerate}
   \item \textbf{Filteren van Ongeldige Data:} Blikregistraties waarbij geen \texttt{gaze2d}-coördinaten beschikbaar zijn, 
-  worden genegeerd, omdat deze niet bruikbaar zijn voor 2D-analyse op het videobeeld.
+  worden genegeerd, omdat deze niet bruikbaar zijn voor 2D-analyse in het videobeeld.
   \item \textbf{Denormalisatie en Diepteberekening:}
     \begin{itemize}
       \item Een schatting van de diepte van het blikpunt (\texttt{gaze\_depth}) wordt berekend. 
-        Indien data voor beide ogen beschikbaar is, wordt de 3D-oorsprong van de blik benaderd als 
+        Indien data voor beide ogen beschikbaar zijn, wordt de 3D-oorsprong van de blik benaderd als 
         het gemiddelde van de \texttt{gazeorigin} van het linker- en rechteroog. 
         De diepte is dan de Euclidische afstand tussen dit gemiddelde oorsprongspunt en het geregistreerde \texttt{gaze3d}-punt.
       \item De genormaliseerde \texttt{gaze2d}-coördinaten (x, y) worden omgezet naar absolute pixelcoördinaten 
         ten opzichte van de resolutie van de video-opname. 
         Hierbij wordt gebruik gemaakt van de \texttt{clamp}-functie om te verzekeren dat de coördinaten 
-        binnen de grenzen [0,1] blijven alvorens te vermenigvuldigen met de respectievelijke breedte en hoogte.
+        binnen de grenzen van de videoframe blijven alvorens te vermenigvuldigen met de respectievelijke breedte en hoogte.
     \end{itemize}
 \end{enumerate}
 
@@ -695,16 +702,16 @@ De functie \texttt{match\_frames\_to\_gaze} implementeert de logica voor deze sy
   \end{minted}
   \caption[\texttt{match\_frames\_to\_gaze} functie]{
     De \texttt{match\_frames\_to\_gaze} functie synchroniseert de blikpunten met de videoframes.
-    Het resultaat is een lijst van lijsten, waarbij elke sublijst de blikpunten bevat die overeenkomen met de respectieve frame-index.
+    Het resultaat is een lijst van lijsten, waarbij elke sublijst de blikpunten bevat die overeenkomen met de respectievelijke frame-index.
   }
 \end{listing}
 
-Gegeven het totaal aantal frames in de video, de lijst van \texttt{GazePoint}-objecten (gesorteerd op timestamp), 
+Gegeven het totaal aantal frames in de video, de lijst van \texttt{GazePoint}-objecten (gesorteerd op tijdstempel), 
 en de framerate (fps) van de video, doorloopt deze functie elke frame-index:
 \begin{enumerate}
-  \item Voor elke frame wordt de eindtijd van dat frame berekend.
-  \item Vervolgens worden alle \texttt{GazePoint}-objecten verzameld waarvan de timestamp valt vóór de eindtijd van de huidige frame, 
-  maar na de eindtijd van de vorige frame (impliciet, doordat de \texttt{gaze\_index} behouden blijft).
+  \item Voor elke frame wordt de eindtijd berekend.
+  \item Vervolgens worden alle \texttt{GazePoint}-objecten verzameld waarvan de tijdstempel valt vóór het einde van de huidige, 
+  maar na het einde van de vorige frame (impliciet, doordat de \texttt{gaze\_index} behouden blijft).
   \item Dit resulteert in een mapping waarbij elke frame-index wordt geassocieerd met een lijst van één of meerdere 
   \texttt{GazePoint}-objecten die tijdens de duur van dat frame zijn geregistreerd. 
   Typisch zullen dit, afhankelijk van de sampling rates, nul, één of twee blikpunten per frame zijn. 
@@ -718,7 +725,7 @@ applicatie het vroegste blikpunt dat overeenkomt met de frame-index zal gebruike
 \subsection{Database}
 
 We hebben het al eerder gehad over opnames, simulatieomgevingen, objecten en annotaties, maar hoe worden deze nu opgeslagen in de database?
-Om een beter zicht te krijgen op de database, werd er een Entity-Relationship Diagram (ERD) gemaakt dat de verschillende entiteiten en hun onderlinge relaties toont (zie figuur \ref{fig:erd}).
+Om hier een beter zicht op te krijgen, werd er een Entity-Relationship Diagram (ERD) gemaakt dat de verschillende entiteiten en hun onderlinge relaties toont (zie figuur \ref{fig:erd}).
 
 \begin{figure}[H]
   \centering
@@ -734,18 +741,18 @@ Om een beter zicht te krijgen op de database, werd er een Entity-Relationship Di
   \item \textbf{recordings} zijn de video-opnames die gemaakt worden met de eyetracker. 
   Elke opname heeft een naam, een datum, en een duur. 
   Een opname kan ook dienen als kalibratie-opname voor meerdere simulatieruimten. 
-  Opnames hebben ook een pad naar hun video-bestand en hun blik-data bestand. 
+  Opnames hebben ook een pad naar hun video- en blikdata bestand. 
   Deze paden worden niet opgeslagen in de database, maar worden gegenereerd op basis van het \texttt{id} van de opname. 
   \item \textbf{calibration\_recordings} zijn louter een referentie naar de opname die als kalibratie-opname wordt gebruikt 
   voor de simulatieomgeving. Ze kunnen meerdere annotaties bevatten.
   \item \textbf{annotations} worden gemaakt in de labeling-tool en hebben een \texttt{class}, een \texttt{frame index}, 
-  een base64-gecodeerde afbeelding van het masker en van de regio in de originele frame, en een bounding box. Zowel het base64-gecodeerde 
+  een base64-gecodeerde afbeelding van het masker evenals van de regio in de originele frame. Het bevat eveneens een bounding box. Zowel het base64-gecodeerde 
   masker en de bounding-box worden getoond in de labeler bovenop de originele frame. De bounding-box is de rechthoek die de regio van de 
   annotatie omsluit, met het json formaat: \texttt{[x1, y1, x2, y2]}. Hier zijn \texttt{x1} en \texttt{y1} de coördinaten van de 
   linkerbovenhoek van de rechthoek, en \texttt{x2} en \texttt{y2} de coördinaten van de rechteronderhoek. 
   Tenslotte wordt ook een `crop' van de originele frame opgeslagen, dat enkel de regio van de annotatie bevat. 
   Dit is een afbeelding van dezelfde grootte als het masker, en wordt gebruikt om de annotatie te tonen in de annotatielijst onderaan de labeler.
-  \item \textbf{point\_labels} zijn de individuele punten die aan een annotatie worden gegeven. Elk point-label heeft een x- en y-coördinaat, en een label dat aangeeft of het punt binnen (1) of buiten (0) de annotatie ligt.
+  \item \textbf{point\_labels} zijn de individuele punten die aan een annotatie worden toegekend. Elk point-label heeft een x- en y-coördinaat, en een label dat aangeeft of het punt binnen (1) of buiten (0) de annotatie ligt.
 \end{itemize}
 
 Merk op dat de geautomatiseerde tracking-resultaten niet in de database worden opgeslagen, maar enkel de manuele annotaties.
@@ -770,5 +777,13 @@ TODO
 
 \section{Gekende Problemen en Beperkingen}
 
-TODO
+Hoewel de kernfunctionaliteit van de applicatie robuust is, zullen we het in deze sectie hebben 
+over enkele gekende problemen en beperkingen die de gebruikerservaring kunnen beïnvloeden.
+
 % TODO: afwerken
+
+\paragraph{Importeren van Opnames}
+
+\paragraph{Labeling Tool}
+
+\subsection{}

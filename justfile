@@ -11,8 +11,7 @@ build:
       --build-arg TENSORRT_VERSION={{TENSORRT_VERSION}} \
       --build-arg CUDA_USER_VERSION={{CUDA_USER_VERSION}} \
       --tag eyetracking-app . \
-      --progress=plain \
-      --no-cache
+      --progress=plain
 
 install:
     rm -rf libs

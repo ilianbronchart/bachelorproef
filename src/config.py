@@ -34,8 +34,6 @@ GAZE_FOV = 1 + 0.6  # 1 degree fovea + 0.6 degree eyetracker accuracy
 TOBII_GLASSES_RESOLUTION = (1080, 1920)
 VIEWED_RADIUS = int(GAZE_FOV / TOBII_FOV_X * TOBII_GLASSES_RESOLUTION[1] / 2)
 TOBII_GLASSES_FPS = 24.95
-UNKNOWN_CLASS_ID = -1
-
 
 @dataclass(frozen=True)
 class Sam2Checkpoints:

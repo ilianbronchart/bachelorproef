@@ -5,7 +5,12 @@ import numpy as np
 import torch
 
 from src.api.models.gaze import GazeData, GazePoint
-from src.config import VIEWED_RADIUS, TOBII_GLASSES_FPS, TOBII_GLASSES_RESOLUTION, RECORDINGS_PATH
+from src.config import (
+    RECORDINGS_PATH,
+    TOBII_GLASSES_FPS,
+    TOBII_GLASSES_RESOLUTION,
+    VIEWED_RADIUS,
+)
 from src.utils import clamp
 
 
@@ -168,8 +173,12 @@ def get_gaze_point_per_frame(
 
     return gaze_point_per_frame
 
+
 def get_gaze_position_per_frame(
-    recording_id: str, frame_count: int, resolution: tuple[int, int] = TOBII_GLASSES_RESOLUTION, fps: float = TOBII_GLASSES_FPS
+    recording_id: str,
+    frame_count: int,
+    resolution: tuple[int, int] = TOBII_GLASSES_RESOLUTION,
+    fps: float = TOBII_GLASSES_FPS,
 ) -> dict[int, tuple[int, int]]:
     gaze_data_path = RECORDINGS_PATH / f"{recording_id}.tsv"
     gaze_point_per_frame = get_gaze_point_per_frame(
