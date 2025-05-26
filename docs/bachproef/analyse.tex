@@ -347,7 +347,7 @@ Bij de voorgaande classificatiestrategieën lag de focus op het classificeren va
 % - Objectdetectie is iets meer complex omdat we niet enkel de ROIs rechtstreeks gaan classificeren, maar ook de objectdetectieresultaten moeten linken aan de originele FastSAM bounding boxes. 
 % - Hoewel het technisch gezien om objectdetectie gaat, wordt dit nog steeds gezien als classificatie aangezien we uiteindelijk een label toekennen aan de originele segmenten.
 
-\subsubsection{Creatie van de Objectdetectie Trainingsdataset}
+\subsubsection{Creatie van de Trainingsdataset voor Objectdetectie}
 
 Gebaseerd op de gelabelde kalibratieopname die eerder werd besproken, werd een trainingsdataset voor objectdetectie gecreëerd.
 Deze dataset moest bestaan uit beelduitsnedes (hierna `crops' genoemd) waarin de kritische objecten gelabeld zijn met bounding boxes.
@@ -358,7 +358,22 @@ De creatie van deze dataset werd geïmplementeerd in de python notebook \texttt{
 
 De basis voor de trainingsdataset werd gevormd door de kalibratieopname waarbij de objecten 
 tegen dezelfde achtergrond als de evaluatieopnames gefilmd werden.
+Zoals eerder vermeld, werd het object `ampule poeder' niet opgenomen in de labeling, resulterende in een dataset met 14 objecten.
+De notebook laadt in een eerste stap de bestandspaden van de trackingresultaten per klasse 
+via de functie \texttt{get\_tracking\_results\_per\_class} (zie Codefragment~\ref{listing:opslaan-segmentatie-resultaten}).
+Vervolgens worden op basis van de trackingresultaten, metadata per klasse verzameld door de functie \texttt{get\_metadata\_per\_class} aan te roepen.
+Dit resulteert in een dictionary waarin elke klasse ID is gekoppeld aan een dictionary met de volgende informatie:
+\begin{itemize}
+    \item \texttt{class\_name}: De naam van de klasse, bijvoorbeeld `monitor'.
+    \item \texttt{color}: Het kleur van de klasse in hexadecimale notatie.
+    \item \texttt{frame_indexes}: Een lijst van frame-indexen waarin de klasse voorkomt in de trackingresultaten.
+    \item \texttt{mask_areas}: Een lijst van de oppervlakte van het segmentatiemasker voor elk frame waarin de klasse voorkomt.
+    \item \texttt{bboxes}: Een lijst van de bounding box voor elk frame waarin de klasse voorkomt.
+\end{itemize}
+Elk element in de lijst \texttt{frame\_indexes} komt overeen met een element in de lijsten 
+\texttt{mask\_areas} en \texttt{bboxes}, en vormt een unieke `sample' van de klasse in de kalibratieopname.
 
+% TODO finaal aantal samples per klasse hier vermelden
 
 
 \subsubsection{Training van YOLOv11 Modellen}
