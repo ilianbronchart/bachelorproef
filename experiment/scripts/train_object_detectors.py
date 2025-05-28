@@ -8,8 +8,9 @@ import shutil
 
 OBJECT_DETECTION_DATASETS_PATH = TRAINING_DATASETS_PATH / "object_detection"
 
-TRAIN_EPOCHS = 1
-BATCH_SIZE = 32
+TRAIN_EPOCHS = 100
+BATCH_SIZE = 48
+PATIENCE = 10
 
 datasets = list(OBJECT_DETECTION_DATASETS_PATH.iterdir())
 if len(datasets) == 0:
@@ -31,6 +32,9 @@ def train_model(dataset_path, model_name, crop_size):
         imgsz=int(crop_size),
         device="cuda",
         batch=BATCH_SIZE,
+        patience=PATIENCE,
+        plots=True,
+        save=True,
     )
 
     model_path = OBJECT_DETECTION_MODELS_PATH / f"{model_name}.pt"
@@ -42,7 +46,9 @@ for dataset_path in tqdm(datasets, desc="Training models"):
     crop_size = model_name.split("_")[2]
 
     # run the training in a separate process (to avoid memory issues)
+    print("\n--------------------------------------------------------------")
     print(f"Starting training for {model_name} with crop size {crop_size}")
+    print("--------------------------------------------------------------\n")
     process = Process(target=train_model, args=(dataset_path, model_name, crop_size))
     process.start()
     process.join()

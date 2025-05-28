@@ -302,8 +302,6 @@ potentieel verwarrende objecten.
     }
 \end{figure}
 
-
-
 \subsection{Initiële Classificatiepogingen en Uitdagingen}
 
 Nadat de object-datasets waren aangemaakt en de referentiedata uit de kalibratieopname was gelabeld, was de volgende stap het 
@@ -339,47 +337,297 @@ In plaats daarvan waren ze geneigd elke ROI te classificeren als één van de ob
 Gezien deze mismatch tussen de aard van het probleem en de gekozen aanpak, werd besloten deze classificatiestrategieën niet verder te optimaliseren.
 De focus verschoof naar een methode die beter is uitgerust om specifieke, bekende objecten te identificeren: objectdetectie.
 
-\subsection{Objectdetectie met YOLOv11} 
+\section{Objectdetectie met YOLOv11} 
 
 Bij de voorgaande classificatiestrategieën lag de focus op het classificeren van geïsoleerde objectsegmenten afkomstig uit de FastSAM everything-segmentatie.
-% TODO: intro tot dit deel (nu not niet doen)
-% Nu wil ik mijn introductie tot objectdetectie subsectie schrijven. Ik wil het volgende vermelden:
-% - Objectdetectie is iets meer complex omdat we niet enkel de ROIs rechtstreeks gaan classificeren, maar ook de objectdetectieresultaten moeten linken aan de originele FastSAM bounding boxes. 
-% - Hoewel het technisch gezien om objectdetectie gaat, wordt dit nog steeds gezien als classificatie aangezien we uiteindelijk een label toekennen aan de originele segmenten.
+% TODO: Intro iets beter maken
 
-\subsubsection{Creatie van de Trainingsdataset voor Objectdetectie}
+\subsection{Creatie van de Trainingsdataset voor Objectdetectie}
 
-Gebaseerd op de gelabelde kalibratieopname die eerder werd besproken, werd een trainingsdataset voor objectdetectie gecreëerd.
-Deze dataset moest bestaan uit beelduitsnedes (hierna `crops' genoemd) waarin de kritische objecten gelabeld zijn met bounding boxes.
-De creatie van deze dataset werd geïmplementeerd in de python notebook \texttt{12\_prepare\_object\_detection\_datasets.ipynb} en omvatte de volgende stappen:
-
-% TODO: waarom crops? (gecenterd op het blikpunt)
-\paragraph{1. Verzamelen van Gelabelde Data uit de Kalibratieopname}
-
-De basis voor de trainingsdataset werd gevormd door de kalibratieopname waarbij de objecten 
-tegen dezelfde achtergrond als de evaluatieopnames gefilmd werden.
+Gebaseerd op de gelabelde kalibratieopname die eerder werd besproken, werd een specifieke trainingsdataset voor objectdetectie gecreëerd.
 Zoals eerder vermeld, werd het object `ampule poeder' niet opgenomen in de labeling, resulterende in een dataset met 14 objecten.
+Deze moest bestaan uit beelduitsnedes (hierna `crops' genoemd) waarin de kritische objecten gelabeld zijn met bounding boxes.
+De creatie van deze dataset werd geïmplementeerd in de python notebook \texttt{12\_prepare\_object\_detection\_datasets.ipynb}.
+Omwille van de beknoptheid zullen in deze sectie enkel de belangrijkste codefragmenten worden getoond; 
+de geïnteresseerde lezer wordt verwezen naar de genoemde notebook voor de volledige implementatiedetails van de hieronder beschreven stappen.
+
+\subsubsection{Formaat van de Trainingsdataset}
+
+Alvorens de trainingsdataset te creëren, was het belangrijk om het beoogde formaat van de dataset te bepalen.
+Een eerste overweging was de resolutie van de crops. 
+Om tot een geïnformeerde keuze te komen, werd een analyse uitgevoerd op de afmetingen van de bounding boxes 
+van de gelabelde objecten in de kalibratieopname. 
+Figuur~\ref{fig:size-histogram} toont histogrammen van zowel de breedte (links) als de hoogte (rechts) 
+in pixels van deze bounding boxes. 
+Uit de histogrammen blijkt dat de meerderheid van de objecten een breedte en hoogte heeft van minder dan 400 pixels. 
+Enkele objecten, of objecten die van zeer dichtbij zijn opgenomen, vertonen grotere afmetingen. 
+Op basis van deze observatie, en rekening houdend met het feit dat objecten in de praktijk 
+niet altijd perfect in het midden van een crop zullen liggen, 
+werd gekozen voor een vierkante crop-grootte van 640x640 pixels. 
+Deze afmeting biedt een ruime marge om de meeste objecten volledig te omvatten, zelfs als ze enigszins 
+verschoven zijn ten opzichte van het centrum van de crop. 
+Deze grootte is tevens een gangbare inputresolutie voor YOLO-modellen.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{bboxes-histogrammen.png}
+    \caption[Histogrammen van de breedte en grootte in pixels van bounding boxes in de kalibratieopname]{
+      \label{fig:size-histogram}
+      Histogrammen van de breedte (links) en hoogte (rechts) in pixels van de bounding boxes in de kalibratieopname.
+      De meeste objecten vallen onder de 400 pixels in zowel breedte als hoogte, met een aantal uitzonderingen die groter zijn.
+    }
+\end{figure}
+
+De volgende overweging betrof de wijze waarop deze crops gegenereerd zouden worden uit de kalibratieopname. 
+Aangezien het uiteindelijke doel is om de ROIs die gegenereerd werden door FastSAM, te classificeren, 
+dient de trainingsdataset zo goed mogelijk de karakteristieken van deze te classificeren ROIs te weerspiegelen. 
+In de praktijk zullen deze ROIs vaak (maar niet altijd perfect) gecentreerd zijn rond het blikpunt van de student, 
+omdat de FastSAM-segmentatie en de blikpuntfiltering hierop aansturen. 
+Daarom werd voor de creatie van de trainingsdataset besloten om de crops te genereren 
+door ze te centreren op het middelpunt van de bounding box van een \textit{geselecteerd doelobject} uit de kalibratieopname. 
+Dit simuleert de situatie waarbij het model een ROI aangeboden krijgt waarin het doelobject centraal staat.
+
+Tenslotte vereiste de trainingsdataset voor objectdetectie ook een specifieke structuur, zijnde het \textit{Ultralytics YOLO formaat} (zie Codefragment~\ref{fig:yolo-format}).
+% TODO: alle footnotes omvormen naar een bron! \footnote{\url{https://docs.ultralytics.com/datasets/detect/#ultralytics-yolo-format}}
+
+\begin{listing}[H]
+  \begin{minted}{text}
+    data/
+    ├── images/
+    │   ├── train/
+    │   │   ├── 0000000001.jpg
+    │   │   ├── 0000000002.jpg
+    │   │   ├── 0000000003.jpg
+    │   │   └── ...
+    │   └── val/
+    │       ├── 0000000001.jpg
+    │       ├── 0000000002.jpg
+    │       ├── 0000000003.jpg
+    │       └── ...
+    ├── labels/
+    │   ├── train/
+    │   │   ├── 0000000001.txt
+    │   │   ├── 0000000002.txt
+    │   │   ├── 0000000003.txt
+    │   │   └── ...
+    │   └── val/
+    │       ├── 0000000001.txt
+    │       ├── 0000000002.txt
+    │       ├── 0000000003.txt
+    │       └── ...
+    └── data.yml
+  \end{minted}
+  \caption[Voorbeeld van het Ultralytics YOLO Formaat]{
+    \label{fig:yolo-format}
+    Voorbeeld van de structuur van de trainingsdataset voor objectdetectie in het Ultralytics YOLO formaat.
+    De dataset bestaat uit een map met afbeeldingen (in dit geval crops) en een map met labels.
+    Elke afbeelding heeft een bijbehorende labelbestand met dezelfde naam, waarin de bounding boxes en klassen van elk object in de afbeelding zijn gedefinieerd.
+    Het data.yml bestand bevat de metadata van de dataset, wat later aan bod komt.
+  }
+\end{listing}
+
+\subsubsection{Genereren van de Trainingsdataset}
+
+Het eigenlijke proces voor het creëren van de trainings- en validatiedatasets werd gecoördineert door de functie \texttt{create\_dataset} 
+(zie Codefragment~\ref{listing:create-dataset-overview}). 
+Deze functie neemt de metadata van de gelabelde objecten, de geëxtraheerde frames van de kalibratieopname, 
+en configuratieparameters zoals de crop-grootte en het gewenste aantal samples per klasse als input.
+
+\begin{listing}[H]
+  \fontsize{10pt}{9.6pt}
+  \begin{minted}{python}
+  def create_dataset(
+      per_class_metadata: dict,
+      frames: list[Path],
+      datasets_path: Path,
+      crop_size: int,
+      dataset_type: str,
+      num_samples_per_class: int,
+  ):
+      # Definieren van de paden voor de trainings- en validatiedatasets
+      # ... Code weggelaten voor beknoptheid ...
+
+      # Samples selecteren per klasse en train/val splitsen
+      selected_samples_per_class = select_samples_per_class(
+          per_class_metadata, num_samples_per_class
+      )
+      all_samples_per_frame = get_samples_per_frame(per_class_metadata)
+      train_samples_per_class, val_samples_per_class = get_train_val_split(
+          selected_samples_per_class, train_ratio=0.8
+      )
+
+      # Datasetfiles aanmaken
+      class_label_to_model_id = create_metadata_yaml(dataset_path, per_class_metadata)
+      create_train_or_val_dataset(
+          per_class_metadata,
+          class_label_to_model_id,
+          train_samples_per_class,
+          all_samples_per_frame,
+          frames,
+          train_images_path,
+          train_labels_path,
+          crop_size=crop_size,
+      )
+      create_train_or_val_dataset(
+          per_class_metadata,
+          class_label_to_model_id,
+          val_samples_per_class,
+          all_samples_per_frame,
+          frames,
+          val_images_path,
+          val_labels_path,
+          crop_size=crop_size,
+          is_validation=True,
+      )
+
+      return dataset_path
+  \end{minted}
+  \caption[Functie voor het creëren van de objectdetectie-trainingsdataset]{
+    \label{listing:create-dataset-overview}
+    De \texttt{create\_dataset} functie coördineert het creëren van de trainings- en validatiedatasets voor objectdetectie.
+    Deze functie definieert de paden voor de datasets, maakt de benodigde mappen aan,
+    selecteert de samples per klasse, splitst deze in train- en validatiesets,
+    en roept de \texttt{create\_train\_or\_val\_dataset} functie aan om de crops en labels te genereren. 
+  }
+\end{listing}
+
+De benodigde stappen voor het creëren van de trainingsdataset kunnen worden samengevat in drie hoofdfasen, zoals hieronder beschreven.
+
+\paragraph{1. Verzamelen van Metadata per Klasse}
+
 De notebook laadt in een eerste stap de bestandspaden van de trackingresultaten per klasse 
-via de functie \texttt{get\_tracking\_results\_per\_class} (zie Codefragment~\ref{listing:opslaan-segmentatie-resultaten}).
+voor de kalibratieopname via de functie \texttt{get\_tracking\_results\_per\_class} (zie voorgaande Codefragment~\ref{listing:opslaan-segmentatie-resultaten}).
 Vervolgens worden op basis van de trackingresultaten, metadata per klasse verzameld door de functie \texttt{get\_metadata\_per\_class} aan te roepen.
 Dit resulteert in een dictionary waarin elke klasse ID is gekoppeld aan een dictionary met de volgende informatie:
 \begin{itemize}
     \item \texttt{class\_name}: De naam van de klasse, bijvoorbeeld `monitor'.
     \item \texttt{color}: Het kleur van de klasse in hexadecimale notatie.
-    \item \texttt{frame_indexes}: Een lijst van frame-indexen waarin de klasse voorkomt in de trackingresultaten.
-    \item \texttt{mask_areas}: Een lijst van de oppervlakte van het segmentatiemasker voor elk frame waarin de klasse voorkomt.
+    \item \texttt{frame\_indexes}: Een lijst van frame-indexen waarin de klasse voorkomt in de trackingresultaten.
+    \item \texttt{mask\_areas}: Een lijst van de oppervlakte van het segmentatiemasker voor elk frame waarin de klasse voorkomt.
     \item \texttt{bboxes}: Een lijst van de bounding box voor elk frame waarin de klasse voorkomt.
 \end{itemize}
-Elk element in de lijst \texttt{frame\_indexes} komt overeen met een element in de lijsten 
-\texttt{mask\_areas} en \texttt{bboxes}, en vormt een unieke `sample' van de klasse in de kalibratieopname.
+Elke combinatie van een frame-index en bijbehorende bounding box uit deze lijsten representeert 
+een uniek gelabeld voorbeeld (een `sample') van een object in de kalibratieopname.
 
-% TODO finaal aantal samples per klasse hier vermelden
+Figuur~\ref{fig:samples-per-class} toont het aantal verzamelde samples per klasse in de kalibratieopname. 
+Aangezien sommige objecten dichter bij elkaar stonden, 
+zijn er voor die objecten meer samples verzameld dan voor andere.
+Zo zien we dat het infuus relatief weinig samples heeft, omdat het in een afgezonderde hoek van het beeld stond.
+Hierdoor zijn er enkel samples verzameld binnen de 30 seconden waarin het infuus werd bekeken, 
+of wanneer het zichtbaar was in de achtergrond.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{samples-per-class.png}
+    \caption[Aantal samples per klasse in de kalibratieopname]{
+        \label{fig:samples-per-class}
+        Aantal samples per klasse in de kalibratieopname.
+        De getoonde aantallen zijn het resultaat van de tracking binnen de labeling tool.
+      }
+\end{figure}
+
+Deze \texttt{per\_class\_metadata} dictionary wordt vervolgens doorgegeven aan de \texttt{create\_dataset} functie.
+
+\paragraph{2. Selectie van Voorbeeldsamples per Klasse}
+Om een gebalanceerde dataset te creëren voor training, en om de impact van de datasetgrootte te kunnen onderzoeken, 
+werd per objectklasse een specifiek aantal voorbeeld-samples geselecteerd. 
+De functie \texttt{select\_samples\_per\_class} implementeert deze selectie. 
+Er werd geëxperimenteerd met verschillende aantallen samples per klasse: 500, 1000, 2000 en 3000 via de parameter \texttt{num\_samples\_per\_class}.
+Indien een klasse onvoldoende unieke samples bevatte tegenover het opgegeven aantal, werd oversampling toegepast.
+Alle beschikbare unieke samples werden eerste geselecteerd, waarna de resterende benodigde samples willekeurig met vervanging ui de beschikbare pool werden getrokken.
+
+Met deze mapping, werden de train- en validatiesets gedefinieerd.
+De functie \texttt{get\_train\_val\_split} verdeelt de geselecteerde samples in een train- en validatieset,
+met een splitsing van 80\% voor training en 20\% voor validatie.
+Deze stap resulteert in twee mappings: \texttt{train\_samples\_per\_class} en \texttt{val\_samples\_per\_class}.
+
+Tenslotte werd ook per frame een lijst van \textit{alle} (dus niet enkel de geselecteerde) bounding boxes verzameld.
+Dit is van belang omdat bij het maken van een crop rond een \textit{geselecteerd doelobject},
+ook alle \textit{andere} objecten die toevallig in die crop vallen, correct gelabeld moeten worden voor de objectdetector.
+De functie \texttt{get\_samples\_per\_frame} creëert hiertoe een dictionary (\texttt{all\_samples\_per\_frame}), 
+waarbij elke frame-index gemapt wordt naar een lijst van alle objecten (klasse-ID en bounding box) die in dat frame voorkomen.
+
+\paragraph{3. Genereren van Crops en YOLO-Labels voor Trainings- en Validatiesets}
+Met de voorbereide lijsten van geselecteerde trainings- en validatiesamples per 
+klasse (\texttt{train\_samples\_per\_class} en \texttt{val\_samples\_per\_class}) 
+en de complete lijst van alle gelabelde objecten per frame (\texttt{all\_samples\_per\_frame}), 
+kon de daadwerkelijke generatie van de dataset beginnen. 
+Dit proces werd uitgevoerd door de functie \texttt{create\_train\_or\_val\_dataset}, 
+die afzonderlijk werd aangeroepen voor het creëren van de trainingsdata en de validatiedata. 
+De functie \texttt{create\_dataset} fungeerde als een overkoepelende wrapper die de mappenstructuur 
+aanmaakte en de \texttt{create\_train\_or\_val\_dataset} functie aanriep (zie Codefragment{\ref{listing:create-train-val-dataset}}).
+
+\begin{listing}[H]
+  \fontsize{10pt}{9.6pt}
+  \begin{minted}{python}
+    def create_train_or_val_dataset(
+      per_class_metadata,
+      class_label_to_model_id,
+      selected_samples_per_class,
+      all_samples_per_frame,
+      frames,
+      images_path,
+      labels_path,
+      crop_size: int,
+      is_validation=False,
+  ):
+      selected_samples_per_frame = get_selected_samples_per_frame(
+          selected_samples_per_class
+      )
+
+      current_sample_idx = 0
+      for frame_idx, frame in enumerate(tqdm(frames)):
+          # check if the frame has any samples
+          if selected_samples_per_frame.get(frame_idx) is None:
+              continue
+
+          image = cv2.imread(str(frame))
+
+          # gather boxes and labels for the current frame
+          class_ids, bboxes = zip(*all_samples_per_frame[frame_idx])
+          bboxes = np.array(bboxes)
+          class_labels = [
+              per_class_metadata[class_id]["class_name"] for class_id in class_ids
+          ]
+
+          # for all selected samples in this frame, create crops
+          for _, box in selected_samples_per_frame[frame_idx]:
+              # create a crop for the current box
+              transformed_image, transformed_bboxes, transformed_class_labels = create_crop_for_frame(
+                  image,
+                  crop_size,
+                  box,
+                  bboxes,
+                  class_labels,
+                  is_validation
+              )
+
+              # Save the transformed image and labels
+              create_data_files(
+                  labels_path,
+                  images_path,
+                  class_label_to_model_id,
+                  current_sample_idx,
+                  transformed_image,
+                  transformed_bboxes,
+                  transformed_class_labels,
+              )
+
+              current_sample_idx += 1
+  \end{minted}
+  \caption[Functie voor het creëren van de trainings- en validatiedatasets]{
+    \label{listing:create-train-val-dataset}
+    % TODO: Beschrijving
+    }
+\end{listing}
+
+
 
 
 \subsubsection{Training van YOLOv11 Modellen}
 
 \subsubsection{Combineren van Objectdetectie en FastSAM Tracking}
 
-\subsubsection{Resultaten van de Objectdetectie}
+\section{Evaluatie van de Analysepipeline}
 
 \section{Samenvatting van de Gehele Analysepipeline}
