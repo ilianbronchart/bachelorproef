@@ -198,7 +198,7 @@ PROCESSED_TRACKING_RESULTS_PATH = Path("data/processed_tracking_results")
 BLUR_METRICS_PATH = Path("data/blur_metrics")
 MODELS_PATH = Path("data/models")
 OBJECT_DETECTION_MODELS_PATH = MODELS_PATH / "object_detection"
-COMPARISON_SETS_PATH = Path("data/comparison_sets")
+COMPARISON_SETS_PATH = Path("data/comparison_datasets")
 
 # Database
 SIMROOM_ID = 1

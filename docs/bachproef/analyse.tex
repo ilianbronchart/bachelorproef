@@ -70,6 +70,7 @@ Figuur~\ref{fig:analyse-pipeline-visualisatie} illustreert de fasen van dit proc
 \end{figure}
 
 \section{Tracking en Segmentatie van Objecten}
+\label{sec:tracking-segmentatie}
 
 De eerste fase van de analysepipeline is erop gericht om uit de continue videostroom alle potentieel relevante objectregio's 
 te isoleren die daadwerkelijk door de student zijn bekeken. 
@@ -81,7 +82,7 @@ Voor deze fase werd gekozen om gebruik te maken van het FastSAM-model, vanwege z
 Dit maakte het mogelijk om snel de aanpak te optimaliseren en de pipeline te testen, zonder dat de tijdsduur van de analyse een beperkende factor werd.
 Het model komt in twee varianten: een `large' (\texttt{FastSAM-x}) en een `small' (\texttt{FastSAM-s}) versie.
 Er werd gekozen om de `large' versie te gebruiken, vanwege de betere segmentatiekwaliteit.
-FastSAM is beschikbaar via de \texttt{ultralytics}\footnote{\url{https://docs.ultralytics.com/models/fast-sam/}} python-bibliotheek,
+FastSAM is beschikbaar via de \texttt{ultralytics}\footnote{\url{https://docs.ultralytics.com/models/fast-sam/} (laatst geraadpleegd op 2025-05-21)} python-bibliotheek,
 die een \texttt{track} functie bevat die het mogelijk maakt om alle objecten in een video zowel te segmenteren als te tracken.
 
 \subsection{Tracking en Segmentatie van Objecten}
@@ -197,6 +198,7 @@ De volgende gegevens worden opgeslagen:
 Aangezien het opslaan van de resultaten IO-intensief is, wordt dit proces uitgevoerd met behulp van multithreading (\texttt{executor.submit}).
 
 \subsection{Voorbereiding van de Tracking Resultaten voor Classificatie}
+\label{sec:voorbereiding-tracking-resultaten}
 
 De output van de vorige stap bestaat uit een reeks \texttt{.npz}-bestanden, één per frame, 
 die de gefilterde segmenten, ROIs, en bijbehorende metadata bevatten. 
@@ -324,11 +326,11 @@ In dergelijke scenario's  wordt aangenomen dat elke te classificeren input (elke
 daadwerkelijk tot één van de vooraf gedefinieerde klassen behoort. 
 
 De realiteit van de observaties is echter complexer en sluit veel beter aan bij het concept van \textit{Open Set Recognition (OSR)}. 
-Zoals \textcite{Wang2023} beschrijven in hun overzichtsartikel, is het 
+Zoals \textcite{Geng2018} beschrijven in hun overzichtsartikel, is het 
 ``doorgaans moeilijk om, wanneer men een herkenner of classificator traint, trainingsvoorbeelden te verzamelen die alle (mogelijke) klassen omvatten''.
 OSR beschrijft een scenario waarin 
 ``er ten tijde van de training onvolledige kennis van de wereld bestaat, en onbekende klassen tijdens het testen aan een algoritme kunnen worden voorgelegd''.
-Dit vereist dat een classificatiemodel ``niet alleen de geziene klassen accuraat classificeert, maar ook effectief omgaat met de ongeziene'' (citaten uit \textcite{Wang2023}, eigen vertaling).
+Dit vereist dat een classificatiemodel ``niet alleen de geziene klassen accuraat classificeert, maar ook effectief omgaat met de ongeziene'' (citaten uit \textcite{Geng2018}, eigen vertaling).
 
 In de context van dit onderzoek betekende dit dat de studenten talloze objecten en achtergrondelementen bekeken die \textit{niet} tot de kritische objecten behoorden.
 De geïmplementeerde ROI-classificatiemodellen waren niet in staat om deze `onbekende' inputs effectief te herkennen en te verwerpen.
@@ -387,8 +389,8 @@ Daarom werd voor de creatie van de trainingsdataset besloten om de crops te gene
 door ze te centreren op het middelpunt van de bounding box van een \textit{geselecteerd doelobject} uit de kalibratieopname. 
 Dit simuleert de situatie waarbij het model een ROI aangeboden krijgt waarin het doelobject centraal staat.
 
-Tenslotte vereiste de trainingsdataset voor objectdetectie ook een specifieke structuur, zijnde het \textit{Ultralytics YOLO formaat} (zie Codefragment~\ref{fig:yolo-format}).
-% TODO: alle footnotes omvormen naar een bron! \footnote{\url{https://docs.ultralytics.com/datasets/detect/#ultralytics-yolo-format}}
+Tenslotte vereiste de trainingsdataset voor objectdetectie ook een specifieke structuur, zijnde het 
+\textit{Ultralytics YOLO formaat}\footnote{\url{https://docs.ultralytics.com/datasets/detect/\#ultralytics-yolo-format} (laatst geraadpleegd op 2025-05-21).} (zie Codefragment~\ref{fig:yolo-format}).
 
 \begin{listing}[H]
   \begin{minted}{text}
@@ -527,6 +529,7 @@ of wanneer het zichtbaar was in de achtergrond.
 \end{figure}
 
 Deze \texttt{per\_class\_metadata} dictionary wordt vervolgens doorgegeven aan de \texttt{create\_dataset} functie.
+Elke dataset werd opgeslagen in de map \texttt{data/training\_datasets/object\_detection}.
 
 \paragraph{2. Selectie van Voorbeeldsamples per Klasse}
 Om een gebalanceerde dataset te creëren voor training, en om de impact van de datasetgrootte te kunnen onderzoeken, 
@@ -555,10 +558,11 @@ kon de daadwerkelijke generatie van de dataset beginnen.
 Dit proces werd uitgevoerd door de functie \texttt{create\_train\_or\_val\_dataset}, 
 die afzonderlijk werd aangeroepen voor het creëren van de trainingsdata en de validatiedata. 
 De functie \texttt{create\_dataset} fungeerde als een overkoepelende wrapper die de mappenstructuur 
-aanmaakte en de \texttt{create\_train\_or\_val\_dataset} functie aanriep (zie Codefragment{\ref{listing:create-train-val-dataset}}).
+aanmaakte en de \texttt{create\_train\_or\_val\_dataset} functie aanriep (zie Codefragment~{\ref{listing:create-train-val-dataset}}).
 
+% TODO: nederlandse comments + check code page cutoff
 \begin{listing}[H]
-  \fontsize{10pt}{9.6pt}
+  \fontsize{11pt}{9.6pt}
   \begin{minted}{python}
     def create_train_or_val_dataset(
       per_class_metadata,
@@ -591,12 +595,12 @@ aanmaakte en de \texttt{create\_train\_or\_val\_dataset} functie aanriep (zie Co
           ]
 
           # for all selected samples in this frame, create crops
-          for _, box in selected_samples_per_frame[frame_idx]:
+          for _, target_box in selected_samples_per_frame[frame_idx]:
               # create a crop for the current box
               transformed_image, transformed_bboxes, transformed_class_labels = create_crop_for_frame(
                   image,
                   crop_size,
-                  box,
+                  target_box,
                   bboxes,
                   class_labels,
                   is_validation
@@ -617,16 +621,440 @@ aanmaakte en de \texttt{create\_train\_or\_val\_dataset} functie aanriep (zie Co
   \end{minted}
   \caption[Functie voor het creëren van de trainings- en validatiedatasets]{
     \label{listing:create-train-val-dataset}
-    % TODO: Beschrijving
+    De \texttt{create\_train\_or\_val\_dataset} functie genereert de crops en labels voor de trainings- of validatiedataset.
+    Het laadt de originele afbeelding, verzamelt de relevante bounding boxes en klassenamen,
+    en maakt voor elk geselecteerd doelobject een crop rond de bounding box.
     }
 \end{listing}
 
+De werking van \texttt{create\_train\_or\_val\_dataset} is als volgt:
+\begin{enumerate}
+    \item Eerst worden de \texttt{selected\_samples\_per\_class} (die de geselecteerde doelobjecten voor de huidige set bevatten) 
+    geherstructureerd naar een per-frame dictionary \texttt{selected\_samples\_per\_frame}.
+    \item De functie itereert vervolgens over alle frames van de kalibratieopname.
+    \item Voor elke frame wordt de originele afbeelding geladen, indien er samples voor die frame zijn geselecteerd. 
+    Ook worden alle bounding boxes en bijbehorende klassenamen van 
+    \textit{alle} gelabelde objecten in die frame verzameld uit \texttt{all\_samples\_per\_frame}.
+    \item Daarna wordt geïtereerd over elk \textit{geselecteerd doelobject}
+    dat in de huidige frame aanwezig is (opgehaald uit \texttt{selected\_samples\_per\_frame}). 
+    Het is rond deze \texttt{target\_box} dat een crop zal worden gemaakt.
+    \item Voor elk \texttt{target\_box} binnen de frame wordt de functie \texttt{create\_crop\_for\_frame} aangeroepen. 
+    Deze functie, hieronder beschreven, retourneert de beelduitsnede, de bounding boxes, en de klassenamen 
+    van alle objecten die na het croppen en eventuele augmentatie nog significant zichtbaar zijn binnen die uitsnede.
+    \item Tenslotte worden de resultaten opgeslagen via de hulpfunctie \texttt{create\_data\_files},
+    die de beelduitsnede en de bijbehorende labels opslaat in de juiste mappenstructuur.
+\end{enumerate}
 
+De functie \texttt{create\_crop\_for\_frame} in Codefragment~\ref{listing:create-crop-frame} 
+is verantwoordelijk voor het creëren van de crop rond het doelobject.
+Het transformeert ook de bounding box-coördinaten van alle relevante objecten naar het coördinatenstelsel van de nieuwe crop,
+en past indien nodig augmentaties toe.
 
+% TODO: nederlandse comments + check code page cutoff
+\begin{listing}[H]
+  \fontsize{12pt}{10pt}
+  \begin{minted}{python}
+    def create_crop_for_frame(
+        image: np.ndarray,
+        crop_size: int,
+        target_box: tuple[int, int, int, int],
+        bboxes: np.ndarray,
+        class_labels: list[str],
+        is_validation: bool = False,  
+    ):
+        x1, y1, x2, y2 = target_box
+        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
-\subsubsection{Training van YOLOv11 Modellen}
+        # create a crop around the center of the box
+        half_crop = crop_size // 2
+        x_min = max(0, cx - half_crop)
+        y_min = max(0, cy - half_crop)
+        x_max = min(image.shape[1], cx + half_crop)
+        y_max = min(image.shape[0], cy + half_crop)
 
-\subsubsection{Combineren van Objectdetectie en FastSAM Tracking}
+        transform_steps = [
+            A.Crop(x_min=x_min, y_min=y_min, x_max=x_max, y_max=y_max),
+            A.PadIfNeeded(min_height=crop_size, min_width=crop_size),
+        ]
+
+        if not is_validation:
+            transform_steps.append(A.HorizontalFlip(p=0.5))
+            transform_steps.append(A.RandomBrightnessContrast(p=0.2))
+
+        transform = A.Compose(
+            transform_steps,
+            bbox_params=A.BboxParams(
+                format="pascal_voc", label_fields=["class_labels"], min_visibility=0.7
+            ),
+        )
+
+        # Augment the image and boxes
+        augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
+        transformed_image = augmented["image"]
+        transformed_bboxes = augmented["bboxes"]
+        transformed_class_labels = augmented["class_labels"]
+        return transformed_image, transformed_bboxes, transformed_class_labels
+  \end{minted}
+  \caption[Functie voor het creëren van een crop rond een doelobject]{
+    \label{listing:create-crop-frame}
+    De \texttt{create\_crop\_for\_frame} functie maakt een crop rond een doelobject in de afbeelding.
+    Het past ook transformaties en augmentaties toe, afhankelijk van of de crop bedoeld is voor training of validatie.
+    De functie retourneert de getransformeerde afbeelding, de bounding boxes, en de klassenamen van de objecten in de crop.
+    }
+\end{listing}
+
+Voor het uitvoeren van beeldtransformaties en augmentaties werd de open-source bibliotheek \texttt{Albumentations} gebruikt \autocite{Buslaev2018}.
+De bibliotheek staat toe om eenvoudig transformatiepipelines te definiëren, en vereenvoudigt sterk het werken met bounding-box coördinaten.
+Augmentaties kunnen de robustheid van een model verbeteren door extra variatie aan de trainingsdata toe te voegen.
+De volgende transformaties en augmentaties werden toegepast:
+\begin{itemize}
+    \item \textbf{A.Crop}: Deze transformatie werd gebruikt om een vierkante uitsnede te maken rond het geselecteerde doelobject.
+    \item \textbf{A.PadIfNeeded}: Soms kan het zijn dat de crop deels buiten de grenzen van de originele afbeelding valt.
+    Om dit te voorkomen, wordt padding met nullen toegepast om de crop altijd te vullen tot de gewenste grootte.
+    \item \textbf{A.HorizontalFlip}: Deze augmentatie wordt willekeurig toegepast met een kans van 50\% om de afbeelding horizontaal te spiegelen.
+    \item \textbf{A.RandomBrightnessContrast}: Deze augmentatie past willekeurig de helderheid en het contrast van de afbeelding aan met een kans van 20\%.
+\end{itemize}
+De transformaties \texttt{A.Crop} en \texttt{A.PadIfNeeded} worden altijd toegepast,
+terwijl de transformaties \texttt{A.HorizontalFlip} en \texttt{A.RandomBrightnessContrast} 
+enkel worden toegepast als een crop bedoeld is voor de trainingset (dus niet voor de validatieset).
+Het toepassen van de \texttt{A.Crop} transformatie past ook de bounding box coördinaten aan van frame-niveau naar crop-niveau.
+Tenslotte heeft de \texttt{A.BboxParams} parameter ook een \texttt{min\_visibility} parameter, die ervoor zorgt dat alleen bounding boxes
+met een zichtbaarheid van minstens 70\% worden behouden in de crop.
+Deze parameter werd momenteel hardgecodeerd op 70\%, maar kan in de toekomst indien nodig verder geoptimaliseerd worden.
+
+\subsection{Training van YOLOv11 Modellen}
+
+Met de trainingsdatasets aangemaakt, kon de volgende stap beginnen: het trainen van YOLOv11-modellen.
+Zoals eerder vermeld, werden vier verschillende datasets gecreëerd, elk met een ander aantal samples per klasse: 500, 1000, 2000 en 3000.
+Voor elke datasetconfiguratie werd een afzonderlijk model getraind.
+
+Voor de training werd gebruik gemaakt van het \texttt{YOLOv11n.pt} model. 
+Dit is de `nano'-variant van een reeks modellen die zijn voorgetraind op de COCO-dataset \autocite{Khanam2024}.
+Het starten met een voorgetraind model is een gangbare praktijk in transfer learning, waarbij het model 
+al een basisniveau van kennis heeft over objectherkenning.
+Hiermee kan het model sneller convergeren met een kleinere dataset aan domeinspecifieke objecten, tegenover het trainen van een model vanaf nul.
+
+De training werd uitgevoerd met behulp van de functionaliteit van de \texttt{ultralytics} bibliotheek, 
+binnen de script \texttt{scripts/train\_object\_detectors.py}.
+De relevante code voor het trainen van de modellen is te vinden binnen de functie \texttt{train\_model} in Codefragment~\ref{listing:train-model}.
+
+\begin{listing}[H]
+  \begin{minted}{python}
+    TRAIN_EPOCHS = 100
+    BATCH_SIZE = 0.9
+    PATIENCE = 10
+
+    def train_model(dataset_path, model_name, crop_size):
+        model = YOLO("yolo11n.pt")
+
+        model.train(
+            data=dataset_path / "data.yaml",
+            epochs=TRAIN_EPOCHS,
+            imgsz=int(crop_size),
+            device="cuda",
+            batch=BATCH_SIZE,
+            patience=PATIENCE,
+            plots=True,
+            save=True,
+        )
+
+        model_path = OBJECT_DETECTION_MODELS_PATH / f"{model_name}.pt"
+        model.save(str(model_path))
+    }
+  \end{minted}
+  \caption[Functie voor het trainen van YOLOv11-modellen]{
+    \label{listing:train-model}
+    De \texttt{train\_model} functie traint een YOLOv11-model op basis van de opgegeven dataset.
+    Het gebruikt een voorgetraind model (\texttt{yolo11n.pt}) en traint het op de opgegeven dataset voor een bepaald aantal epochs.
+    De \texttt{patience} parameter bepaalt hoeveel epochs het model zonder verbetering mag trainen.
+  }
+\end{listing}
+
+Voor de training werden de volgende hyperparameters gebruikt:
+\begin{itemize}
+    \item \textbf{Epochs:} 100 epochs, wat betekent dat het model de volledige dataset 100 keer doorloopt.
+    \item \textbf{Batch Size:} 0.9, wat betekent dat de batchgrootte automatisch wordt berekend om 90\% van het beschikbare GPU-geheugen te gebruiken. 
+    \item \textbf{Patience:} Een patience van 10 betekent dat de training stopt als er gedurende 10 opeenvolgende epochs geen verbetering in de validatieprestaties wordt gezien.
+    Aangezien de prestaties van de modellen tijdens de training echter steeds beter werden tot de 100ste epoch, werd de training niet vroegtijdig gestopt.
+\end{itemize}
+De \texttt{train\_model} functie werd telkens in een apart proces uitgevoerd voor het beheren van geheugen.
+Tenslotte werd elk model opgeslagen in de map \texttt{data/models/object\_detection}.
+
+\subsection{Combineren van Objectdetectie en FastSAM Tracking}
+
+Met de getrainde modellen was het mogelijk om de objectdetectie te integreren met de eerder verkregen FastSAM trackingresultaten uit Sectie~\ref{sec:tracking-segmentatie}.
+In deze sectie wordt het proces beschreven om de FastSAM segmentaties te combineren met objectdetectie,
+met als doel een dataset te verkrijgen die voor elke frame van de evaluatieopnames een lijst aan gelabelde, bekeken objecten bevat.
+Het proces werd geïmplementeerd in de notebook \texttt{13\_predict\_object\_detection.ipynb} en kan worden samengevat in de volgende stappen:
+\begin{enumerate}
+    \item \textbf{Genereren van Vergelijkingssets per Frame}: Voor elke frame van een evaluatieopname werd een 
+    `vergelijkingsset' samengesteld. 
+    Deze set bracht de informatie uit twee bronnen samen. 
+    De eerste component bestond uit de door FastSAM geïdentificeerde objectsegmenten, 
+    die al eerder op basis van de blikdata van de student waren geselecteerd. 
+    De tweede component bevatte de objectdetecties die resulteerden uit het toepassen van het getrainde 
+    YOLOv11-model op een specifieke uitsnede (crop) van het betreffende frame, 
+    waarbij deze uitsnede gecentreerd was rond het blikpunt van de student.
+    \item \textbf{Matchen van Segmentaties en Detecties:} 
+    Binnen elke vergelijkingsset werden de FastSAM-segmentaties gematcht aan de YOLOv11-detecties op 
+    basis van ruimtelijke overlap (Intersection over Union, IoU), waarbij enkel betrouwbare matches werden behouden.
+    De term `Intersection over Union' wordt in de volgende sectie verder toegelicht (Figuur~\ref{fig:iou-conceptual}).
+    \item \textbf{Toekennen van een Klasse aan FastSAM Object Tracks:} 
+    De klassevoorspellingen van de gematchte YOLOv11-detecties werden geaggregeerd voor elke unieke FastSAM object ID 
+    (die een object over meerdere frames volgt). 
+    Op basis hiervan werd een definitieve classificatie (één van de 14 kritische objecten of 'onbekend') 
+    toegekend aan elke FastSAM-track.
+    \item \textbf{Samenstellen van de Finale Voorspellingsdataset:} 
+    De resulterende, nu gelabelde FastSAM-tracks werden per evaluatieopname geconsolideerd 
+    tot een finale voorspellingsdataset, die per frame de geïdentificeerde, bekeken objecten specificeert.
+\end{enumerate}
+In de volgende sectie worden deze voorspellingsdatasets geëvalueerd tegenover de grondwaarheid, en worden de resultaten besproken.
+
+\subsubsection{Genereren van Vergelijkingssets per Frame}
+
+De eerste stap in het combineren van de FastSAM-trackingresultaten met de YOLOv11-objectdetectie was het per frame samenstellen van een `vergelijkingsset'.
+Dit vormde een dataset die later gebruikt zou worden om de finale voorspellingsdataset te creëren.
+De functie \texttt{get\_comparison\_dataset} implementeert de logica voor het genereren hiervan (zie Codefragment~\ref{listing:get-comparison-set}).
+
+De volgende functieparameters werden op voorhand samengesteld:
+\begin{itemize}
+    \item \texttt{frame\_to\_gaze\_position}: Een dictionary die per frame-index het (x,y)-coördinaat van het 
+    blikpunt van de student bevat. 
+    Deze data werd eerder berekend in Sectie~\ref{sec:synchronisatie-blikpunten-videoframes}.
+    \item \texttt{frame\_to\_gaze\_segmentation\_data}: Een dictionary 
+    die per frame-index de resultaten van de FastSAM-tracking bevat (bounding boxes en object ID's van de door de blik bekeken segmenten).
+\end{itemize}
+
+Vervolgens worden voor elke frame in de evaluatieopname de volgende stappen uitgevoerd:
+\begin{enumerate}
+    \item Indien er een blikpunt beschikbaar is voor de huidige frame, wordt de afbeelding geladen.
+    \item De functie \texttt{create\_frame\_crop} (zie Codefragment~\ref{listing:create-frame-crop}) wordt aangeroepen om een crop te maken rond het blikpunt van de student.
+    Deze functie transformeert ook de bounding-boxes van de FastSAM-segmentaties naar het coördinatenstelsel van de nieuwe crop.
+    Hier werd net zoals bij de creatie van de trainingsdataset, Albumentation gebruikt om de crop te maken.
+    Segmentaties die minder dan 70\% zichtbaar zijn in de crop, werden weggelaten via de \texttt{min\_visibility} parameter.
+    \item Het getrainde YOLOv11-model wordt toegepast op de gemaakte crop, en de voorspellingen worden verzameld.
+    \texttt{model.predict} aanvaart twee belangrijke parameters:
+    \begin{itemize}
+        \item \texttt{conf}: De drempel voor de vertrouwensscore van de voorspellingen.
+        Deze werd hier ingesteld op 0.5 om in deze stap veel voorspellingen te krijgen. 
+        Op deze manier kan later geëxperimenteerd worden met het filteren van voorspellingen bij het matchen van segmentaties en detecties.
+        \item \texttt{iou}: De drempel voor de Intersection over Union (IoU) bij het filteren van overlappende voorspellingen.
+    \end{itemize}
+    \item De resultaten worden opgeslagen in een dictionary met de volgende informatie:
+    \begin{itemize}
+        \item De FastSAM-segmentatiegegevens (bounding boxes en object ID's).
+        \item De YOLOv11-voorspellingen (bounding boxes, klasse-ID's en vertrouwensscores).
+    \end{itemize}
+\end{enumerate}
+Tenslotte worden alle vergelijkingsdatasets voor de verschillende evaluatieopnames opgeslaan als JSON-bestanden in de map 
+\texttt{data/comparison\_datasets/<recording\_id>.json}.
+
+% TODO: comments?
+\begin{listing}[H]
+  \fontsize{10pt}{9.6pt}
+  \begin{minted}{python}
+    def get_comparison_dataset(
+        recording_id: str,
+        model: YOLO,
+        frame_paths: list[Path],
+        frame_to_gaze_position: dict[int, tuple[int, int]],
+        frame_to_gaze_segmentation_data: dict[int, dict],
+    ) -> None:
+        comparison_dataset = {}
+        
+        for frame_path in tqdm(frame_paths, desc=f"Running inference for {recording_id}"):
+            frame_idx = int(frame_path.stem)
+            if frame_to_gaze_position.get(frame_idx) is None:
+                continue
+
+            image = cv2.imread(str(frame_path))
+            gaze_position = frame_to_gaze_position[frame_idx]
+
+            transformed_image, transformed_gs_boxes, transformed_gs_object_ids = create_frame_crop(
+                image,
+                gaze_position,
+                frame_to_gaze_segmentation_data,
+                frame_idx
+            )
+
+            results = model.predict(
+                source=transformed_image, conf=0.5, iou=0.5, device="cuda", verbose=False
+            )
+
+            predicted_confidences = []
+            predicted_bboxes = []
+            predicted_class_ids = []
+            for box in results[0].boxes:
+                conf = float(box.conf[0].cpu().numpy())
+                class_id = int(box.cls[0])
+                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                predicted_confidences.append(conf)
+                predicted_bboxes.append((int(x1), int(y1), int(x2), int(y2)))
+                predicted_class_ids.append(class_id)
+
+            comparison_dataset[frame_idx] = {
+                "gaze_segmentation": {
+                    "boxes": transformed_gs_boxes.astype(np.int32).tolist(),
+                    "object_ids": transformed_gs_object_ids,
+                },
+                "predicted": {
+                    "boxes": predicted_bboxes,
+                    "class_ids": predicted_class_ids,
+                    "confidences": predicted_confidences,
+                },
+            }
+
+        return comparison_dataset
+  \end{minted}
+  \caption[Functie voor het creëren van vergelijkingsdataset voor een evaluatieopname]{
+    \label{listing:get-comparison-set}
+    De \texttt{get\_comparison\_dataset} functie genereert een vergelijkingsdataset voor een evaluatieopname.
+    Deze dataset bevat de FastSAM-segmentaties en de YOLOv11-voorspellingen voor elke frame.
+    De functie maakt een crop rond het blikpunt van de student, past het YOLOv11-model toe op deze crop,
+    en slaat de resultaten op in een dictionary die per frame de segmentatie- en detectiegegevens bevat.
+    }
+\end{listing}
+
+% TODO: comments?
+\begin{listing}[H]
+  \fontsize{12pt}{10pt}
+  \begin{minted}{python}
+    def create_frame_crop(
+        image: np.ndarray,
+        gaze_position: tuple[int, int],
+        frame_to_gaze_segmentation_data: dict[int, dict],
+        frame_idx: int
+    ) -> tuple[np.ndarray, list[tuple[int, int, int, int]], list[int]]:
+        gaze_segmentation_boxes = frame_to_gaze_segmentation_data[frame_idx]["boxes"]
+        gaze_segmentation_object_ids = frame_to_gaze_segmentation_data[frame_idx][
+            "object_ids"
+        ]
+
+        cx, cy = gaze_position
+        x_min = max(0, cx - IMG_CROP_SIZE_HALF)
+        y_min = max(0, cy - IMG_CROP_SIZE_HALF)
+        x_max = min(image.shape[1], cx + IMG_CROP_SIZE_HALF)
+        y_max = min(image.shape[0], cy + IMG_CROP_SIZE_HALF)
+
+        transform = A.Compose(
+            [
+                A.Crop(x_min=x_min, y_min=y_min, x_max=x_max, y_max=y_max),
+                A.PadIfNeeded(min_height=IMG_CROP_SIZE, min_width=IMG_CROP_SIZE),
+            ],
+            bbox_params=A.BboxParams(
+                format="pascal_voc", label_fields=["object_ids"], min_visibility=0.7
+            ),
+        )
+
+        transformed = transform(
+            image=image,
+            bboxes=gaze_segmentation_boxes,
+            object_ids=gaze_segmentation_object_ids,
+        )
+        transformed_image = transformed["image"]
+        transformed_gs_boxes = transformed["bboxes"]
+        transformed_gs_object_ids = transformed["object_ids"]
+
+        return transformed_image, transformed_gs_boxes, transformed_gs_object_ids
+  \end{minted}
+  \caption[Functie voor het creëren van een crop rond het blikpunt van de student]{
+    \label{listing:create-frame-crop}
+    De \texttt{create\_frame\_crop} functie maakt een crop rond het blikpunt van de student in de afbeelding.
+    Het past ook de bounding boxes van de FastSAM-segmentaties aan naar het coördinatenstelsel van de nieuwe crop.
+    Indien een segmentatie minder dan 70\% zichtbaar is in de crop, wordt deze weggelaten.
+    De functie retourneert de getransformeerde afbeelding, de aangepaste bounding boxes, en de object ID's van de segmentaties.
+    }
+\end{listing}
+
+\subsubsection{Matchen van Segmentaties en Detecties}
+
+De volgende stap was het koppelen van de FastSAM-segmentaties aan de YOLOv11-detecties binnen elke vergelijkingsset.
+Het doel was om voor elke FastSAM-segmentatie te bepalen welke YOLOv11-detectie, indien aanwezig, het beste overeenkwam.
+Aangezien de code veel dataverwerkingsstappen bevat, worden hier enkel de belangrijkste conceptuele stappen beschreven.
+De functie \texttt{get\_matched\_boxes\_per\_frame} implementeert de logica voor het matchen van de segmentaties en detecties.
+Deze functie aanvaart twee parameters die later binnen een grid-search worden geëvalueerd:
+\begin{itemize}
+  \item \texttt{min\_pred\_conf}: De minimum vereiste vertrouwensscore voor een YOLOv11-detectie om als geldig te worden beschouwd.
+  \item \texttt{iou\_threshold}: De minimum Intersection over Union (IoU) drempel die vereist is om een match te beschouwen als geldig.  
+\end{itemize}
+IoU wordt gedefinieerd als de verhouding tussen de oppervlakte van de overlap tussen twee bounding boxes en de oppervlakte van hun unie.
+Zie Figuur~\ref{fig:iou-conceptual} voor een visuele representatie van IoU.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{iou_conceptual.png}
+    \caption[Conceptuele weergave van Intersection over Union (IoU)]{
+        \label{fig:iou-conceptual}
+        Conceptuele weergave van Intersection over Union (IoU).
+        De overlap tussen de twee rechthoeken wordt gedeeld door de unie van de twee rechthoeken.
+        Dit resulteert in een waarde tussen 0 en 1, waarbij 1 betekent dat de rechthoeken volledig overlappen.
+        (eigen afbeelding)
+      }
+\end{figure}
+
+De matching-functie omvat de volgende conceptuele stappen:
+\begin{enumerate}
+    \item Voor elke frame in de vergelijkingsset worden de FastSAM-segmentaties en YOLOv11-detecties opgehaald.
+    \item De objectdetectie-voorspellingen worden gefilterd op basis van de \texttt{min\_pred\_conf} parameter.
+    \item Indien er voor een klasse meerdere detecties zijn, wordt enkel de detectie met de hoogste vertrouwensscore behouden.
+    \item Indien er geen voorspellingen overblijven na filtering, wordt de frame overgeslagen.
+    \item Voor elke FastSAM-segmentatie wordt de IoU berekend met elke geldige YOLOv11-detectie.
+    \item Indien de IoU groter is dan de \texttt{iou\_threshold}, wordt de detectie beschouwd als een match voor de segmentatie.
+    \item Voor elke segmentatie wordt de beste match bepaald op basis van de hoogste IoU.
+    \item Tenslotte wordt de lijst van gematchte segmentaties, detecties en hun IoU-waarden opgeslagen in een dictionary per frame.
+\end{enumerate}
+
+\subsubsection{Toekennen van een Klasse aan FastSAM Object Tracks}
+
+Na de matchingstap beschikken we per frame over een lijst van FastSAM-segmentaties die 
+succesvol gekoppeld konden worden aan een YOLOv11-objectdetectie.
+De volgende uitdaging is om op basis van deze per-frame informatie, een definitieve klasse toe te kennen aan elke unieke FastSAM object ID
+die doorheen de evaluatieopname werd gevolgd.
+Een object ID kan immers over meerdere frames worden waargenomen, 
+en het YOLOv11-model kan in verschillende frames verschillende voorspellingen doen voor hetzelfde object (of zelfs geen voorspelling doen)
+De aggregatie dient de ruis van individuele voorspellingen te reduceren.
+
+Dit proces, inclusief de vorige matchingstap, werd geïmplementeerd in de overkoepelende functie \texttt{get\_predictions\_df}.
+De belangrijkste conceptuele stappen zijn als volgt:
+
+\paragraph{1. Aggregeren van Voorspellingen per FastSAM Object ID}
+De eerste stap is het verzamelen van alle YOLOv11-klassevoorspellingen en hun bijbehorende 
+vertrouwensscores die gematcht zijn met een specifieke FastSAM object-ID, 
+ongeacht in welke frame ze voorkwamen. 
+Dit aggregeert de per-frame matchresultaten naar een lijst van voorspellingen voor elke unieke getrackte entiteit. 
+De functie \texttt{get\_predictions\_per\_object\_id} voert deze groepering uit en genereert een dictionary waarin elke FastSAM object-ID is gekoppeld aan een lijst van voorspellingen.
+Voor elke voorspelling wordt de klasse-ID en de bijbehorende vertrouwensscore opgeslagen.
+
+\paragraph{2. Filteren op Minimale Observatieduur}
+In de evaluatiestap werd er ook onderzocht of het zinvol was om een parameter te introduceren die bepaalt hoeveel frames een object moet worden waargenomen
+voordat het wordt geclassificeerd. Dit zou eventueel een effect hebben op vals-positieve voorspellingen, omdat korte ovservaties meer vatbaar zijn voor ruis.
+Zo worden enkel object tracks die in minstens een bepaald aantal frames zijn waargenomen, behouden.
+Dit wordt aangedreven door de parameter \texttt{min\_observed\_frames} in de functie \texttt{filter\_by\_min\_observed\_frames}.
+
+\paragraph{3. Toekennen van de Finale Klasse per Track}
+Voor elke overgebleven FastSAM object-track, wordt nu één definitieve klasse bepaald door de functie \texttt{get\_final\_prediction\_per\_object\_id}. 
+Hier wordt voor elke object ID de klasse gekozen die de hoogste totale som van YOLOv11-vertrouwensscores 
+behaalde over de gehele duur van de track. 
+Dit kan gezien worden als een vorm van stemmingsaggregatie, 
+waarbij de klasse met de meeste `stemmen' (in termen van vertrouwensscores) wordt gekozen.
+
+\subsubsection{Samenstellen van de Finale Voorspellingsdataset}
+Het resultaat van de vorige stap was een mapping van FastSAM object-ID's, 
+naar hun definitieve voorspelde klasse (één van de 14 kritische objecten) 
+en de geaggregeerde vertrouwensscore.
+In Sectie~\ref{sec:voorbereiding-tracking-resultaten} werd al beschreven hoe de metadata van de FastSAM-trackingresultaten opgeslagen werden in zogenaamde `object-datasets'.
+In deze stap werden deze datasets, voor elke evaluatieopname, uitgebreid met de voorspelde klasse en de bijbehorende vertrouwensscore voor elke object ID.
+Het resultaat was een finale voorspellingsdataset per evaluatieopname die klaar was voor evaluatie en de volgende velden bevatte:
+\begin{itemize}
+    \item \texttt{frame\_idx}: De index van de frame in de evaluatieopname.
+    \item \texttt{object\_id}: De unieke ID van het getrackte object.
+    \item \texttt{gs\_confidence}: De vertrouwensscore van de FastSAM-segmentatie voor het object in de frame (dus niet van de YOLOv11-detectie).
+    \item \texttt{mask\_area}: De oppervlakte van de FastSAM-segmentatie in pixels.
+    \item \texttt{x1, y1, x2, y2}: De coördinaten van de bounding box van de FastSAM-segmentatie in de frame.
+    \item \texttt{predicted\_class\_id}: De voorspelde klasse-ID van het object, gebaseerd op de YOLOv11-detecties.
+    Indien er geen voorspelling was voor het object, werd deze op -1 gezet (dit betekent dat het object als `onbekend' wordt beschouwd).
+    \item \texttt{predicted\_confidence}: De geaggregeerde vertrouwensscore van de voorspelde klasse, gebaseerd op de YOLOv11-detecties.
+\end{itemize}
 
 \section{Evaluatie van de Analysepipeline}
 

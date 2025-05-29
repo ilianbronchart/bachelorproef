@@ -1,3 +1,4 @@
 data/*
-yolo11n-cls.pt
-yolo11n.pt
+runs/*
+**.pt
+**.pt
