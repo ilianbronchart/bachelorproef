@@ -252,8 +252,8 @@ def render_confusion_matrix(cm: pd.DataFrame, show_absolute_counts: bool = False
     ax.set_yticks(np.arange(cm.shape[0]))
     ax.set_yticklabels(true_names)
 
-    ax.set_xlabel("Predicted Label")
-    ax.set_ylabel("True Label")
+    ax.set_xlabel("Voorspelde Klasse")
+    ax.set_ylabel("Ware Klasse (grondwaarheid)")
     ax.set_title("Confusion Matrix")
 
     # Annotate each cell with the count value.
@@ -349,8 +349,11 @@ def evaluate_predictions(
                 matched_pred_indices.add(pred_idx)
                 matched_gt_indices.add(gt_idx)
 
+                gt_row = gts_f.iloc[gt_idx]
+
                 p_dict = preds_f.iloc[pred_idx].to_dict()
                 p_dict["true_class_id"] = gts_f.iloc[gt_idx]["class_id"]
+                p_dict["mask_area"] = gt_row.get("mask_area", np.nan)
                 # Since pairs are formed on class equality, this is always a TP
                 p_dict["label"] = "TP"
                 records.append(p_dict)

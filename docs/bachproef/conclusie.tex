@@ -15,3 +15,152 @@
 %onderzoek?
 
 % TODO op zich is fastsam segmentatie met filtering ook al bruikbaar voor trainers
+
+Deze bachelorproef had als doel een methode te ontwikkelen om de observatievaardigheden van 
+studenten in het 360° Zorglab van HOGENT op een geautomatiseerde, objectieve manier te evalueren.
+Computervisie-modellen werden geïntegreerd met eyetrackingdata van Tobii Glasses, om zo de huidige, 
+subjectieve evaluatiemethode te vervangen door een datagestuurde aanpak.
+Hiertoe werd een proef-of-concept applicatie ontwikkeld en werden verschillende computervisie-modellen 
+geëvalueerd op hun vermogen om objecten te detecteren en te segmenteren in de eyetrackingdata.
+
+\section{Beantwoording van de Onderzoeksvragen}
+
+De centrale onderzoeksvraag was: 
+\textit{Hoe kunnen computervisie-modellen geïntegreerd worden met eyetrackingdata van Tobii Glasses om observatieprestaties 
+van studenten in het 360° Zorglab automatisch te analyseren?}
+Er werd aangetoond dat een dergelijke integratie haalbaar is en bovendien veelbelovende resultaten oplevert.
+De deelvragen kunnen als volgt beantwoord worden:
+
+\paragraph{\textit{Welke barrières (cognitief, technisch of didactisch) ervaren trainers en studenten bij de huidige, handmatige observatiemethodes?}}
+Deze vraag werd binnen deze proef niet expliciet onderzocht via een nieuw, formeel gebruikersonderzoek. 
+Desondanks konden de inherente barrières worden geïdentificeerd. 
+Dit gebeurde op basis van een combinatie van de initiële probleemstelling, een grondige literatuurstudie en inzichten verkregen uit overleg met de co-promotor. 
+Deze laatste is zelf een ervaren docent in de verpleegkunde en is de opdrachtgever van dit onderzoek. 
+De voornaamste barrières die hieruit naar voor kwamen, waren de subjectiviteit in de beoordeling, 
+de tijdrovende aard van zelfrapportage en directe, observatie evenals het gebrek aan objectieve data over kijkgedrag.  
+    
+\paragraph{\textit{Welke kenmerken moet een geautomatiseerde analysemethode hebben om de huidige beperkingen van handmatige observatie te verhelpen?}}
+In een ideale wereld zou een volledig geautomatiseerde analysemethode in staat zijn  
+de eyetracking opnames van studenten volledig te analyseren zonder enige menselijke tussenkomst.
+Echter, gezien de huidige stand van de technologie, is dit nog niet haalbaar.
+Daarom werd er gekozen voor een semi-automatische aanpak, waarbij de trainer nog steeds een actieve rol speelt in het initialiseren van de analyse.
+In de ontwikkelde pipeline voert de trainer de `kalibratiestap' uit, waarbij de kritische objecten worden gelabeld. 
+De ontwikkelde methode omvat daarom als ondersteunend kenmerk, een softwareapplicatie met een gebruiksvriendelijke interface. 
+Deze stelt trainers in staat eyetrackingopnames te beheren, objecten te definiëren en deze efficiënt te labelen.
+Aangezien computer-vision een veld is dat voortdurend evolueert, was het ook belangrijk dat de ontwikkelde software voortdurend kon bijgestuurd worden.
+De software is daarom modulair opgebouwd, zodat nieuwe componenten gemakkelijk kunnen worden toegevoegd.
+    
+\paragraph{\textit{In welke mate kunnen de modellen en de ontwikkelde software:}}
+\begin{enumerate}
+    \item \textit{correct bepalen welke kritische objecten studenten hebben waargenomen?}
+    \item \textit{nauwkeurig meten hoe lang studenten naar deze objecten keken?}
+\end{enumerate}
+De beste resultaten werden behaald door de combinatie van een YOLOv11-objectdetector getraind op 1000 samples per klasse, gecombineerd met FastSAM-tracking.
+Deze combinatie behaalde een micro-gemiddelde F1-score van 0.8017, met een precisie van 0.9424 en een recall van 0.6976.
+Dit duidt erop dat de software met hoge precisie objecten kan identificeren (weinig fout-positieven), 
+maar dat er nog ruimte voor verbetering is in de recall (het detecteren van alle daadwerkelijk bekeken objecten). 
+De analyse van vals-positieven toonde aan dat een aanzienlijk deel hiervan correct gedetecteerde objecten waren 
+die niet in de grondwaarheid voorkwamen. Dit maakt de werkelijke precisie mogelijk hoger.
+
+Hoewel de micro-gemiddelden een goed overzicht geven van de prestaties van het model, hangen de resultaten in de praktijk 
+sterk af van de aard van de kritische objecten. 
+Zo bleek het model het bijzonder moeilijk te hebben met het detecteren van kleine objecten (ampule, snoepje, spuit), zeker wanneer ze een laag contrast hebben met hun omgeving.
+Dit leidde tot een lage recall voor deze objecten.
+Ook werden er problemen vastgesteld bij het detecteren van objecten die meerdere componenten bevatten, zoals het infuus.
+Wanneer men wil weten of een student naar een specifiek deel van een object heeft gekeken, zoals de infuuszak, 
+zal het model dit object ook detecteren wanneer er gekeken wordt naar een ander deel, bijvoorbeeld de infuuspaal.
+Dit kan, afhankelijk van de context, gezien worden als een vals-positief dat de precisie van het model verlaagt voor dat specifieke object.
+
+De nauwkeurigheid van de duurmeting (2) is direct afhankelijk van de frame-per-frame correctheid van de objectidentificatie (1).
+Waar objecten correct worden geïdentificeerd, kan de duur accuraat worden afgeleid door het aantal frames te tellen. 
+Fouten in identificatie (vals-negatieven of -positieven) leiden echter direct tot onnauwkeurigheden in de duurmeting.
+
+\section{Bijdrage en Meerwaarde}
+
+De voornaamste bijdrage van deze bachelorproef ligt in de ontwikkeling van een werkend Proof-of-Concept.
+Deze demonstreert de haalbaarheid van het geautomatiseerd analyseren van eyetrackingdata in een dynamische omgeving zoals het Zorglab.
+Het was de bedoeling om een platform te creëren dat gemakkelijk uit te breiden en te onderhouden valt, zodat toekomstige onderzoekers 
+en ontwikkelaars deze basis kunnen gebruiken voor verder onderzoek.
+De methodologie voor het creëren van een grondwaarheidsdataset en de evaluatie van de analysepipeline 
+levert een referentie voor toekomstige projecten binnen dit domein.
+
+Hoewel het hier niet gaat om productieklare software die direct in het Zorglab kan worden ingezet, 
+zet dit onderzoek wel een grote stap richting een geautomatiseerde evaluatiemethode.
+In de toekomst zullen trainers en studenten kunnen profiteren van een meer doelgerichte en objectieve evaluatie van observatievaardigheden.
+Het opleiden van elke student vereist een unieke aanpak, wat momenteel een hoge werkdruk met zich meebrengt voor docenten.
+De geautomatiseerde evaluatie kan deze werkdruk verlichten door objectieve data te 
+leveren die gericht zijn op de specifieke vaardigheden (of blinde vlekken) van elke student. 
+Ook de maatschappij heeft voordeel bij een hogere zorgkwaliteit, door studenten beter voor te bereiden op de praktijk.
+Deze bachelorproef legt de fundering voor een toekomst waarin technologie en zorgonderwijs hand in hand gaan,
+en waar de hierboven vernoemde voordelen gerealiseerd kunnen worden.
+
+\section{Reflectie en Discussie}
+
+De behaalde resultaten zijn veelbelovend, met name de hoge precisie (circa 0.94, en in de werkelijkheid hoger) van het beste model. 
+Een hoog aantal vals-positieven zou echter de bruikbaarheid van de software in het gedrang kunnen brengen, door 
+een inaccuraat beeld te schetsen van de werkelijk bekeken objecten.
+De lagere recall (circa 0.70) geeft aan dat niet alle bekeken objecten consistent werden gedetecteerd en dat er een marge is voor verbetering.
+Dit was deels te verwachten, gezien de complexiteit van de taak (variërende objectgroottes, belichting, occlusie, snelle hoofdbewegingen).
+
+Een onverwachte conclusie was dat er praktisch geen verschil was in de prestaties van de verschillende YOLOv11-objectdetectors,
+ondanks de variërende datasetgroottes.
+Dit gaf een indicatie dat de segmentatie van FastSAM de beperkende factor was,
+en niet de objectdetectie op zich.
+Om een beter beeld te krijgen van de impact van FastSAM, 
+zou het interessant zijn om bij de vals-negatieven te onderzoeken of deze objecten toch gedetecteerd werden door de YOLOv11-objectdetector, 
+maar niet door FastSAM.
+Daarnaast heeft FastSAM twee parameters die in dit onderzoek niet werden geoptimaliseerd: 
+\texttt{iou} en \texttt{conf}.
+Een hogere \texttt{iou} en een lagere \texttt{conf} zouden kunnen leiden tot meer getrackte objecten, waardoor de recall eventueel kan worden verhoogd.
+Langs de andere kant is er een kans op een lagere precisie, omdat er mogelijk meer fout-positieven worden gegenereerd.
+
+De analyse van vals-positieven en -negatieven bracht interessante inzichten. 
+Veel zogenaamde vals-positieven bleken toch correcte detecties te zijn die door inconsistenties 
+tussen de FastSAM-output en de grondwaarheid niet als dusdanig werden geregistreerd. 
+Dit wijst op een potentieel probleem in de methodologie voor het creëren van de grondwaarheid,
+waarbij `bekeken' objecten werden geselecteerd op basis van de overlap tussen het blikpunt en de handmatig gelabelde segmentaties.
+
+Een andere invalshoek is dat er potentieel een probleem is met de definitie van `bekeken' objecten.
+Deze definitie van `overlapping', creëert echter een grijze zone.
+Het is denkbaar dat een student visuele informatie van een object verwerkt, zelfs als het precieze blikpunt 
+net buiten de grenzen van het gedetecteerde segment valt; bijvoorbeeld door perifeer zicht of een lichte 
+onnauwkeurigheid in de eyetracker die de gedefinieerde marge overstijgt.
+De huidige binaire aanpak (wel/niet bekeken) 
+kan deze nuances moeilijk vatten en leidt mogelijk tot een onderschatting van daadwerkelijk geobserveerde objecten.
+Toekomstig onderzoek zou kunnen overwegen om deze definitie te herzien,
+bijvoorbeeld door te werken met de afstand tussen het blikpunt en de segmentatie in plaats van een binaire overlap.
+
+\subsection{Toekomstig Onderzoek en Aanbevelingen}
+
+Het is belangrijk te benadrukken dat deze resultaten geen volledig beeld geven hoe het 
+systeem zal presteren onder alle mogelijke praktijkomstandigheden of met een ongelimiteerde variëteit aan objecten.
+Het experiment dat uitgevoerd werd in het Zorglab was geen naturalistische setting,
+maar een gecontroleerde omgeving met een beperkt aantal objecten.
+Om de relevantie van het systeem verder te valideren, is het belangrijk om tests uit te voeren in een realistische setting,
+waarbij studenten in een echte, relevante zorgsituatie worden geplaatst. 
+
+Daarnaast is de ontwikkelde analysemethode, hoewel veelbelovend, momenteel redelijk complex. 
+De combinatie van FastSAM en YOLOv11 is niet vanzelfsprekend en zorgt voor veel potentiële foutenbronnen.
+Toekomstige modellen kunnen eventueel gebruik maken van een enkele, end-to-end benadering die zowel objectdetectie als segmentatie in één stap uitvoert.
+Hoewel YOLOv11 ook tracking ondersteunt, is het nog niet mogelijk om segmentaties te verkrijgen binnen een trackingopdracht. 
+Daardoor kan de overlap tussen het blikpunt en het object niet worden berekend.
+
+Een andere interessante overweging is de beschikbaarheid van een grafische kaart (GPU) in het Zorglab.
+Momenteel beschikt het Zorglab niet over een GPU, waardoor de ontwikkelde software niet kan worden gebruikt.
+Bij het Zorglab worden niet enkel computervisie-modellen onderzocht, maar ook andere AI-toepassingen zoals spraakherkenning.
+Ook deze toepassingen zouden kunnen profiteren van de rekenkracht van een sterke GPU.
+De GPU die gebruikt werd in dit onderzoek, was een NVIDIA RTX 4090, wat snelle iteratie mogelijk maakte.
+Met tragere GPU's zou het trainen van de modellen en het uitvoeren van de analyses veel langer duren. 
+Aangezien AI-toepassingen steeds sterker worden en meer toepassingen bieden, 
+is het aan te raden om in de toekomst te investeren in een krachtige GPU.
+
+Op vlak van hardware is het ook belangrijk om stil te staan bij de resolutie van de camera van de eyetracker.
+Bij de analyse werd vastgesteld dat het model moeite had met het detecteren van kleine objecten.
+Het kan dus interessant zijn om de evolutie op de markt van de eyetrackers nauwlettend op te volgen.
+Hierbij kan men kijken naar hogere resoluties of betere camera's die mogelijk meer details kunnen vastleggen.
+Een andere optie voor het verbeteren van beeldkwaliteit is het toepassen van motion-deblurring technieken, 
+die in eerdere onderzoeken al potentieel toonden \autocite{Cederin2023}.
+
+Zoals eerder vermeld, is de ontwikkelde software modulair opgebouwd, zodat nieuwe componenten gemakkelijk kunnen worden toegevoegd.
+Studenten kunnen bij volgende bachelorproeven baat hebben bij de ontwikkelde labeling tool, om zo meer tijd te kunnen besteden aan het ontwikkelen van nieuwe analysecomponenten.
+Indien deze componenten goed presteren, kunnen ze worden toegevoegd aan de bestaande software.

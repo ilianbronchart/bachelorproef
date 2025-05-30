@@ -5,38 +5,40 @@
 \chapter{\IfLanguageName{dutch}{Inleiding}{Introduction}}%
 \label{ch:inleiding}
 
-Observatievaardigheden van zorgverleners zijn niet enkel belangrijk om nauwkeurige diagnoses te stellen, maar ook om de patiënt te ondersteunen en te begeleiden. 
-Zo zien we dat studenten in de ouderenzorg vaak moeite hebben met sociale omgang en communicatie met ouderen. 
-In het 360° Zorglab aan HOGENT worden studenten getraind via simulaties waarbij ze in een omgeving zoals een ziekenhuis kamer of woonkamer geplaatst worden.
+Observatievaardigheden van zorgverleners zijn niet enkel belangrijk om nauwkeurige diagnoses te stellen. Het stelt ze tevens in staat de patiënt beter te ondersteunen en te begeleiden. 
+Zo zien we dat studenten bijvoorbeeld in de ouderenzorg vaak moeite hebben met sociale omgang en communicatie met ouderen. 
+In de omgang met kleuters kan de aanwezigheid van gevaarlijke voorwerpen zoals een schaar problemen opleveren.
+In het 360° Zorglab aan HOGENT worden studenten getraind door middel van simulaties waarbij zorgrelevante taken uitvoeren in een gecontroleerde omgeving.
 Zo leren ze de nuances van zorgverlening kennen en worden ze geconfonteerd met concrete situaties. 
 Een belangrijk aspect van deze training is dat studenten leren om kritische objecten, zoals een colafles op het nachtkastje van een diabetespatiënt, op te merken.
-Tot op heden wordt er gesteund op zelfrapportage en observatie door docenten om de vaardigheden van de sudenten te evalueren.
-Dit is echter een subjectieve methode die niet altijd even betrouwbaar is, waardoor er nood is aan een objectievere methode om observatievaardigheden te evalueren.
-Het Zorglab beschikt over een Tobii eyetracking-bril die de oogbewegingen van de studenten kunnen registreren, en een camera bezit die het gezichtsveld van de studenten kan opnemen.
-Eerder werk richtte zich op het visualiseren van het pad waarlangs de blik van de studenten beweegt, maar zo steunt de analyse op het herbekijken van elke opname.
-Bovendien produceert deze methode geen bruikbare metrieken die de prestaties van de studenten objectief kunnen becijferen.
-Hierdoor is er een nood aan een geautomatiseerde methode om de eyetrackingdata te analyseren en te visualiseren, zodat trainers snel inzicht krijgen in de observatieprestaties van studenten.
+Tot op heden wordt er vooral gewerkt met zelfrapportage en observatie door docenten om de vaardigheden van de studenten te evalueren.
+Dit is echter een subjectieve methode die niet altijd even betrouwbaar is, waardoor de nood ontstond aan een meer objectieve methode om observatievaardigheden te evalueren.
+Het Zorglab beschikt over een Tobii eyetracking-bril die de oogbewegingen van de studenten kan registreren en over een camera beschikt die het gezichtsveld van de studenten kan opnemen.
+Voorgaand onderzoek richtte zich voornamelijk op het visualiseren van het pad waarlangs de blik van de studenten beweegt. 
+Dit betreft echter geen geautomatiseerde analyse maar steunt op het manueel herbekijken van elke opname.
+Bovendien levert deze methode geen bruikbare metrieken op die de prestaties van de studenten objectief kunnen becijferen.
+Hierdoor ontstond de nood aan een geautomatiseerde methode om de eyetrackingdata te analyseren en te visualiseren, zodat trainers snel inzicht krijgen in de observatieprestaties van studenten.
 
 \section{\IfLanguageName{dutch}{Probleemstelling}{Problem Statement}}%
 \label{sec:probleemstelling}
 
-Hoewel de Tobii Glasses bruikbare data opleveren, ontbreekt er momenteel geschikte software om te analyseren of studenten daadwerkelijk naar deze objecten hebben gekeken.
-Dit gebrek aan dataverwerking en visualisatie maakt het voor trainers lastig om de observatieprestaties van studenten efficiënt te beeordelen en te verbeteren.
-Zonder een geautomatiseerde manier om te detecteren welke specifieke objecten studenten wel of niet hebben waargenomen, wordt het geven van directe feedback een tijdrovend proces. 
+Hoewel de Tobii Glasses bruikbare data opleveren, ontbreekt er momenteel geschikte software deze te analyseren.
+Dit gebrek aan dataverwerking en visualisatie maakt het voor trainers lastig om de observatieprestaties van studenten efficiënt te beoordelen en te verbeteren.
+Zonder een geautomatiseerde manier van detectie van de specifieke objecten die studenten al dan niet hebben waargenomen, wordt het geven van directe feedback een tijdrovend proces. 
+De huidige feedbackmethoden zijn bovendien te subjectief en kunnen leiden tot inconsistenties in de beoordeling van studenten.
 
 \section{\IfLanguageName{dutch}{Onderzoeksvraag}{Research question}}%
 \label{sec:onderzoeksvraag}
 
-Hoe kunnen computervisie-modellen geïntegreerd worden met eyetrackingdata van Tobii Glasses om observatieprestaties van studenten in het 360° Zorglab automatisch te analyseren en te visualiseren?
+Hoe kunnen computervisie-modellen geïntegreerd worden met eyetrackingdata van Tobii Glasses om observatieprestaties van studenten in het 360° Zorglab automatisch te analyseren?
 Deze onderzoeksvraag wordt uitgewerkt aan de hand van de volgende deelvragen:
 \begin{itemize}
-    \item Welke barrières (cognitief, technisch of didactisch) ervaren trainers en studenten bij de huidige, handmatige observatiemethode?
-    \item Welke noden ervaren gebruikers bij het analyseren en interpreteren van eyetrackingdata in de huidige context?
+    \item Welke barrières (cognitief, technisch of didactisch) ervaren trainers en studenten bij de huidige, handmatige observatiemethodes?
     \item Welke kenmerken moet een geautomatiseerde analysemethode hebben om de huidige beperkingen van handmatige observatie te verhelpen?
     \item In welke mate kunnen de modellen en de ontwikkelde software:
         \begin{enumerate}
             \item correct bepalen welke kritische objecten studenten hebben waargenomen?
-            \item nauwkeurig meten hoe lang studenten naar deze objecten kijken?
+            \item nauwkeurig meten hoe lang studenten naar deze objecten keken?
         \end{enumerate}
 \end{itemize}
 
@@ -44,8 +46,8 @@ Deze onderzoeksvraag wordt uitgewerkt aan de hand van de volgende deelvragen:
 \label{sec:onderzoeksdoelstelling}
 
 Het doel is om trainers in het Zorglab te ondersteunen bij het analyseren en visualiseren van eyetrackingdata, zodat ze snel inzicht krijgen in de observatieprestaties van studenten en kunnen 
-vaststellen of belangrijke objecten tijdens zorgsimulaties zijn waargenomen. Er zullen hiervoor twee metrieken worden berekend: naar welke objecten de studenten kijken en hoe lang ze naar deze objecten kijken.
-Hiervoor wordt een proof-of-concept softwareoplossing ontwikkeld die de eyetrackingdata van Tobii Glasses combineert met objectdetectie- en segmentatiemodellen op een gebruiksvriendelijke manier.
+vaststellen of belangrijke objecten tijdens zorgsimulaties zijn waargenomen. Hierbij richten we onze focus op twee items: naar welke objecten de studenten gekeken hebben en voor hoe lang.
+Hiervoor wordt een proof-of-concept softwareoplossing ontwikkeld die de eyetrackingdata van Tobii Glasses combineert met objectdetectie- en segmentatiemodellen en dit op een gebruiksvriendelijke manier.
 Ook wordt er onderzocht hoe accuraat het uiteindelijke systeem is in het berekenen van de metrieken.
 
 \section{\IfLanguageName{dutch}{Opzet van deze bachelorproef}{Structure of this bachelor thesis}}%
@@ -61,8 +63,8 @@ De rest van deze bachelorproef is als volgt opgebouwd:
   \item In Hoofdstuk~\ref{ch:methodologie} wordt de methodologie toegelicht en worden de gebruikte onderzoekstechnieken besproken om een antwoord te kunnen formuleren op de onderzoeksvragen.
   \item In Hoofdstuk~\ref{ch:oplossingsstrategieen} worden mogelijke oplossingsstrategieën besproken die kunnen worden toegepast om de eyetrackingdata te analyseren.
   \item In Hoofdstuk~\ref{ch:ontwikkeling} wordt de ontwikkeling van de proof-of-concept applicatie toegelicht.
-  \item In Hoofdstuk~\ref{ch:experiment} wordt het experimenteel onderzoek besproken dat werd uitgevoerd om de proof-of-concept applicatie te evalueren.
-  \item In Hoofdstuk~\ref{ch:grondwaarheid} wordt het bouwen van de grondwaarheid besproken, dat nodig is om de resultaten van de geautomatiseerde analyse dat volgt te kunnen evalueren.
+  \item In Hoofdstuk~\ref{ch:experiment} wordt het experimenteel onderzoek besproken dat de data opleverde die geanalyseerd dienden te worden.
+  \item In Hoofdstuk~\ref{ch:grondwaarheid} wordt het bouwen van de grondwaarheid besproken, die een kwantitatieve basis vormt voor de evaluatie van de analysemethoden.
   \item In Hoofdstuk~\ref{ch:analyse} worden de experimentele opnames geanalyseerd en de resultaten besproken.
-  \item In Hoofdstuk~\ref{ch:conclusie}, tenslotte, wordt de conclusie gegeven en een antwoord geformuleerd op de onderzoeksvragen. Daarbij wordt ook een aanzet gegeven voor toekomstig onderzoek binnen dit domein.
+  \item In Hoofdstuk~\ref{ch:conclusie}, tenslotte, komen de conclusies aan bod en wordt een antwoord geformuleerd op de onderzoeksvragen. Daarbij worden ook aanbevelingen gegeven voor toekomstig onderzoek binnen dit domein.
 \end{itemize}

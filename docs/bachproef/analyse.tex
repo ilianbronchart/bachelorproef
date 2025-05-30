@@ -116,8 +116,10 @@ Hier zijn volgende zaken belangrijk om op te merken:
     \item De \texttt{track} functie levert een lijst op van \texttt{Results}-objecten, maar bevat hier slechts één element, aangezien de functie telkens een enkele frame behandelt.
     Dit \texttt{Results}-object bevat de segmentatiemaskers, bounding boxes, en tracking-informatie voor elk object in het frame.
 \end{itemize}
-
-% TODO: IOU? CONF?
+Het is ook mogelijk om een \texttt{iou} (Intersection over Union) parameter in te stellen, evenals een \texttt{conf} (vertrouwensscore) parameter.
+De \texttt{iou} parameter bepaalt hoeveel overlap nodig is tussen objecten om ze als hetzelfde object te beschouwen tijdens tracking.
+Een hoge waarde zal meer objecten als verschillend beschouwen, terwijl een lage waarde meer objecten zal samenvoegen.
+Echter werden deze parameters binnen dit onderzoek niet verder geoptimaliseerd.
 
 \subsection{Filteren van Tracking-Resultaten}
 
@@ -1051,7 +1053,6 @@ Het resultaat was een finale voorspellingsdataset (pandas \texttt{Dataframe}) pe
     \item \texttt{frame\_idx}: De index van de frame in de evaluatieopname.
     \item \texttt{object\_id}: De unieke ID van het getrackte object.
     \item \texttt{gs\_confidence}: De vertrouwensscore van de FastSAM-segmentatie voor het object in de frame (dus niet van de YOLOv11-detectie).
-    \item \texttt{mask\_area}: De oppervlakte van de FastSAM-segmentatie in pixels.
     \item \texttt{x1, y1, x2, y2}: De coördinaten van de bounding box van de FastSAM-segmentatie in het frame.
     \item \texttt{predicted\_class\_id}: De voorspelde klasse-ID van het object, gebaseerd op de YOLOv11-detecties.
     Indien er geen voorspelling was voor het object, werd deze op -1 gezet (dit betekent dat het object als `onbekend' werd beschouwd).
@@ -1232,11 +1233,13 @@ Het voegt voor elke frame twee zaken toe aan de voorspellingsdataset:
             \item \textbf{FN (False Negative):} Er is een object in de grondwaarheid aanwezig, maar het model heeft dit object niet gedetecteerd of geclassificeerd.
         \end{itemize} 
 \end{itemize}
+Ook werd het veld \texttt{mask\_area} vervangen door zijn waarde in de \texttt{grondwaarheid}, om latere analyses mogelijk te maken.
+Indien het ging om een vals-positief waar geen grondwaarheid voor bestond, werd hier een lege waarde (\texttt{NaN}) toegekend. 
 
 Hier is het interessant om stil te staan bij twee specifieke gevallen:
-Wanneer de evaluatie een vals-positief aangeeft waarvoor geen grondwaarheid bestaat, wordt hier een speciale klasse-ID -3 toegekend als `ware klasse' (\texttt{true\_class\_id}).
-Wanneer de evaluatie een vals-negatief aangeeft, wordt de klasse-ID -2 toegekend als `voorspelde klasse' (\texttt{predicted\_class\_id}).
-Dit maakt het mogelijk om deze gevallen mee te visualiseren in de confusion matrix.
+Wanneer de evaluatie een vals-positief aangeeft waarvoor geen grondwaarheid bestaat, werd hier een speciale klasse-ID -3 toegekend als `ware klasse' (met als naam `geen grondwaarheid').
+Wanneer de evaluatie een vals-negatief aangeeft, werd de klasse-ID -2 toegekend als `voorspelde klasse' (met als naam `geen voorspelling').
+Dit maakte het mogelijk om deze gevallen mee te visualiseren in de confusion matrix.
 
 \paragraph{2. Bijwerken van de Confusion Matrix}
 De confusion matrix is een vierkante tabel die het mogelijk maakt om de prestaties van het model te visualiseren en metrieken zoals precisie, recall en F1-score te berekenen.
@@ -1393,7 +1396,7 @@ en niet op de YOLOv11-detecties.
 Voor voorbeelden van deze uitsnedes binnen de klasse `naaldcontainer', zie Figuur~\ref{fig:fp-examples-naaldcontainer}.
 Zoals men kan zien, zijn alle vals-positieven in de werkelijkheid toch correcte detecties, maar werden ze niet opgenomen in de grondwaarheid dataset.
 Een mogelijke verklaring hiervoor is dat de segmentatiemaskers van de FastSAM-tracking niet altijd volledig 
-overeenkomen met die van de grondwaarheid.
+overeenkomen met de grondwaarheid.
 Dit zorgt ervoor dat sommige objecten als `bekeken' aangeduid worden in de geautomatiseerde analyse, 
 terwijl ze niet opgenomen werden in de grondwaarheid omdat er geen overlap was met het blikpunt van de student.
 \begin{figure}[H]
@@ -1450,9 +1453,9 @@ Deze bevinding wijst op problemen bij de detectie van objecten die samengesteld 
 Om het effect van het type object op de prestaties van het model te onderzoeken,
 werden vals-negatieven per klasse (van het beste model) geanalyseerd (zie Figuur~\ref{fig:fn-per-class}).
 De aantallen werden opnieuw genormaliseerd ten opzichte van de support van die klasse om een eerlijke vergelijking te verkrijgen.
-Uit deze analyse blijkt dat de klassen `ampule vloeistof', `spuit', en `snoep', de meeste vals-negatieven opleverden.
-Dit is logisch, aangezien deze objecten vaak klein waren, waardoor ze moeilijk te detecteren bleken.
-De ampulepoeder en de spuit waren heel doorschijnend, met een witte achtergrond.
+Uit deze analyse bleken de klassen `ampule vloeistof', `spuit' en `snoep', de meeste vals-negatieven op te leveren.
+Dit is logisch, aangezien deze objecten klein zijn, waardoor ze moeilijk te detecteren bleken.
+De `ampule vloeistof' en de `spuit' waren heel doorschijnend, met een witte achtergrond.
 Hoewel het snoepje heel klein was, werden toch meer dan 50\% van de gevallen correct gedetecteerd. 
 
 \begin{figure}[H]
@@ -1463,5 +1466,71 @@ Hoewel het snoepje heel klein was, werden toch meer dan 50\% van de gevallen cor
   }
 \end{figure}
 
-Het verwerven van een beter inzicht in de aard van de vals-negatieven vereiste echter een diepgaandere analyse.
+Het verwerven van een beter inzicht in de aard van de vals-negatieven vereiste echter een meer diepgaande analyse.
 
+\paragraph{Analyse van de Maskergroottes van Vals-Negatieven en Waar-Positieven}
+Als hypothese kunnen we stellen dat de analysepipeline vooral kleine objecten mist. 
+Om dit te onderzoeken, werden de maskergroottes van de waar-positieven (TP) en vals-negatieven (FN) per klasse geanalyseerd.
+Voor elke klasse werd `\text{Cohen's d}' berekend, een maatstaf voor de effectgrootte die aangeeft hoe groot het verschil is tussen de gemiddelde maskergrootte van de TP en FN (zie Figuur~\ref{fig:cohens-d-fn-tp}).
+% TODO: formule voor Cohen's d toevoegen? also, kan deze zin beter, also cohens d in aanhalingstekens
+Boven elke staaf in de figuur staat ook het gehalte aan vals-negatieven voor die klasse, tegenover de support ervan.
+Dit geeft een indicatie over de betrouwbaarheid van de effectgrootte, aangezien een hoge effectgrootte bij een laag aantal vals-negatieven mogelijk niet representatief is.
+We zien dat de meeste klassen een gemiddelde tot hoge effectgrootte tonen, wat betekent dat de TP gemiddeld grotere maskers bevat dan de FN.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{cohens-d-tp-fn.png}
+  \caption[]{\label{fig:cohens-d-fn-tp}
+    Cohen's d voor de gemiddelde maskergrootte van de waar-positieven (TP) en vals-negatieven (FN) per klasse.
+    Boven elke staaf staat het percentage vals-negatieven ten opzichte van de support van die klasse.
+    Een positieve waarde duidt erop dat de TP gemiddeld grotere maskers bevat dan de FN, terwijl een negatieve waarde het omgekeerde aangeeft.
+    Een waarde van 0.2 wordt vaak beschouwd als een klein effect, 0.5 als een gemiddeld effect, en 0.8 als een groot effect.
+  }
+\end{figure}
+
+Om een beter inzicht te krijgen in de distributie van de maskergroottes binnen zowel de TP als de FN, werden voor elke klasse vioolplotten gemaakt (zie Figuur~\ref{fig:violinplot-fn-tp}).
+Deze plots tonen de verdeling van de maskergroottes voor zowel de TP als de FN, waarbij de breedte van elke viool de dichtheid van de waarden aangeeft.
+Hier zijn de klassen van links naar rechts en van boven naar beneden geordend volgens hun `\text{Cohen's d}' waarde.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{mask-area-violin-plots.png}
+  \caption[]{\label{fig:violinplot-fn-tp}
+    Vioolplotten van de maskergroottes voor de waar-positieven (TP) en vals-negatieven (FN) per klasse.
+    De breedte van elke viool geeft de dichtheid van de waarden aan, terwijl de hoogte de verdeling van de maskergroottes weergeeft.
+  }
+\end{figure}
+
+Als aanvullende analyse werd ook manueel gekeken naar de uitsnedes van de vals-negatieven per klasse (op basis van de bounding box van de grondwaarheid).
+Met deze drie analyses werden de volgende inzichten verkregen voor elke klasse die een `hoge' effectgrootte vertoonde (`\text{Cohen's d}' > 1):
+\begin{itemize}
+    \item \textbf{spuit en ampule vloeistof}: Beide objecten vertonen een zeer hoge effectgrootte.
+    Dit is logisch, aangezien deze objecten klein en sterk doorzichtig zijn met een witte achtergrond. 
+    Binnen de vioolplots van beide klassen zien we dat er voor de FN's een duidelijke grens is waaronder de maskeroppervlakten vallen. 
+    Voor de spuit is dit rond de 600 pixels, en voor de ampule vloeistof rond de 1200 pixels.
+    \item \textbf{iced tea, bol wol, keukenmes, en bril}: In de vioolplot van deze klassen zien we dat de FN's duidelijk geconcentreerd zijn onder de 1000 pixels,
+    terwijl de TP's een veel bredere spreiding hebben. 
+\end{itemize}
+Daarnaast zijn er ook enkele klassen die een lage effectgrootte vertonen (`\text{Cohen's d}' tussen -0.5 en 0.5):
+\begin{itemize}
+    \item \textbf{rollator}: De rollator vertoont hier geen systematisch probleem. De `\text{Cohen's d}' waarde is hier waarschijnlijk een toeval.
+    Een beter inzicht in de vals-negatieven voor dit object vergt een manuele inspectie van de opname, in combinatie met een overlay van de FastSAM-segmentaties, het blikpunt en de grondwaarheid.
+    \item \textbf{snoep}: De vioolplot toont dat het aantal vals-negatieven toeneemt naarmate de maskergrootte kleiner wordt. 
+    Toch vertoont het snoepje een hoog aantal TP's met een maskergrootte rond de 1000 pixels, in tegenstelling tot de hierboven besproken klassen.
+    Dit valt waarschijnlijk te verklaren door het feit dat dit object een hoog kleurcontrast heeft met de achtergrond (groen snoepje op een witte tafel).
+    Het FastSAM model heeft het dan ook gemakkelijker om dit object te segmenteren, zelfs wanneer het klein is.
+    \item \textbf{infuus, nuchter en stethoscoop}: Deze klassen vertonen geen systematisch probleem ten opzichte van de maskergrootte.
+    Een beter inzicht in de vals-negatieven van deze objecten zal net zoals de rollator een manuele inspectie vereisen. 
+\end{itemize}
+Tenslotte vertonen de fotokader en de naaldcontainer een hoge negatieve effectgrootte (`\text{Cohen's d}' < -1).
+Bij de fotokader valt dit te verklaren door het feit dat binnen één van de opnames, de student het object van heel dichtbij bekeek.
+Dit zorgde ervoor dat het object niet meer binnen de crop van 640x640 viel, waardoor het objectdetectiemodel geen voorspelling kon maken.
+De negatieve effectgrootte van de naaldcontainer is waarschijnlijk niet representatief, aangezien deze klasse slechts 5.9\% van de support heeft als vals-negatieven.
+
+Een consistent resultaat is dat de meeste klaasen een dunne, lange staart vertonen in de vioolplots voor de FN's. 
+Dit valt, net zoals bij de vals-positieven, te verklaren door het feit dat de segmentatiemaskers van de FastSAM-tracking niet altijd volledig overeenkomen met die van de grondwaarheid.
+Soms is een segmentatiemasker echter opgeschoven of kleiner dan die van de grondwaarheid, waardoor het blikpunt van de student net niet meer binnen de segmentatie valt.
+Dit fenomeen resulteert dus ongeacht de maskergrootte in vals-negatieven.
+
+% TODO: verder manueel onderzoek naar vals-negatieven
+% TODO: overgang naar conclusie
