@@ -15,7 +15,7 @@ De workflow die bedacht werd voor de proof-of-concept applicatie, om van ruwe da
     \item Er worden één of meerdere `kalibratie-opnames' gemaakt met de eyetrackingbril, waarbij elk object dat onderdeel is van het onderzoek, vanuit verschillende hoeken wordt gefilmd.
     \item Ook worden er evaluatieopnames gemaakt van studenten die de simulatieomgeving gebruiken, waarbij de eyetracker op het hoofd van de student wor\-dt geplaatst.
     \item De opnames worden geïmporteerd in de applicatie via de WiFi-verbinding van de eyetrackingbril.
-    \item Men geeft een naam aan de simulatieomgeving (bijvoorbeeld `Zorglab Zorgkamer') binnen de applicatie en defininieert de objecten.
+    \item Men geeft een naam aan de simulatieomgeving (bijvoorbeeld `Zorglab Zorgkamer') binnen de applicatie en definieert de objecten.
     \item Daarna kan men beginnen met het labelen van de objecten in de kalibratie-opnames via de ingebouwde labeling-tool. De labeling-data dienen als basis voor het trainen of initialiseren van de analysemodellen.
     \item De applicatie is nu in staat de eyetracking-opnames van de studenten te analyseren en de metrieken te visualiseren. 
     Het visualisatiegedeelte viel buiten scope voor deze bachelorproef.
@@ -42,8 +42,11 @@ Dit kan gedaan worden met de bijgeleverde kalibratiekaart, die op armlengte afst
 Aan de participant wordt gevraagd om naar de centrale stip op de kaart te kijken, en vervolgens wordt er op de knop `Calibrate' gedrukt.
 De app begint nu met het opnemen van de video, en de participant kan nu vrij rondlopen in de simulatieomgeving.
 
-% \subsubsection{Opmerking over Belichting}
-% TODO: Als er tijd is probleem met belichting toevoegen
+\subsubsection{Opmerking over Belichting}
+
+Bij het maken van opnames werd een probleem vastgesteld wanneer een object zich op een locatie bevond met een hoge lichtinval.
+In deze situaties gingen de objecten vaak verloren in de achtergrond, waardoor het moeilijk werd om deze te detecteren.
+Daarom is het belangrijk om bijzondere aandacht te besteden aan de belichting van de omgeving waarin de opnames worden gemaakt.
 
 \subsection{Importeren van Eyetracking-Opnames}
 
@@ -56,7 +59,9 @@ Wanneer men de applicatie opent op de pagina `Browse Recordings' via de navigati
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{browse-recordings.png}
-  \caption[]{\label{fig:browse-recordings} Screenshot van de `Browse Recordings'-pagina waar opnames kunnen worden geïmporteerd. Hier is de bril niet verbonden met de computer. }
+  \caption[
+  Screenshot van de `Browse Recordings'-pagina
+  ]{\label{fig:browse-recordings} Screenshot van de `Browse Recordings'-pagina waar opnames kunnen worden geïmporteerd. Hier is de bril niet verbonden met de computer. }
 \end{figure}
 
 
@@ -73,7 +78,9 @@ Elke rij in de onderste tabel bevat een blauwe knop met een pijl naar beneden, w
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{browse-recordings-connected.png}
-  \caption[]{\label{fig:browse-recordings-connected} Bij dit voorbeeld is de bril wel verbonden met de computer. Men ziet linksonder de batterijstatus van de bril. In de onderste tabel is het mogelijk om opnames te importeren vanuit de bril naar de computer. }
+  \caption[
+    Screenshot van de `Browse Recordings'-pagina
+  ]{\label{fig:browse-recordings-connected} Bij dit voorbeeld is de bril wel verbonden met de computer. Men ziet linksonder de batterijstatus van de bril. In de onderste tabel is het mogelijk om opnames te importeren vanuit de bril naar de computer. }
 \end{figure}
 
 \subsection{Simulatieruimten en Objecten}
@@ -84,7 +91,9 @@ Men kan zich dus voorstellen dat men niet enkel in het Zorglab werkt, maar bijvo
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{simrooms.png}
-  \caption[]{\label{fig:simrooms} Voorbeeld van de `Manage Sim Rooms'-pagina waar de simulatieomgevingen kunnen worden gedefinieerd. Hier is de `Controlled Experiment Room' geselecteerd, met een aantal objecten en kalibratie-opnames. }
+  \caption[
+  Voorbeeld van de `Manage Sim Rooms'-pagina
+  ]{\label{fig:simrooms} Voorbeeld van de `Manage Sim Rooms'-pagina waar de simulatieomgevingen kunnen worden gedefinieerd. Hier is de `Controlled Experiment Room' geselecteerd, met een aantal objecten en kalibratie-opnames. }
 \end{figure}
 
 In figuur \ref{fig:simrooms} is een voorbeeld te zien van de pagina waar simulatieomgevingen kunnen worden gedefinieerd. 
@@ -117,7 +126,9 @@ De functies van de labeling-tool worden hieronder verder toegelicht.
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{labeler.png}
-  \caption[]{\label{fig:labeler} Een screenshot van de labeling-tool met vier onderdelen: de labeling-canvas, de tijdlijn, de objectenlijst rechts, en een lijst van gemaakte annotaties onderaan. In dit voorbeeld is het object `stethoscoop' geselecteerd. }
+  \caption[
+    Screenshot van de labeling-tool
+  ]{\label{fig:labeler} Een screenshot van de labeling-tool met vier onderdelen: de labeling-canvas, de tijdlijn, de objectenlijst rechts, en een lijst van gemaakte annotaties onderaan. In dit voorbeeld is het object `stethoscoop' geselecteerd. }
 \end{figure}
 
 Eenmaal de labeling-tool geopend is, zien we een pagina met vier onderdelen (zie figuur \ref{fig:labeler}).
@@ -135,7 +146,9 @@ Dit start de automatische tracking van het huidige geselecteerde object doorheen
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{labeler-tracking.png}
-  \caption[]{\label{fig:labeler-tracking} In deze screenshot zien we dat er een tracking-opdracht gaande is. Hier is ook de optie `Show inactive classes' uitgevinkt, waardoor enkel het actieve object wordt getoond. }
+  \caption[
+    Screenshot van de labeling-tool tijdens een tracking-opdracht
+  ]{\label{fig:labeler-tracking} In deze screenshot zien we dat er een tracking-opdracht gaande is. Hier is ook de optie `Show inactive classes' uitgevinkt, waardoor enkel het actieve object wordt getoond. }
 \end{figure}
 
 Uit praktische overweging worden niet alle frames bekeken binnen een tracking-opdracht. Een annotatie wordt als basis gebruikt voor tracking, en wanneer het object voor een bepaalde tijd uit het beeld verdwijnt, wordt de trackingopdracht stopgezet tenzij er nog annotaties overblijven.
@@ -147,7 +160,7 @@ Tenslotte bestaat de mogelijkheid dat er veel objecten in beeld zijn waardoor ma
 
 Hoewel het aanvankelijk de bedoeling was, werd in de context van deze bachelorproef, geen werkende analyse-tool ontwikkeld maar enkel een proof-of-concept.
 De labeling-tool was in dit opzicht de belangrijkste component, omdat deze de labels genereert die nodig zijn voor de analyse.
-Aangezien de het hier enkel een proof-of-concept betrof, werd hier ook geen pagina voor ontwikkeld.
+Aangezien het hier enkel een proof-of-concept betrof, werd hier ook geen pagina voor ontwikkeld.
 Indien men in de toekomst een betrouwbaar analysemodel kan ontwikkelen, bestaat de mogelijkheid om een nieuwe pagina te maken die de resultaten van de analyses toont.
 Naast de pagina zelf dient dan ook een bijbehorende optie in de navigatiekolom aangemaakt te worden.
 De analyses die uitgevoerd werden in deze bachelorproef komen aan bod in Hoofdstuk~\ref{ch:experiment}.
@@ -159,6 +172,7 @@ In deze sectie gaan we dieper in op de technische aspecten van de applicatie,
 met als doel de keuzes te verduidelijken en eventuele nieuwe developers wegwijs te maken in de codebase.
 
 \subsection{Softwarearchitectuur}
+\label{sec:software-architectuur}
 
 Voor de ontwikkeling van de applicatie werd een lichtgewicht, modulaire softwarestack gekozen, afgestemd op de specifieke noden van het project.
 Er is geopteerd voor een web-applicatie die via een browser toegankelijk is en lokaal kan draaien op een laptop (met een degelijke grafische kaart) of een desktop computer.
@@ -178,7 +192,9 @@ De data en requests vloeien doorgaans van de \texttt{frontend} via de \texttt{ro
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\textwidth]{software-architectuur.png}
-  \caption[]{\label{fig:software-architectuur} Software-architectuur van de applicatie. De applicatie is opgebouwd uit verschillende lagen die elk hun eigen verantwoordelijkheden hebben. }
+  \caption[
+Software-architectuur van de applicatie
+  ]{\label{fig:software-architectuur} Software-architectuur van de applicatie. De applicatie is opgebouwd uit verschillende lagen die elk hun eigen verantwoordelijkheden hebben. }
 \end{figure}
 % Link naar canva: https://www.canva.com/design/DAGmr8n_Umg/6k1gqiCpq2hON75Jq9H17Q/edit?utm_content=DAGmr8n_Umg&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
@@ -268,7 +284,9 @@ Zo krijgen we een annotatie die uit meerdere punten bestaat (zie figuur \ref{fig
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\textwidth]{annotation.png}
-  \caption[]{\label{fig:annotation} Links een annotatie met een aantal positieve (groene) en negatieve (rode) punten zoals zichtbaar in de labeling-tool. Rechts het overeenkomstig masker dat werd gegenereerd door SAM2. }
+  \caption[
+Voorbeeld van een annotatie in de labeling-tool met SAM2
+  ]{\label{fig:annotation} Links een annotatie met een aantal positieve (groene) en negatieve (rode) punten zoals zichtbaar in de labeling-tool. Rechts het overeenkomstig masker dat werd gegenereerd door SAM2. }
 \end{figure}
 
 De manuele annotaties vormen de basis voor de automatische tracking van het object doorheen de opname.
@@ -423,7 +441,9 @@ Het ging om een totaal van 360 getrackede frames aan een snelheid van 10.5fps, m
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{sam_mem_usage.png}
-  \caption[]{\label{fig:sam-mem-usage} 
+  \caption[
+Het geheugengebruik van SAM2 tijdens een tracking-opdracht
+  ]{\label{fig:sam-mem-usage} 
   Het geheugengebruik van SAM2 tijdens een tracking-opdracht. Links het cumulatieve geheugengebruik doorheen de tijd met een piek van 1599MB, rechts een boxplot van het geheugengebruik met een gemiddelde van 1374 MB. }
 \end{figure}
 
@@ -718,7 +738,9 @@ Om hier een beter zicht op te krijgen, werd er een Entity-Relationship Diagram (
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\textwidth]{erd.png}
-  \caption[]{\label{fig:erd} Entity-Relationship Diagram (ERD) van de applicatie. De verschillende entiteiten en hun onderlinge relaties worden weergegeven: simulatieruimten, objecten (classes), opnames, kalibratie-opnames, annotaties, en point-labels. }
+  \caption[
+Entity-Relationship Diagram (ERD) van de applicatie
+  ]{\label{fig:erd} Entity-Relationship Diagram (ERD) van de applicatie. De verschillende entiteiten en hun onderlinge relaties worden weergegeven: simulatieruimten, objecten (classes), opnames, kalibratie-opnames, annotaties, en point-labels. }
 \end{figure}
 
 \begin{itemize}
@@ -760,17 +782,22 @@ Ze bevatten de volgende data:
 
 \section{Installatie en Configuratie}
 
-De instructies voor het installeren en configureren van de applicatie zijn te uitvoerig beschreven in de README\footnote{\url{https://github.com/ilianbronchart/bachelorproef/blob/master/README.md}} file van de Git repository.
+De instructies voor het installeren en configureren van de applicatie zijn uitvoerig beschreven in de README\footnote{\url{https://github.com/ilianbronchart/bachelorproef/blob/master/README.md}} file van de Git repository.
 
-% \section{Gekende Problemen en Beperkingen}
+\section{Gekende Problemen en Beperkingen}
 
-% Hoewel de kernfunctionaliteit van de applicatie robuust is, zullen we het in deze sectie hebben 
-% over enkele gekende problemen en beperkingen die de gebruikerservaring kunnen beïnvloeden.
+Hoewel de kernfunctionaliteit van de applicatie robuust is, zullen we het in deze sectie hebben 
+over enkele gekende problemen en beperkingen die de gebruikerservaring kunnen beïnvloeden.
 
-% % TODO: afwerken
+\paragraph{Importeren van Opnames}
+De applicatie zou eventueel baat hebben bij de mogelijkheid om opnames te importeren vanuit een andere bron, zoals een bestand op de harde schijf.
+Zo kunnen opnames die niet op de hub van de eyetracker staan, maar wel lokaal beschikbaar zijn, worden toegevoegd aan de applicatie.
 
-% \paragraph{Importeren van Opnames}
-
-% \paragraph{Labeling Tool}
-
-% \subsection{}
+\paragraph{Labeling Tool}
+De grootste beperking van de labeling tool is dat men slechts één annotatie per klasse per frame kan maken.
+Dit betekent dat, indien er meerdere objecten van dezelfde klasse in een frame aanwezig zijn, men slechts één van deze objecten kan annoteren.
+Daarnaast biedt de labeling tool momenteel geen manier om een tracking-opdracht te annuleren.
+Ook is er geen automatisch beheer van de geladen computer-visie modellen. Wanneer men de labeling tool afsluit (door bijvoorbeeld naar een andere pagina te navigeren),
+worden de modellen niet automatisch uit het geheugen verwijderd.
+Tenslotte zou het handig zijn als er een mogelijkheid bestond om de gemaakte annotaties te exporteren.
+Op deze manier kan er gemakkelijker geëxperimenteerd worden met de annotaties, zoals bij het ontwikkelen van nieuwe analysemethoden.

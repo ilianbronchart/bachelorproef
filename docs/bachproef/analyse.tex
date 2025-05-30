@@ -8,7 +8,7 @@ van experimentele data, en het creëren van een grondwaarheidsdataset uitvoerig 
 Dit hoofdstuk richt zich op de kern van het onderzoek: de geautomatiseerde analyse van de 
 observatieprestaties van studenten aan de hand van de verzamelde eyetracking-opnames.
 
-Het hoofddoel van de hier beschreven analyse is, om op basis van de videofeed en blikdata van de Tobii Pro Glasses 3, 
+Het hoofddoel van de hier beschreven analyse is om op basis van de videofeed en blikdata van de Tobii Pro Glasses 3, 
 automatisch te bepalen (1) welke van de vooraf gedefinieerde kritische objecten door een student zijn waargenomen en (2) 
 hoe lang de aandacht op elk van deze objecten gericht was. 
 Om dit te realiseren, werd een analysepipeline ontworpen en geïmplementeerd, die de output van verschillende computervisiemodellen combineert.
@@ -105,7 +105,7 @@ Daarna is het mogelijk om de \texttt{track} functie toe te passen op deze frames
   \caption[Tracking van objecten met FastSAM]{}
 \end{listing}
 
-Hier zijn volgende zaken belangrijk om op te merken:
+Hier zijn de volgende zaken belangrijk om op te merken:
 \begin{itemize}
     \item De frames dienen gesorteerd te worden op basis van hun volgorde in de video.
     \item De \texttt{track} functie neemt een parameter \texttt{imgsz} aan, die de grootte van de inputafbeeldingen bepaalt.
@@ -113,7 +113,7 @@ Hier zijn volgende zaken belangrijk om op te merken:
     Deze parameter heeft zowel invloed op de snelheid van de segmentatie als op de kwaliteit ervan.
     \item Het is belangrijk om de \texttt{persist} parameter op \texttt{True} te zetten, 
     zodat het model de tracking-informatie kan behouden tussen opeenvolgende frames.
-    \item De \texttt{track} functie levert een lijst op van \texttt{Results}-objecten, maar bevat hier slechts één element, aangezien de functie telkens een enkele frame behandelt.
+    \item De \texttt{track} functie levert een lijst op van \texttt{Results}-objecten, maar bevat hier slechts één element, aangezien de functie telkens één enkele frame behandelt.
     Dit \texttt{Results}-object bevat de segmentatiemaskers, bounding boxes, en tracking-informatie voor elk object in het frame.
 \end{itemize}
 Het is ook mogelijk om een \texttt{iou} (Intersection over Union) parameter in te stellen, evenals een \texttt{conf} (vertrouwensscore) parameter.
@@ -318,7 +318,7 @@ Er werden initieel twee strategieën onderzocht voor het classificeren van deze 
 \end{enumerate}
 
 Deze twee benaderingen zullen hier echter niet diepgaand worden behandeld, 
-aangezien beiden al in een vroeg stadium van evaluatie een fundamenteel gebrek vertoonden, 
+aangezien beide al in een vroeg stadium van evaluatie een fundamenteel gebrek vertoonden, 
 namelijk een onacceptabel hoge mate van vals-positieven. 
 Het probleem lag niet zozeer in de specifieke modelkeuzes, maar in een verkeerde definitie van het classificatieprobleem.
 De gekozen classificatietechnieken zijn inherent ontworpen voor \textit{gesloten-set} scenario's. 
@@ -349,7 +349,7 @@ De toegevoegde beeldcontext rond een object zorgt voor lagere gevoeligheid voor 
 \subsection{Creatie van de Trainingsdataset voor Objectdetectie}
 
 Gebaseerd op de gelabelde kalibratieopname die eerder werd besproken, werd een specifieke trainingsdataset voor objectdetectie gecreëerd.
-Zoals eerder vermeld, werd het object `ampule poeder' niet opgenomen in de labeling. Dit resulterende in een dataset met 14 objecten.
+Zoals eerder vermeld, werd het object `ampule poeder' niet opgenomen in de labeling. Dit resulteerde in een dataset met 14 objecten.
 Deze diende te bestaan uit beelduitsnedes (hierna `crops' genoemd) waarin de kritische objecten gelabeld zijn met bounding boxes.
 De creatie van deze dataset werd geïmplementeerd in de python notebook \texttt{12\_prepare\_object\_detection\_datasets.ipynb}.
 Omwille van de beknoptheid zullen in deze sectie enkel de belangrijkste codefragmenten worden getoond; 
@@ -505,7 +505,7 @@ Vervolgens worden op basis van de trackingresultaten, metadata per klasse verzam
 Dit resulteert in een dictionary waarin elke klasse ID is gekoppeld aan een dictionary met de volgende informatie:
 \begin{itemize}
     \item \texttt{class\_name}: De naam van de klasse, bijvoorbeeld `monitor'.
-    \item \texttt{color}: Het kleur van de klasse in hexadecimale notatie.
+    \item \texttt{color}: De kleur van de klasse in hexadecimale notatie.
     \item \texttt{frame\_indexes}: Een lijst van frame-indexen waarin de klasse voorkomt in de trackingresultaten.
     \item \texttt{mask\_areas}: Een lijst van de oppervlakte van het segmentatiemasker voor elk frame waarin de klasse voorkomt.
     \item \texttt{bboxes}: Een lijst van bounding boxes voor elk frame waarin de klasse voorkomt.
@@ -734,7 +734,7 @@ al een basisniveau van kennis heeft over objectherkenning.
 Hiermee kan het model sneller convergeren met een kleinere dataset aan domeinspecifieke objecten, dan wanneer training aangevat wordt vanaf nul.
 
 De training werd uitgevoerd met behulp van de functionaliteit van de \texttt{ultralytics}\footnote{\url{https://pypi.org/project/ultralytics/} (laatst geraadpleegd op 2025-05-29)} bibliotheek, 
-binnen de script \texttt{scripts/train\_object\_detectors.py}.
+binnen het script \texttt{scripts/train\_object\_detectors.py}.
 De relevante code voor het trainen van de modellen is te vinden binnen de functie\\ \texttt{train\_model} in Codefragment~\ref{listing:train-model}.
 
 \begin{listing}[H]
@@ -783,7 +783,7 @@ Tenslotte werd elk model opgeslagen in de map \texttt{data/models/object\_detect
 
 Met de getrainde modellen was het mogelijk om de objectdetectie te koppelen aan de eerder verkregen FastSAM trackingresultaten uit Sectie~\ref{sec:tracking-segmentatie}.
 In deze sectie wordt het proces beschreven om de FastSAM segmentaties te combineren met objectdetectie,
-met als doel een dataset te verkrijgen die voor elke frame van de evaluatieopnames een lijst aan gelabelde, bekeken objecten bevat.
+met als doel een dataset te verkrijgen die voor elke frame van de evaluatieopnames een lijst met gelabelde, bekeken objecten bevat.
 Het proces werd geïmplementeerd in de notebook \texttt{13\_predict\_object\_detection.ipynb} en kan worden samengevat in de volgende stappen:
 \begin{enumerate}
     \item \textbf{Genereren van Vergelijkingssets per Frame}: Voor elke frame van een evaluatieopname werd een 
@@ -817,7 +817,7 @@ De functie \texttt{get\_comparison\_dataset} implementeert de logica voor het ge
 
 De volgende functieparameters werden op voorhand samengesteld:
 \begin{itemize}
-    \item \texttt{frame\_to\_gaze\_position}: Een dictionary die per frame-index het\\ (x,y)-coördinaat van het 
+    \item \texttt{frame\_to\_gaze\_position}: Een dictionary die per frame-index de\\ (x,y)-coördinaat van het 
     blikpunt van de student bevat. 
     Deze data werden reeds eerder berekend in Sectie~\ref{sec:synchronisatie-blikpunten-videoframes}.
     \item \texttt{frame\_to\_gaze\_segmentation\_data}: Een dictionary 
@@ -1005,7 +1005,7 @@ De matching-functie omvat de volgende conceptuele stappen:
 
 \subsubsection{Toekennen van een Klasse aan FastSAM Object Tracks}
 
-Ne het matchen beschikten we per frame over een lijst van FastSAM-segmentaties die 
+Na het matchen beschikten we per frame over een lijst van FastSAM-segmentaties die 
 succesvol gekoppeld konden worden aan een YOLOv11-objectdetectie.
 De volgende uitdaging was om op basis van deze per-frame informatie, een definitieve klasse toe te kennen aan elk uniek FastSAM object ID
 die doorheen de evaluatieopname werd gevolgd.
@@ -1043,7 +1043,7 @@ naar hun definitieve voorspelde klasse (één van de 14 kritische objecten)
 en de geaggregeerde vertrouwensscore.
 In Sectie~\ref{sec:voorbereiding-tracking-resultaten} werd al beschreven hoe de metadata van de FastSAM-trackingresultaten opgeslagen werden in zogenaamde\\ `object-datasets'.
 In deze stap werden deze datasets, voor elke evaluatieopname, uitgebreid met de voorspelde klasse en de bijbehorende vertrouwensscore voor elk object ID.
-Het resultaat was een finale voorspellingsdataset (pandas \texttt{Dataframe}) per evaluatieopname. Deze waren klaar was voor evaluatie en bevatten de volgende velden:
+Het resultaat was een finale voorspellingsdataset (pandas \texttt{Dataframe}) per evaluatieopname. Deze was klaar voor evaluatie en bevatten de volgende velden:
 \begin{itemize}
     \item \texttt{frame\_idx}: De index van de frame in de evaluatieopname.
     \item \texttt{object\_id}: De unieke ID van het getrackte object.
@@ -1061,7 +1061,7 @@ kon de evaluatie van de volledige analysepipeline beginnen.\\ Deze evaluatie had
 \begin{enumerate}
     \item Het bepalen van de optimale combinatie van hyperparameterwaarden voor het eerder besproken matchingproces waarbij de finale klasse aan een track wordt toegekend.
     \item Het beoordelen van de algehele prestaties van de verschillende getrainde\\ YOLOv11-modellen tegenover de grondwaarheid op basis van precisie, recall en F1-score.
-    \item Het bekomen van een kwantitatief antwoord op de deelonderzoeksvragen betreffende de accuraatheid van het 
+    \item Het verkrijgen van een kwantitatief antwoord op de deelonderzoeksvragen betreffende de accuraatheid van het 
     ontwikkelde systeem, specifiek (zoals origineel geformuleerd in Sectie~\ref{sec:onderzoeksvraag}):
         \begin{itemize}
             \item In welke mate kan de ontwikkelde software correct bepalen welke kritische objecten studenten hebben waargenomen?
@@ -1219,7 +1219,7 @@ Het voegt voor elke frame twee zaken toe aan de voorspellingsdataset:
     \item \textbf{true\_class\_id}: De klasse-ID van het object zoals gedefinieerd in de grondwaarheid.
     \item \textbf{label}: Een categorisch label dat aangeeft hoe de voorspelling zich verhoudt tot die grondwaarheid. Dit label kan de volgende waarden aannemen:
         \begin{itemize}
-            \item \textbf{TP (True Positive)}: De voorspelde klasse komt overeen met de grondwaarde klasse voor een object in hetzelfde frame. 
+            \item \textbf{TP (True Positive)}: De voorspelde klasse komt overeen met de grondwaarheidsklasse voor een object in hetzelfde frame. 
             Een correcte detectie en classificatie.
             \item \textbf{FP (False Positive):} Het model voorspelt een object, maar er is geen overeenkomstige grondwaarheid 
             voor die klasse in het frame; of het voorspelde object komt niet overeen met de grondwaarheidsklasse.
@@ -1274,7 +1274,7 @@ te werken op basis van de evaluatieresultaten voor een bepaalde evaluatieopname 
       }
 \end{listing}
 
-\paragraph{3. Berekekenen van Confusion Matrix Metrieken}
+\paragraph{3. Berekenen van Confusion Matrix Metrieken}
 Uit de confusion matrix kunnen verschillende metrieken worden afgeleid die de prestaties van het model samenvatten.
 Dit gebeurt met behulp van de functie \texttt{experiment\_utils.confusion\_matrix\_metrics}. 
 
@@ -1317,7 +1317,9 @@ De precisie, recall en F1-score voor het beste resultaat per model worden weerge
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{grid-search-results-models.png}
-  \caption[]{\label{fig:best-models-metrics} 
+  \caption[
+    Precisie, recall en F1-score van de beste modellen per getraind YOLOv11-model
+  ]{\label{fig:best-models-metrics} 
     De precisie, recall en F1-score van de beste modellen per getraind YOLOv11-model.
     De beste hyperparameters werden bepaald op basis van de hoogste F1-score over alle evaluatieopnames.
     De resultaten zijn weergegeven voor de vier getrainde modellen, gesorteerd op de hoeveelheid samples die gebruikt werden voor het trainen.
@@ -1327,13 +1329,13 @@ Merk op dat de resultaten van elk model hier heel nauw bij elkaar liggen, wat mi
 Dit wijst echter potentieel op het feit dat de beperkende factor in de prestaties van de analysepipeline niet de YOLOv11-objectdetectie is,
 maar eerder de FastSAM-tracking en segmentatie stap.
 
-Volgens de grid search werd het beste model getraind op 1000 samples per klasse, die de volgende resultaten behaalde:
+Volgens de grid search werd het beste model getraind op 1000 samples per klasse, dat de volgende resultaten behaalde:
 \begin{itemize}
     \item \textbf{Precisie:} 0.9424
     \item \textbf{Recall:} 0.6976
     \item \textbf{F1-score:} 0.8017
 \end{itemize}
-De beste combinatie van hyperparameters voor dit model zijn:
+De beste combinatie van hyperparameters voor dit model is:
 \begin{itemize}
     \item \textbf{min\_pred\_conf:} 0.85
     \item \textbf{iou\_threshold:} 0.2
@@ -1349,7 +1351,9 @@ Dit wordt in een latere sectie verder onderzocht.
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{confusion-matrix-best-model.png}
-  \caption[]{\label{fig:confusion-matrix-best-model} 
+  \caption[
+    Confusion matrix voor het beste model, getraind op 1000 samples per klasse
+  ]{\label{fig:confusion-matrix-best-model} 
     De confusion matrix voor het beste model, getraind op 1000 samples per klasse.
     Hier zijn de totaalwaarden van elke cel genormaliseerd door te delen door de som van de waarden in zijn rij.
     Elke rij in de matrix vertegenwoordigt de ware klasse (grondwaarheid),
@@ -1362,6 +1366,7 @@ Dit wordt in een latere sectie verder onderzocht.
 \end{figure}
 
 \subsection{Verdere Analyse van het Beste Model}
+\label{sec:analyse-beste-model}
 
 Om een beter inzicht te krijgen in de prestaties van de analysepipeline en om mogelijk problemen te identificeren, werden de 
 resultaten van het beste model (getraind op 1000 samples per klasse) verder geanalyseerd.
@@ -1376,7 +1381,9 @@ Opmerkelijk is dat het `infuus' object veruit de meeste vals-positieven geeft, w
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{false-positives-per-class.png}
-  \caption[]{\label{fig:false-positives-per-class}
+  \caption[
+    Staafdiagram van het aantal vals-positieven per klasse voor het beste model.
+  ]{\label{fig:false-positives-per-class}
     Staafdiagram van het aantal vals-positieven per klasse voor het beste model, genormaliseerd ten opzichte van de support van die klasse.
 
   }
@@ -1386,7 +1393,7 @@ Om verder inzicht te verkrijgen in de aard van de vals-positieven, werden per kl
 Hier is het belangrijk om te vermelden dat de uitsnedes betrekking hebben op de FastSAM-segmenta\-ties,
 en niet op de YOLOv11-detecties.
 Voor voorbeelden van deze uitsnedes binnen de klasse `naaldcontainer', zie Figuur~\ref{fig:fp-examples-naaldcontainer}.
-Zoals men kan zien, zijn alle vals-positieven in de werkelijkheid toch correcte detecties, maar werden ze niet opgenomen in de grondwaarheid dataset.
+Zoals men kan zien, zijn alle vals-positieven in de werkelijkheid toch correcte detecties, maar werden ze niet opgenomen in de grondwaarheidsdataset.
 Een mogelijke verklaring hiervoor is dat de segmentatiemaskers van de FastSAM-tracking niet altijd volledig 
 overeenkomen met de grondwaarheid.
 Dit zorgt ervoor dat sommige objecten als `bekeken' aangeduid worden in de geautomatiseerde analyse, 
@@ -1394,7 +1401,9 @@ terwijl ze niet opgenomen werden in de grondwaarheid omdat er geen overlap was m
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{fp-examples-naaldcontainer.png}
-    \caption[]{\label{fig:fp-examples-naaldcontainer}
+    \caption[
+    Voorbeelden van vals-positieven voor de klasse `naaldcontainer' van het beste model
+    ]{\label{fig:fp-examples-naaldcontainer}
     Vals-positieve voorbeelden voor de klasse `naaldcontainer' van het beste model.
     De afbeeldingen tonen de uitsnedes van de FastSAM-segmentaties die als vals-positief werden beschouwd, vergeleken met de grondwaarheid.
     Het framenummer en de klasse-ID van de FastSAM-segmentatie zijn weergegeven in de titel van elke afbeelding.
@@ -1402,17 +1411,19 @@ terwijl ze niet opgenomen werden in de grondwaarheid omdat er geen overlap was m
 \end{figure}
 
 Voor elke klasse werden op deze manier de uitsnedes van de vals-positieven manueel bekeken om te bepalen of ze in werkelijkheid ook vals-positief waren.
-Uit het totaal van 262 zogezegde vals-positieven, bleken er echter slechts drie `echte' vals-positieven te zijn (met uitzondering van het infuus is, dat hierna wordt besproken).
+Uit het totaal van 262 zogezegde vals-positieven, bleken er echter slechts drie `echte' vals-positieven te zijn (met uitzondering van het infuus, dat hierna wordt besproken).
 Interessant was dat deze drie vals-positieven allemaal betrekking hadden op de klasse `fotokader', en ook tot dezelfde FastSAM object ID behoorden (zie Figuur~\ref{fig:fp-examples-fotokader}).
 Dit wijst op een fout in de tracking van dit specifieke object, veroorzaakt door het onjuist toekennen van een object ID aan een segmentatie die niet tot hetzelfde object behoort.
-Inderdaad, bij manuele inspectie van de resultaten bleek dat de meeste frames met dit object ID eigenlijk betrekking hadden tot het effectief bekeken fotokader.
+Inderdaad, bij manuele inspectie van de resultaten bleek dat de meeste frames met dit object ID eigenlijk betrekking hadden op het effectief bekeken fotokader.
 Echter, wanneer de student het hoofd draaide, bleef de FastSAM-tracking andere objecten toewijzen aan dit object ID, waardoor vals-positieven ontstonden.
 Dit kan eventueel worden opgelost in de toekomst na een meer uitgebreide analyse van dit probleem in de FastSAM-tracking.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{fp-fotokader.png}
-  \caption[]{\label{fig:fp-examples-fotokader}
+  \caption[
+    Voorbeelden van vals-positieven voor de klasse `fotokader' van het beste model
+  ]{\label{fig:fp-examples-fotokader}
     Vals-positieve voorbeelden voor de klasse `fotokader' van het beste model.
     Hier zien we drie `ware' vals-positieven, en drie vals-positieven die in werkelijkheid correcte detecties waren. 
     }
@@ -1434,7 +1445,9 @@ Deze bevinding wijst op problemen bij de detectie van objecten die samengesteld 
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{fp-infuus.png}
-  \caption[]{\label{fig:fp-infuus}
+  \caption[
+    Voorbeelden van vals-positieven voor de klasse `infuus' van het beste model
+  ]{\label{fig:fp-infuus}
     Vals-positieve voorbeelden voor de klasse `infuus' van het beste model.
     }
 \end{figure}
@@ -1452,7 +1465,9 @@ Hoewel het snoepje heel klein was, werden toch meer dan 50\% van de gevallen cor
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{fn-per-class.png}
-  \caption[]{\label{fig:fn-per-class}
+  \caption[
+    Staafdiagram van het aantal vals-negatieven per klasse voor het beste model.
+  ]{\label{fig:fn-per-class}
     Staafdiagram van het aantal vals-negatieven per klasse voor het beste model, genormaliseerd ten opzichte van de support van die klasse.
   }
 \end{figure}
@@ -1463,7 +1478,6 @@ Het verwerven van een beter inzicht in de aard van de vals-negatieven vereiste e
 Als hypothese kunnen we stellen dat de analysepipeline vooral kleine objecten mist. 
 Om dit te onderzoeken, werden de maskergroottes van de waar-positieven (TP) en vals-negatieven (FN) per klasse geanalyseerd.
 Voor elke klasse werd `\text{Cohen's d}' berekend, een maatstaf voor de effectgrootte die aangeeft hoe groot het verschil is tussen de gemiddelde maskergrootte van de TP en FN (zie Figuur~\ref{fig:cohens-d-fn-tp}).
-% TODO: formule voor Cohen's d toevoegen? also, kan deze zin beter, also cohens d in aanhalingstekens
 Boven elke staaf in de figuur staat ook het gehalte aan vals-negatieven voor die klasse, tegenover de support ervan.
 Dit geeft een indicatie over de betrouwbaarheid van de effectgrootte, aangezien een hoge effectgrootte bij een laag aantal vals-negatieven mogelijk niet representatief is.
 We zien dat de meeste klassen een gemiddelde tot hoge effectgrootte tonen, wat betekent dat de TP gemiddeld grotere maskers bevat dan de FN.
@@ -1471,7 +1485,9 @@ We zien dat de meeste klassen een gemiddelde tot hoge effectgrootte tonen, wat b
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{cohens-d-tp-fn.png}
-  \caption[]{\label{fig:cohens-d-fn-tp}
+  \caption[
+    Cohen's d voor de gemiddelde maskergrootte van de waar-positieven (TP) en vals-negatieven (FN) per klasse
+  ]{\label{fig:cohens-d-fn-tp}
     Cohen's d voor de gemiddelde maskergrootte van de waar-positieven (TP) en vals-negatieven (FN) per klasse.
     Boven elke staaf staat het percentage vals-negatieven ten opzichte van de support van die klasse.
     Een positieve waarde duidt erop dat de TP gemiddeld grotere maskers bevat dan de FN, terwijl een negatieve waarde het omgekeerde aangeeft.
@@ -1486,7 +1502,9 @@ Hier zijn de klassen van links naar rechts en van boven naar beneden geordend vo
 \begin{figure}[H]
   \centering
   \includegraphics[width=1\textwidth]{mask-area-violin-plots.png}
-  \caption[]{\label{fig:violinplot-fn-tp}
+  \caption[
+    Vioolplotten van de maskergroottes voor de waar-positieven (TP) en vals-negatieven (FN) per klasse
+  ]{\label{fig:violinplot-fn-tp}
     Vioolplotten van de maskergroottes voor de waar-positieven (TP) en vals-negatieven (FN) per klasse.
     De breedte van elke viool geeft de dichtheid van de waarden aan, terwijl de hoogte de verdeling van de maskergroottes weergeeft.
   }
@@ -1518,7 +1536,7 @@ Bij de fotokader valt dit te verklaren door het feit dat binnen één van de opn
 Dit zorgde ervoor dat het object niet meer binnen de crop van 640x640 viel, waardoor het objectdetectiemodel geen voorspelling kon maken.
 De negatieve effectgrootte van de naaldcontainer is waarschijnlijk niet representatief, aangezien deze klasse slechts 5.9\% van de support heeft als vals-negatieven.
 
-Een consistent resultaat is dat de meeste klaasen een dunne, lange staart vertonen in de vioolplots voor de FN's. 
+Een consistent resultaat is dat de meeste klassen een dunne, lange staart vertonen in de vioolplots voor de FN's. 
 Dit valt, net zoals bij de vals-positieven, te verklaren door het feit dat de segmentatiemaskers van de FastSAM-tracking niet altijd volledig overeenkomen met die van de grondwaarheid.
 Soms is een segmentatiemasker echter opgeschoven of kleiner dan die van de grondwaarheid, waardoor het blikpunt van de student net niet meer binnen de segmentatie valt.
 Dit fenomeen resulteert dus ongeacht de maskergrootte in vals-negatieven.

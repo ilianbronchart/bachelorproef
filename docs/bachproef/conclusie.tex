@@ -5,15 +5,6 @@
 \chapter{Conclusie}%
 \label{ch:conclusie}
 
-% TODO: Trek een duidelijke conclusie, in de vorm van een antwoord op de
-% onderzoeksvra(a)g(en). Wat was jouw bijdrage aan het onderzoeksdomein en
-% hoe biedt dit meerwaarde aan het vakgebied/doelgroep? 
-% Reflecteer kritisch over het resultaat. In Engelse teksten wordt deze sectie
-% ``Discussion'' genoemd. Had je deze uitkomst verwacht? Zijn er zaken die nog
-% niet duidelijk zijn?
-% Heeft het onderzoek geleid tot nieuwe vragen die uitnodigen tot verder 
-%onderzoek?
-
 Deze bachelorproef had als doel een methode te ontwikkelen om de observatievaardigheden van 
 studenten in het 360° Zorglab van HOGENT op een geautomatiseerde, objectieve manier te evalueren.
 Computervisie-modellen werden geïntegreerd met eyetrackingdata van Tobii Glasses, om zo de huidige, 
@@ -32,28 +23,28 @@ De deelvragen kunnen als volgt beantwoord worden:
 \paragraph{\textit{Welke barrières (cognitief, technisch of didactisch) ervaren trainers en studenten bij de huidige, handmatige observatiemethodes?}}
 Deze vraag werd binnen deze proef niet expliciet onderzocht via een nieuw, formeel gebruikersonderzoek. 
 Desondanks konden de inherente barrières worden geïdentificeerd. 
-Dit gebeurde op basis van een combinatie van de initiële probleemstelling, een grondige literatuurstudie en inzichten verkregen uit overleg met de co-promotor. 
+Dit gebeurde op basis van een combinatie van de initiële probleemstelling, een grondige literatuurstudie (Sectie~\ref{sec:eyetracking}) en inzichten verkregen uit overleg met de co-promotor. 
 Deze laatste is zelf een ervaren docent in de verpleegkunde en is de opdrachtgever van dit onderzoek. 
 De voornaamste barrières die hieruit naar voor kwamen, waren de subjectiviteit in de beoordeling, 
 de tijdrovende aard van zelfrapportage en directe, observatie evenals het gebrek aan objectieve data over kijkgedrag.  
     
 \paragraph{\textit{Welke kenmerken moet een geautomatiseerde analysemethode hebben om de huidige beperkingen van handmatige observatie te verhelpen?}}
 In een ideale wereld zou een volledig geautomatiseerde analysemethode in staat zijn  
-de eyetracking opnames van studenten volledig te analyseren zonder enige menselijke tussenkomst.
+de eyetrackingopnames van studenten volledig te analyseren zonder enige menselijke tussenkomst.
 Echter, gezien de huidige stand van de technologie, is dit nog niet haalbaar.
 Daarom werd er gekozen voor een semi-automatische aanpak, waarbij de trainer nog steeds een actieve rol speelt in het initialiseren van de analyse.
 In de ontwikkelde pipeline voert de trainer de `kalibratiestap' uit, waarbij de kritische objecten worden gelabeld. 
-De ontwikkelde methode omvat daarom als ondersteunend kenmerk, een softwareapplicatie met een gebruiksvriendelijke interface. 
+De ontwikkelde methode omvat daarom als ondersteunend kenmerk, een softwareapplicatie (Hoofdstuk~\ref{ch:ontwikkeling}) met een gebruiksvriendelijke interface. 
 Deze stelt trainers in staat eyetrackingopnames te beheren, objecten te definiëren en deze efficiënt te labelen.
 Aangezien computer-vision een veld is dat voortdurend evolueert, was het ook belangrijk dat de ontwikkelde software voortdurend kon bijgestuurd worden.
-De software is daarom modulair opgebouwd, zodat nieuwe componenten gemakkelijk kunnen worden toegevoegd.
+De software is daarom modulair opgebouwd (volgens Sectie~\ref{sec:software-architectuur}), zodat nieuwe componenten gemakkelijk kunnen worden toegevoegd.
 
 \paragraph{\textit{In welke mate kunnen de modellen en de ontwikkelde software:}}
 \begin{enumerate}
     \item \textit{correct bepalen welke kritische objecten studenten hebben waargenomen?}
     \item \textit{nauwkeurig meten hoe lang studenten naar deze objecten keken?}
 \end{enumerate}
-De beste resultaten werden behaald door de combinatie van een YOLOv11-object\-detector getraind op 1000 samples per klasse, gecombineerd met FastSAM-tra\-cking.
+De beste resultaten werden behaald door de combinatie van een YOLOv11-object\-detector getraind op 1000 samples per klasse, gecombineerd met FastSAM-tra\-cking (zie Sectie~\ref{sec:analyse-beste-model}).
 Deze combinatie behaalde een micro-gemiddelde F1-score van 0.8017, met een precisie van 0.9424 en een recall van 0.6976.
 Dit duidt erop dat de software met hoge precisie objecten kan identificeren (weinig fout-positieven), 
 maar dat er nog ruimte voor verbetering is in de recall (het detecteren van alle daadwerkelijk bekeken objecten). 
@@ -168,7 +159,6 @@ Zoals eerder vermeld, is de ontwikkelde software modulair opgebouwd, zodat\\ nie
 Studenten kunnen bij volgende bachelorproeven baat hebben bij de ontwikkelde labeling tool, om zo meer tijd te kunnen besteden aan het ontwikkelen van nieuwe analysecomponenten.
 Indien deze componenten goed presteren, kunnen ze worden toegevoegd aan de bestaande software. 
 Hierbij dient een analysemodule te worden ontwikkeld waarbij een trainer eyetrackingopnames kan selecteren en eventueel verschillende analysemethoden kan combineren.
-Een voorbeeld hiervan is een analysemethoden voor gezichtsherkenning, die kan bepalen of een student naar een specifieke persoon kijkt.
-Tenslotte ontbreekt de software momenteel een visualisatiemodule die de resultaten van de analyse(s) op een gebruiksvriendelijke manier presenteert.
+Een voorbeeld hiervan is een analysemethode voor gezichtsherkenning, die kan bepalen of een student naar een specifieke persoon kijkt.
+Tenslotte beschikt de software momenteel niet over een visualisatiemodule die de resultaten van de analyse(s) op een gebruiksvriendelijke manier presenteert.
 
-% TODO conclusie een beetje leuker eindigen 
