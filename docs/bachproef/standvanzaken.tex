@@ -34,14 +34,9 @@
 \chapter{\IfLanguageName{dutch}{Stand van zaken}{State of the art}}%
 \label{ch:stand-van-zaken}
 
-Deze bachelorproef onderzoekt het raakvlak tussen de huidige state-of-the-art Machine Learning-modellen in Computer Vision en de analyse van hoofd-gemonteerde eyetracking data.
+Deze bachelorproef onderzoekt het raakvlak tussen de huidige state-of-the-art Machine Learning-modellen in Computer Vision en de analyse van hoofd-ge\-mon\-teer\-de eyetracking data.
 Daarom kan dit hoofdstuk opgedeeld worden in twee hoofddelen. Het eerste deel geeft een overzicht van hoofd-gemonteerde eyetracking technologie, met in het bijzonder een focus op de Tobii Pro Glasses 3.
 Het tweede deel biedt een overzicht van de huidige state-of-the-art in Computer Vision, met aandacht voor object detection en segmentation, evenals technieken voor image preprocessing.
-
-\section{Maatschappelijke Relevantie}
-
-% TODO: uitleggen waarom het onderzoek relevant is + aantal concrete simulatiescenario's schetsen
-% voeg dit eerder toe aan de inleiding?
 
 \section{Eyetracking}
 
@@ -49,27 +44,25 @@ Historisch gezien steunde medische training op observatie en zelfrapportage om d
 Deze methoden hebben echter beperkingen door gebrek aan nauwkeurigheid in de betrouwbare rapportage van visuele aandacht en kijkgedrag van studenten.
 Recent onderzoek door \textcite{Clarke2017} toont aan dat individuen over het algemeen weinig bewust zijn van hun eigen oogbewegingen, 
 waardoor zelfrapportage een onbetrouwbare maatstaf is om na te gaan of kritische elementen tijdens een simulatie effectief zijn waargenomen.
-Eyetracking-technologie biedt daarentegen een objectieve methode om visuele aandacht en kijkgedrag in kaart te brengen. 
+Eyetracking-technologie biedt daarentegen een objectieve me\-tho\-de om visuele aandacht en kijkgedrag in kaart te brengen. 
 
 \subsection{Soorten eyetrackers}
 
 Eyetrackers kunnen worden onderverdeeld in twee hoofdtypes: screen-based of mobile devices \autocite{Pauszek2023}.
-Screen-based eyetrackers worden gebruikt in omgevingen waar de gebruiker stationair blijft en naar een monitor kijkt, zoals een computermonitor .
-Mobile eyetrackers zijn draagbare toestellen waarmee gebruikers zich vrij kunnen bewegen terwijl hun kijkgedrag nog steeds wordt gevolgd.
-
+Screen-based eyetrackers worden gebruikt in omgevingen waar de gebruiker stationair blijft en naar een monitor kijkt, zoals een computermonitor.
+Mobile eyetrackers zijn draagbare toestellen waarmee gebruikers zich vrij kunnen bewegen terwijl hun kijkgedrag nog steeds wordt gevolgd.\\
 In de context van medische training en simulatie, waarbij studenten vaak fysieke handelingen uitvoeren en zich door een ruimte verplaatsen, zijn mobile eyetrackers de meest geschikte optie.
 Hierbij zet de student de bril op en kan er na een initiële kalibratie vrij bewogen worden.
 Toch zijn er enkele nadelen verbonden aan mobile eyetrackers \autocite{Pauszek2023}. 
 Plotselinge bewegingen kunnen ervoor zorgen dat de bril verschuift waardoor de initiële kalibratie verstoord wordt.
 Daarnaast is het belangrijk om consistente belichting te hebben om nauwkeurige data te verkrijgen, wat in sommige omgevingen moeilijk kan zijn.
-Meer hierover in addendum \ref{ch:best-practices}.
 
 In het Zorglab van de HOGENT wordt specifiek gebruik gemaakt van de Tobii Pro Glasses 3 \autocite{Tobii2025a}. 
 Dit apparaat is een mobiele eyetracker die een scene camera heeft die het beeld voor de gebruiker registreert, evenals vier eye cameras die de oogbewegingen van de gebruiker opnemen.
 
 \subsection{Analyse van eyetracking data}
 
-Oogbewegingen kunnen breed worden onderverdeeld in verschillende types, waarbij fixaties en saccades de voornaamste blik-afhankelijke metrieken zijn \autocite{Pauszek2023}.
+Oogbewegingen kunnen breed worden onderverdeeld in verschillende types, wa\-arbij fixaties en saccades de voornaamste blik-afhankelijke metrieken zijn \autocite{Pauszek2023}.
 Fixaties zijn periodes waarin de ogen relatief stabiel blijven en zich richten op een specifiek visueel doel of gebied.
 Deze duren meestal tussen de 100 en 600 milliseconden, hoewel deze duur afhankelijk is van contextuele factoren.
 Tijdens fixaties wordt visuele informatie actief gecodeerd en verwerkt, wat ze belangrijk maakt voor cognitieve functies zoals objectherkenning, lezen en besluitvorming.
@@ -247,7 +240,7 @@ De masker-decoder gebruikt vervolgens deze gecombineerde informatie om het uitei
 
 Een opvallend aspect van SAM is het vermogen om ambiguïteit te herkennen en daarmee om te gaan. 
 Wanneer één prompt meerdere mogelijke interpretaties heeft, bijvoorbeeld een punt dat zowel naar een persoon als een kledingstuk verwijst, kan SAM meerdere segmentatiemaskers genereren die elk een mogelijke interpretatie weergeven. 
-Vervolgens wordt voor elk masker een betrouwbaarheidswaarde berekend, waarmee het model aangeeft welk masker het meest waarschijnlijk overeenkomt met de intentie van de gebruiker.
+Vervolgens wordt voor elk masker een betrouwbaarheidswaarde berekend, waarmee het model aangeeft welk masker het meest waarsch\-ijnlijk overeenkomt met de intentie van de gebruiker.
 
 De kracht van SAM ligt in zijn brede toepasbaarheid zonder dat verdere training vereist is (zero-shot generalisatie). 
 Dit betekent dat SAM in staat is om direct te worden ingezet voor nieuwe beelden en taken die het nog niet eerder heeft gezien, wat erg nuttig is voor interactieve toepassingen en snelle analyses.
@@ -286,7 +279,7 @@ Ze kunnen worden beschouwd als een compacte, numerieke `vingerafdruk' van een af
 Enkele voorbeelden van de mogelijkheden van image embeddings zijn te zien in figuur \ref{fig:dinov2}.
 
 Deze techniek is vooral interessant voor toepassingen waarbij men op een efficiënte manier wil bepalen om welk object het gaat, zonder hiervoor telkens nieuwe detectiemodellen te moeten trainen. 
-Wanneer een selectie van objecten via segmentatie (zoals met SAM) gedetecteerd wordt, kan een image embedding gebruikt worden om automatisch te bepalen om welk specifiek object het gaat. 
+Wanneer een selectie van objecten via segmentatie (zoals met SAM) gedetecteerd wordt, kan een image embedding gebrui\-kt worden om automatisch te bepalen om welk specifiek object het gaat. 
 Dit gebeurt door de gegenereerde vector van het gedetecteerde object te vergelijken met een vooraf opgebouwde database van bekende objecten. 
 Het gebruik van image embeddings biedt een aantal voordelen: het is robuust tegen variaties in belichting, perspectief, en andere visuele veranderingen, waardoor het model goed blijft presteren, zelfs wanneer objecten er anders uitzien dan tijdens de training.
 
@@ -302,7 +295,7 @@ DINOv2, geïntroduceerd in 2024 door \textcite{Oquab2024}, bouwt voort op eerder
 Net zoals eerdere embedding-modellen genereert DINOv2 numerieke representaties van afbeeldingen, maar onderscheidt zich door een sterk verbeterde generalisatiekracht. 
 Dit betekent dat het model beter in staat is om nieuwe objecten en situaties te herkennen zonder verdere training.
 
-DINOv2 is gebaseerd op transformer-architecturen en maakt gebruik van self-supervised learning (SSL). 
+DINOv2 is gebaseerd op transformer-architecturen en maakt gebruik van self-sup\-ervised learning (SSL). 
 Hierbij leert het model zelfstandig relevante kenmerken van afbeeldingen zonder gebruik te maken van expliciete labels. 
 In tegenstelling tot veel eerdere modellen presteert DINOv2 zowel goed op algemene taken, zoals het herkennen van categorieën van objecten (auto's of vliegtuigen), als op taken waarbij het exacte exemplaar (een specifiek gebouw of schilderij) geïdentificeerd moet worden. 
 
@@ -313,21 +306,21 @@ behaalt DINOv2 segmentatieprestaties die vergelijkbaar zijn met gespecialiseerde
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\textwidth]{dinov2.png}
-  \caption[]{\label{fig:dinov2}Enkele voorbeelden van de mogelijkheden van DINOv2 image embeddings \autocite{Oquab2024}.}
+  \caption[]{\label{fig:dinov2}Enkele voorbeelden van de mogelijkheden van DINOv2 image embeddings (afbeelding afkomstig van \textcite{Oquab2024}).}
 \end{figure}
 
 \section{Eyetracking en Computer Vision}
 
 Ten slotte is het interessant om stil te staan bij recente implementaties van Computer Vision in combinatie met eyetracking-technologie.
 
-In 2023 onderzochten \textcite{Cederin2023} de mogelijkheden van bestaande computer vision modellen om automatisch te detecteren welke objecten een gebruiker bekijkt tijdens een eyetracking-sessie.
+In 2023 onderzochten \textcite{Cederin2023} de mogelijkheden van bestaan\-de computer vision modellen om automatisch te detecteren welke objecten een gebruiker bekijkt tijdens een eyetrackingsessie.
 Net zoals deze bachelorproef gebruikten ze de Tobii Pro Glasses 3, wat hun onderzoek interessant maakt als referentie voor het omgaan met de eyetracking data van deze specifieke bril.
 Een probleem bij hoofd-gemonteerde eyetrackers is dat er vaak bewegingsruis aanwezig is, zeker als het hoofd van de gebruiker veel beweegt. Dit maakt het toepassen van computer vision modellen moeilijker.
 In hun onderzoek vergeleken ze twee ruisreductiemodellen, namelijk Restormer en DeblurGAN-v2, om de kwaliteit van de eyetracking data te verbeteren. Ze concludeerden dat DeblurGAN-v2 betere resultaten opleverde dan Restormer.
 Ook onderzochten ze de prestatieverschillen tussen YOLOv8 en DINO modellen op de eyetracking data. Uit hun resultaten blijkt dat DINO beter presteert dan YOLOv8 in elk testscenario. Ze concludeerden echter ook dat 
 DINO modellen een langere rekentijd nodig hebben dan de YOLO modellen.
 
-SAM werd ook onderzocht in combinatie met eyetracking data door \textcite{Wang2023} in hun applicatie genaamd `GazeSAM'. Dit onderzoek richtte zich op het segmenteren van de objecten waarnaar de gebruiker kijkt tijdens een eyetracking-sessie.
+SAM werd ook onderzocht in combinatie met eyetracking data door\\ \textcite{Wang2023} in hun applicatie genaamd `GazeSAM'. Dit onderzoek richtte zich op het segmenteren van de objecten waarnaar de gebruiker kijkt tijdens een eyetrackingsessie.
 Een belangrijk onderschijd tussen de context van dit onderzoek en deze bachelorproef is dat er gebruik gemaakt werd van screen-based eyetracking, waarbij de gebruiker naar een computermonitor keek in plaats van een fysieke omgeving.
 De blikrichting van de gebruiker werd gebruikt als basis voor een punt-prompt, waarmee SAM de objecten in de afbeelding kon segmenteren. Het bleek dat SAM soms moeilijkheden had met het segmenteren van medische afbeeldingen, omdat 
 SAM voornamelijk getraind is op alledaagse objecten. Dit zal echter geen probleem vormen voor de toepassingen binnen het Zorglab, waar de objecten voornamelijk alledaagse objecten zijn. Een ander nadeel van SAM was dat het model 

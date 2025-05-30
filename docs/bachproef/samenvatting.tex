@@ -27,11 +27,6 @@
 
 %%---------- Nederlandse samenvatting -----------------------------------------
 %
-% TODO: Als je je bachelorproef in het Engels schrijft, moet je eerst een
-% Nederlandse samenvatting invoegen. Haal daarvoor onderstaande code uit
-% commentaar.
-% Wie zijn bachelorproef in het Nederlands schrijft, kan dit negeren, de inhoud
-% wordt niet in het document ingevoegd.
 
 \IfLanguageName{english}{%
 \selectlanguage{dutch}
@@ -46,19 +41,35 @@
 
 \chapter*{\IfLanguageName{dutch}{Samenvatting}{Abstract}}
 
-% OUDE SAMENVATTING: HERSCHRIJVEN NA CONCLUSIE
-% Deze bachelorproef richt zich op het verbeteren van de observatievaardigheden van studenten in de zorg, specifiek binnen het 360° Zorglab van HOGENT. 
-% Observatievaardigheden zijn belangrijk voor zorgverleners, niet alleen voor het stellen van nauwkeurige diagnoses, maar ook voor de juiste ondersteuning en communicatie met patiënten. 
-% Momenteel ervaren studenten vaak moeilijkheden met het herkennen van kritische objecten tijdens zorgsimulaties, zoals het opmerken van een colafles bij een diabetespatiënt.
-% Eerdere evaluatiemethodes steunden op zelfrapportage en observatie door docenten, maar deze zijn subjectief en onbetrouwbaar. Hierdoor ontstaat de noodzaak voor een objectieve en efficiënte methode.
-% \par
-% Deze bachelorproef onderzoekt hoe eyetracking-technologie van Tobii Glasses gecombineerd kan worden met state-of-the-art Machine Learning modellen uit computervisie om observatievaardigheden objectief te analyseren en visualiseren. 
-% De centrale onderzoeksvraag luidt: `Hoe kunnen computervisie-modellen geïntegreerd worden met eyetrackingdata van Tobii Glasses om observatieprestaties van studenten in het 360° Zorglab automatisch te analyseren en te visualiseren?'.
-% \par
-% Om dit te realiseren, wordt een proof-of-concept (PoC) softwareoplossing ontwikkeld volgens een agile methodiek met iteratieve cycli.
-% Als ondersteuning voor de PoC wordt een literatuurstudie uitgevoerd om na te gaan welke objectdetectie- en segmentatiemodellen geschikt zijn voor dit project.
-% Ook wordt er gekeken naar bestaande implementaties van computervisie binnen eyetracking applicaties en hoe deze geïntegreerd kunnen worden.
-% De PoC omvat het verzamelen van eyetrackingdata, het definiëren en labelen van kritische objecten, en de implementatie van een data-architectuur waarin modellen zoals YOLO, DINOv2, SAM en FastSAM worden toegepast. 
-% Daarnaast wordt onderzocht hoe effectief en nauwkeurig deze modellen en de resulterende metrieken zijn in het identificeren van waargenomen objecten en hun kijkduur.
-% \par
-% Op basis van het onderzoek wordt verwacht dat de ontwikkelde aanpak een aanzienlijke verbetering zal betekenen in de betrouwbaarheid en efficiëntie van het evaluatieproces.
+Observatievaardigheden zijn van belang voor zorgverleners, zowel voor accurate diagnoses als voor empathische patiëntondersteuning. 
+De huidige evaluatie van deze vaardigheden in gesimuleerde omgevingen steunt vaak op subjectieve 
+methoden zoals zelfrapportage en directe observatie door docenten. 
+Hoewel de Tobii eyetracking-brillen in het Zorglab van HOGENT objectieve blikdata leveren, 
+ontbreekt er tot op heden geschikte software om automatisch te analyseren welke objecten studenten waarnemen en voor hoe lang. 
+Deze bachelorproef beantwoordt hoe computervisiemodellen geïntegreerd kunnen worden met 
+eyetrackingdata van Tobii Glasses om de observatieprestaties van studenten automatisch te analyseren.
+De analyses dienen de feedback door docenten in het Zorglab te versterken.
+
+Deze doelstelling werd uitgewerkt door middel van van een proof-of-concept (PoC) softwareapplicatie. 
+Dit proces startte met een literatuurstudie naar eyetracking-analyse en relevante computervisiemodellen (o.a. YOLO, SAM, DINOv2). 
+Vervolgens werd een prototype applicatie ontworpen en geïmplementeerd (Python, FastAPI, HTMX), 
+inclusief een semi-automatische labeling-tool die gebruik maakt van SAM2 voor objectsegmentatie en -tracking. 
+Om de PoC te valideren, werd een gecontroleerd experiment uitgevoerd in het Zorglab. 
+Hier genereerden studenten aan de hand van Tobii Pro Glasses 3, eyetrackingopnames tijdens gesimuleerde observatietaken. 
+Deze opnames, samen met twee specifieke kalibratieopnames, werden gelabeld met de ontwikkelde tool om een grondwaarheidsdataset te creëren. 
+Een analysepijplijn werd ontworpen en geëvalueerd. In deze analyse werd de trackingfunctionaliteit van FastSAM gecombineerd met 
+blikgestuurde filtering en classificatie van objectsegmenten, middels een getraind YOLOv11-objectdetectiemodel. 
+De prestaties werden geëvalueerd aan de hand van precisie, recall en F1-score, na optimalisatie via een grid search van hyperparameters.
+
+Uit de resultaten bleek dat de combinatie van FastSAM-tracking met een YOLOv11-objectdetector (getraind op 1000 samples per klasse) 
+de beste prestaties opleverde, met een F1-score van 0.80, een precisie van 0.94 en een recall van 0.70. 
+De hoge precisie toont aan dat het systeem met grote zekerheid de correcte objecten identificeert, 
+hoewel een significant deel van de fout-positieven in de werkelijkheid correct gedetecteerde objecten bleken te zijn, die niet in de grondwaarheid waren opgenomen. 
+De lagere recall wijst erop dat niet alle bekeken objecten consistent werden gedetecteerd, voornamelijk door problemen met kleine, 
+transparante objecten en door inconsistenties tussen de FastSAM-segmentaties en de grondwaarheid. 
+De FastSAM-tracking bleek de meest beperkende factor in de pijplijn.
+
+Deze bachelorproef levert een werkend PoC en een methodologie op die de haalbaarheid van geautomatiseerde 
+analyse van observatievaardigheden aantoont. 
+Het biedt een objectieve, datagestuurde basis om de feedback aan studenten te verbeteren en de effectiviteit van simulatietraining in de zorg te verhogen.
+Op deze manier legt het een fundament voor verder onderzoek naar robuustere analysemethoden.

@@ -14,8 +14,6 @@
 % Heeft het onderzoek geleid tot nieuwe vragen die uitnodigen tot verder 
 %onderzoek?
 
-% TODO op zich is fastsam segmentatie met filtering ook al bruikbaar voor trainers
-
 Deze bachelorproef had als doel een methode te ontwikkelen om de observatievaardigheden van 
 studenten in het 360° Zorglab van HOGENT op een geautomatiseerde, objectieve manier te evalueren.
 Computervisie-modellen werden geïntegreerd met eyetrackingdata van Tobii Glasses, om zo de huidige, 
@@ -49,13 +47,13 @@ De ontwikkelde methode omvat daarom als ondersteunend kenmerk, een softwareappli
 Deze stelt trainers in staat eyetrackingopnames te beheren, objecten te definiëren en deze efficiënt te labelen.
 Aangezien computer-vision een veld is dat voortdurend evolueert, was het ook belangrijk dat de ontwikkelde software voortdurend kon bijgestuurd worden.
 De software is daarom modulair opgebouwd, zodat nieuwe componenten gemakkelijk kunnen worden toegevoegd.
-    
+
 \paragraph{\textit{In welke mate kunnen de modellen en de ontwikkelde software:}}
 \begin{enumerate}
     \item \textit{correct bepalen welke kritische objecten studenten hebben waargenomen?}
     \item \textit{nauwkeurig meten hoe lang studenten naar deze objecten keken?}
 \end{enumerate}
-De beste resultaten werden behaald door de combinatie van een YOLOv11-objectdetector getraind op 1000 samples per klasse, gecombineerd met FastSAM-tracking.
+De beste resultaten werden behaald door de combinatie van een YOLOv11-object\-detector getraind op 1000 samples per klasse, gecombineerd met FastSAM-tra\-cking.
 Deze combinatie behaalde een micro-gemiddelde F1-score van 0.8017, met een precisie van 0.9424 en een recall van 0.6976.
 Dit duidt erop dat de software met hoge precisie objecten kan identificeren (weinig fout-positieven), 
 maar dat er nog ruimte voor verbetering is in de recall (het detecteren van alle daadwerkelijk bekeken objecten). 
@@ -69,7 +67,7 @@ Dit leidde tot een lage recall voor deze objecten.
 Ook werden er problemen vastgesteld bij het detecteren van objecten die meerdere componenten bevatten, zoals het infuus.
 Wanneer men wil weten of een student naar een specifiek deel van een object heeft gekeken, zoals de infuuszak, 
 zal het model dit object ook detecteren wanneer er gekeken wordt naar een ander deel, bijvoorbeeld de infuuspaal.
-Dit kan, afhankelijk van de context, gezien worden als een vals-positief dat de precisie van het model verlaagt voor dat specifieke object.
+Dit kan, afhankelijk van de context, gezien worden als een vals-positief wat de precisie van het model verlaagt voor dat specifieke object.
 
 De nauwkeurigheid van de duurmeting (2) is direct afhankelijk van de frame-per-frame correctheid van de objectidentificatie (1).
 Waar objecten correct worden geïdentificeerd, kan de duur accuraat worden afgeleid door het aantal frames te tellen. 
@@ -138,6 +136,11 @@ Het experiment dat uitgevoerd werd in het Zorglab was geen naturalistische setti
 maar een gecontroleerde omgeving met een beperkt aantal objecten.
 Om de relevantie van het systeem verder te valideren, is het belangrijk om tests uit te voeren in een realistische setting,
 waarbij studenten in een echte, relevante zorgsituatie worden geplaatst. 
+Bovendien werd bij de evaluatie van de analysemethode en het trainen van de modellen uitsluitend gebruik gemaakt van de kalibratieopname 
+waarbij de objecten zich tegen dezelfde achtergrond bevonden als tijdens de evaluatieopnames. 
+Hoewel er ook een kalibratieopname met een afwijkende achtergrond werd gecreëerd, viel het analyseren van de impact hiervan buiten de scope van deze proef. 
+Toekomstig onderzoek zou zich kunnen richten op het expliciet trainen en testen van de modellen met variërende achtergronden om de robuustheid 
+van het systeem tegen contextuele veranderingen te beoordelen en te verbeteren.
 
 Daarnaast is de ontwikkelde analysemethode, hoewel veelbelovend, momenteel redelijk complex. 
 De combinatie van FastSAM en YOLOv11 is niet vanzelfsprekend en zorgt voor veel potentiële foutenbronnen.
@@ -161,6 +164,11 @@ Hierbij kan men kijken naar hogere resoluties of betere camera's die mogelijk me
 Een andere optie voor het verbeteren van beeldkwaliteit is het toepassen van motion-deblurring technieken, 
 die in eerdere onderzoeken al potentieel toonden \autocite{Cederin2023}.
 
-Zoals eerder vermeld, is de ontwikkelde software modulair opgebouwd, zodat nieuwe componenten gemakkelijk kunnen worden toegevoegd.
+Zoals eerder vermeld, is de ontwikkelde software modulair opgebouwd, zodat\\ nieuwe componenten gemakkelijk kunnen worden toegevoegd.
 Studenten kunnen bij volgende bachelorproeven baat hebben bij de ontwikkelde labeling tool, om zo meer tijd te kunnen besteden aan het ontwikkelen van nieuwe analysecomponenten.
-Indien deze componenten goed presteren, kunnen ze worden toegevoegd aan de bestaande software.
+Indien deze componenten goed presteren, kunnen ze worden toegevoegd aan de bestaande software. 
+Hierbij dient een analysemodule te worden ontwikkeld waarbij een trainer eyetrackingopnames kan selecteren en eventueel verschillende analysemethoden kan combineren.
+Een voorbeeld hiervan is een analysemethoden voor gezichtsherkenning, die kan bepalen of een student naar een specifieke persoon kijkt.
+Tenslotte ontbreekt de software momenteel een visualisatiemodule die de resultaten van de analyse(s) op een gebruiksvriendelijke manier presenteert.
+
+% TODO conclusie een beetje leuker eindigen 

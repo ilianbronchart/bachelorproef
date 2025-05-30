@@ -13,7 +13,7 @@ Zo kan de software bij opeenvolgende bachelorproeven iteratief verder ontwikkeld
 De workflow die bedacht werd voor de proof-of-concept applicatie, om van ruwe data naar bruikbare metrieken te gaan, kan als volgt worden samengevat:
 \begin{enumerate}
     \item Er worden één of meerdere `kalibratie-opnames' gemaakt met de eyetrackingbril, waarbij elk object dat onderdeel is van het onderzoek, vanuit verschillende hoeken wordt gefilmd.
-    \item Ook worden er evaluatieopnames gemaakt van studenten die de simulatieomgeving gebruiken, waarbij de eyetracker op het hoofd van de student wordt geplaatst.
+    \item Ook worden er evaluatieopnames gemaakt van studenten die de simulatieomgeving gebruiken, waarbij de eyetracker op het hoofd van de student wor\-dt geplaatst.
     \item De opnames worden geïmporteerd in de applicatie via de WiFi-verbinding van de eyetrackingbril.
     \item Men geeft een naam aan de simulatieomgeving (bijvoorbeeld `Zorglab Zorgkamer') binnen de applicatie en defininieert de objecten.
     \item Daarna kan men beginnen met het labelen van de objecten in de kalibratie-opnames via de ingebouwde labeling-tool. De labeling-data dienen als basis voor het trainen of initialiseren van de analysemodellen.
@@ -29,14 +29,6 @@ In deze fase werd de Tobii eyetracking-bril van het Zorglab ontleend om vertrouw
 Deze opnames werden thuis uitgevoerd en dienden zowel als basis voor de applicatie zelf als voor initiële experimenten met de computer vision-modellen die later zouden worden ingezet in de labeling-tool en de analyses.
 Om een opname te maken hebben we twee zaken nodig: de eyetracker zelf met bijbehorende accessoires, en een laptop of computer waarop de `Tobii Pro Glasses 3 Controller'\footnote{\url{https://www.tobii.com/products/eye-trackers/wearables/tobii-pro-glasses-3/controller-app}} app is geïnstalleerd.
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.6\textwidth]{placeholder.jpeg}
-  \caption[]{\label{fig:todo} TODO: Foto met de benodigdheden: eyetracker, hub, laptop met app zichtbaar (eyetracker niet geconnecteerd), batterijlader, kalibratiekaart
- }
-\end{figure}
-% TODO: Foto met de benodigdheden: eyetracker, hub, laptop met app zichtbaar (eyetracker niet geconnecteerd), batterijlader, kalibratiekaart
-
 De eyetracker zelf bestaat uit een hub die stroom levert aan de bril en de opnames opslaat op een SD-kaart. 
 Deze hub is verbonden met de bril zelf via een ingebouwde HDMI-kabel.
 De hub heeft een batterij die opgeladen kan worden met de bijgeleverde oplader. 
@@ -44,21 +36,14 @@ Eenmaal de hub ingeschakeld is, verschijnt er een WiFi-verbinding op de laptop o
 Deze verbinding start met `TG', gevolgd door het serienummer van de bril. Het wachtwoord voor de verbinding is `TobiiGlasses'. 
 Open de Tobii Pro Glasses 3 Controller-app en observeer of het camerabeeld van de bril zichtbaar is in de app.
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.6\textwidth]{placeholder.jpeg}
-  \caption[]{\label{fig:todo} TODO: Foto van de app met camerabeeld zichtbaar, en de knoppen om opnames te maken
- }
-\end{figure}
-% TODO: Foto van de app met camerabeeld zichtbaar, en de knoppen om opnames te maken
-
 Na het invoegen van de naam van de opname (of participant), drukt men op de knop `Record' om de opname te starten.
 Voordat de opname kan starten, zal de app vragen om de bril te kalibreren. 
 Dit kan gedaan worden met de bijgeleverde kalibratiekaart, die op armlengte afstand van de bril dient gehouden te worden.
 Aan de participant wordt gevraagd om naar de centrale stip op de kaart te kijken, en vervolgens wordt er op de knop `Calibrate' gedrukt.
 De app begint nu met het opnemen van de video, en de participant kan nu vrij rondlopen in de simulatieomgeving.
 
-% TODO: Best-practices toevoegen?
+% \subsubsection{Opmerking over Belichting}
+% TODO: Als er tijd is probleem met belichting toevoegen
 
 \subsection{Importeren van Eyetracking-Opnames}
 
@@ -105,12 +90,12 @@ Men kan zich dus voorstellen dat men niet enkel in het Zorglab werkt, maar bijvo
 In figuur \ref{fig:simrooms} is een voorbeeld te zien van de pagina waar simulatieomgevingen kunnen worden gedefinieerd. 
 Deze pagina heeft drie kolommen:
 \begin{itemize}
-    \item De eerste kolom toont de reeds gedefinieërde simulatieomgevingen, met hun naam, een knop om deze te verwijderen, en een invoerveld om meer simulatieomgevingen toe te voegen.
+    \item De eerste kolom toont de reeds gedefinieërde simulatieomgevingen, met\\ hun naam, een knop om deze te verwijderen, en een invoerveld om meer simulatieomgevingen toe te voegen.
     \item Wanneer een simulatieomgeving is geselecteerd, worden de bijbehorende objecten getoond in de tweede kolom. Elk object krijgt automatisch een kleur toegewezen die ook gebruikt zal worden in de labeling-tool en eventueel de visualisatie van de metrieken.
     \item In de derde kolom kan men geïmporteerde opnames selecteren om deze te gebruiken als kalibratie-opnames. Elke kalibratie-opname heeft een knop `Start Labeling'. Wanneer men hierop klikt, wordt de labeling-tool geopend met de geselecteerde opname.
 \end{itemize}
 
-Merk op dat het mogelijk is om om het even welke opname te selecteren als kalibratie-opname, waardoor ook evaluatieopnames kunnen worden gebruikt!
+Merk op dat het mogelijk is om om het even welke opname te selecteren als kalibra\-tie-opname, waardoor ook evaluatieopnames kunnen worden gebruikt!
 Zo kunnen we reeds gemaakte opnames van studenten ook gebruiken om de analysemodellen te trainen.
 Dit maakt het mogelijk om de opnames te analyseren op basis van manuele labels door de trainers.
 Deze aanpak zal meer tijd vergen, maar is veel nauwkeuriger dan een automatische analyse. Aangezien het in deze bachelorproef gaat om geautomatiseerde analyse, werd deze optie niet verder uitgewerkt.
@@ -179,14 +164,12 @@ Voor de ontwikkeling van de applicatie werd een lichtgewicht, modulaire software
 Er is geopteerd voor een web-applicatie die via een browser toegankelijk is en lokaal kan draaien op een laptop (met een degelijke grafische kaart) of een desktop computer.
 
 \begin{itemize}
-    \item \textbf{Backend Framework:} Python met \texttt{FastAPI} werd gekozen omwille van zijn gebruiksvriendelijkheid, asynchrone mogelijkheden (belangrijk voor I/O-intensieve taken zoals data-import en analyse), automatische documentatie en type hinting-integratie.
+    \item \textbf{Backend Framework:} Python met \texttt{FastAPI} werd gekozen omwille van zijn gebruiksvriendelijkheid, asynchrone mogelijkheden (belangrijk voor I/O-in\-ten\-sieve taken zoals data-import en analyse), automatische documentatie en\\ type-hinting-integratie.
     \item \textbf{Frontend Aanpak:} In plaats van een zwaar JavaScript-framework, werd geopteerd voor \texttt{HTMX}. Dit laat toe om dynamische interacties te bouwen door HTML direct uit te wisselen met de server, wat de complexiteit van de frontend aanzienlijk reduceert. \texttt{Jinja2} dient als templating engine om deze HTML server-side te genereren. Tenslotte werd \texttt{Bootstrap} gebruikt voor de opmaak van de applicatie.
     \item \textbf{Database:} Een \texttt{SQLite} database werd geselecteerd vanwege de eenvoud en het feit dat de applicatie bedoeld is voor lokaal gebruik, waardoor een complexe database server overbodig is. \texttt{SQLAlchemy} werd ingezet als ORM (Object-Relational Mapping) voor een gestructureerde interactie met de database vanuit Python.
-    \item \textbf{Hardware Communicatie:} Voor de interactie met de Tobii Pro Glasses 3 werd de officiële \texttt{g3pylib} SDK gebruikt, die toegang biedt tot opnames en statusinformatie via de WiFi-verbinding.
+    \item \textbf{Hardware Communicatie:} Voor de interactie met de Tobii Pro Glasses 3 werd de officiële \texttt{g3pylib}\footnote{\url{https://github.com/tobiipro/g3pylib (laatst geraadpleegd op 2025-05-30)}} SDK gebruikt, die toegang biedt tot opnames en statusinformatie via de WiFi-verbinding.
     \item \textbf{Development \& Kwaliteitsborging:} \texttt{Poetry} werd gebruikt voor dependency management. Strikte type hinting met \texttt{Mypy} en code linting/formatting met \texttt{Ruff} dragen bij aan de robuustheid en onderhoudbaarheid van de code. \texttt{Docker} werd ingezet om de applicatie te containeriseren, wat zorgt voor een consistente uitvoeringsomgeving en eenvoudige deployment.
 \end{itemize}
-
-% TODO: voetnoten toevoegen naar SDK en stuff
 
 Deze keuzes resulteerden in een applicatie die relatief eenvoudig te onderhouden en verder te ontwikkelen is, conform de doelstelling om iteratieve verbeteringen in volgende bachelorproeven mogelijk te maken.
 Er werd gewerkt met een gelaagde architectuur om een duidelijke scheiding van verantwoordelijkheden (Separation of Concerns) te waarborgen en onderhoud en testing te vereenvoudigen. 
@@ -234,7 +217,7 @@ De backend, geschreven in Python met het \texttt{FastAPI} framework, is verantwo
 het uitvoeren van de businesslogica, en de interactie met de datalaag en externe hardware.
 
 \paragraph{Routes (FastAPI Endpoints)}
-De \texttt{routes} definiëren de API-endpoints waarnaar de frontend requests stuurt.
+De \texttt{routes} definiëren de API-endpoints waarnaar de frontend requests stuurt.\\
 Deze laag ontvangt HTTP-requests, valideert inkomende data 
 (via Pydantic modellen die FastAPI automatisch uit request bodies of query parameters haalt), 
 roept de juiste methoden aan in de \texttt{services}-laag, en formatteert de respons. 
@@ -326,13 +309,13 @@ De strategie is als volgt:
 \begin{enumerate}
 \item De \texttt{TrackingJob} ontvangt een lijst van manuele annotaties, die eerst gesorteerd worden op frame-index.
 \item Vervolgens wordt er over deze annotaties geïtereerd. Voor elke nog niet verwerkte annotatie (\texttt{start\_frame\_idx}) 
-wordt de functie \texttt{track\_until\_loss} aangeroepen, eerst in achterwaartse richting (\texttt{reverse=True}) en daarna in voorwaartse richting.
+wordt de functie \texttt{track\_until\_loss}\\ aangeroepen, eerst in achterwaartse richting (\texttt{reverse=True}) en daarna in voorwaartse richting.
 \item Dit zorgt ervoor dat de tracking zich vanuit elk betrouwbaar, manueel gelabeld punt propageert over videosegmenten waar het object vermoedelijk aanwezig is. 
 Dit reduceert het totaal aantal te verwerken frames aanzienlijk.
 \end{enumerate}
 
-De kern van het daadwerkelijke volgen binnen deze segmenten zit in de \texttt{track\_until\_loss} methode. 
-Deze methode maakt gebruik van de \texttt{propagate\_in\_video} functionaliteit van de \texttt{SAM2VideoPredictor}.
+De kern van het daadwerkelijke volgen binnen deze segmenten zit in de\\ \texttt{track\_until\_loss} methode. 
+Deze methode maakt gebruik van de\\ \texttt{propagate\_in\_video} functionaliteit van de \texttt{SAM2VideoPredictor}.
 
 \begin{listing}[H]
   \begin{minted}{python}
@@ -455,12 +438,13 @@ resultaten of toestanden van reeds verwerkte frames in het GPU-geheugen vasthiel
 Dit leidde tot een lineaire toename van het VRAM-gebruik naarmate de tracking vorderde. 
 Uiteindelijk kon dit de beschikbare GPU-geheugenlimiet overschrijden, en zo doende resulteren in een crash van de applicatie. 
 
-Om dit probleem aan te pakken en het GPU-geheugenverbruik te stabiliseren, werd er een fork gemaakt van de originele 
+Om dit probleem aan te pakken en het GPU-geheugenverbruik te stabiliseren, we\-rd er een fork gemaakt van de originele 
 SAM2-bibliotheek waarin een aanpassing is doorgevoerd \autocite{Hu2025ilianbronchart}.
 De oplossing is geïnspireerd door een Github-issues comment \autocite{heyoeyo2024comment}. 
 
 De volgende code-snippet bevat de logica die werd toegevoegd binnen de propagatielus van de video-predictor:
 \begin{listing}[H]
+  \fontsize{10pt}{10pt}
   \begin{minted}{python}
   # Fragment uit de aangepaste SAM2VideoPredictor binnen de video propagatie lus
   # Bepaal de dictionary waar frame outputs worden opgeslagen
@@ -485,8 +469,12 @@ De volgende code-snippet bevat de logica die werd toegevoegd binnen de propagati
       obj_output_dict[storage_key].pop(old_idx, None) # Verwijder uit algemene cache
       # Verwijder ook uit object-specifieke caches indien aanwezig
       for objid_iter in inference_state[obj_specific_storage_key].keys():
-          if old_idx in inference_state[obj_specific_storage_key][objid_iter][storage_key]:
-              inference_state[obj_specific_storage_key][objid_iter][storage_key].pop(old_idx, None)
+          if old_idx in inference_state[
+            obj_specific_storage_key
+          ][objid_iter][storage_key]:
+              inference_state[
+                obj_specific_storage_key
+              ][objid_iter][storage_key].pop(old_idx, None)
   \end{minted}
   \caption[Geheugenoptimalisatie in SAM2 door caching van frame outputs]{Toegevoegde logica om gecachte frame-specifieke outputs selectief te verwijderen, waardoor het GPU-geheugengebruik tijdens lange tracking-sessies constant blijft.}
   \label{lst:sam2-memory-fix}
@@ -496,7 +484,7 @@ De oplossing werkt als volgt:
 \begin{enumerate}
   \item De code richt zich op specifieke dictionaries binnen de \texttt{inference\_state} waar frame-gerelateerde data worden opgeslagen.
   \item Er wordt een buffer rond de huidige \texttt{frame\_idx} gedefinieerd. Data van frames die buiten dit venster vallen, worden beschouwd als `oud' en komen in aanmerking voor verwijdering.
-  \item De geïdentificeerde \texttt{old\_frame\_idxs} worden vervolgens uit de relevante cache-dictionaries verwijderd. Dit gebeurt zowel voor de algemene frame outputs als voor de object-specifieke outputs.
+  \item De geïdentificeerde \texttt{old\_frame\_idxs} worden vervolgens uit de relevante ca\-che-dictionaries verwijderd. Dit gebeurt zowel voor de algemene frame outputs als voor de object-specifieke outputs.
 \end{enumerate}
 Merk op dat de buffer van 16 frames hier hardgecodeerd is. 
 In de toekomst kan het nuttig zijn om deze waarde aanpasbaar te maken door middel van een configuratieparameter binnen de \texttt{SAM2VideoPredictor} klasse.
@@ -574,7 +562,7 @@ Zoals men kan zien bevat elke regel van het bestand de volgende metadata, waarva
     \item \texttt{timestamp}: de tijdstempel van de data in seconden.
     \item \texttt{data}: een dictionary met de blikdata. Het is mogelijk dat deze leeg is wanneer er geen blikdata beschikbaar is. Het bevat de volgende velden:
     \begin{itemize}
-      \item \texttt{gaze2d}: De 2D-coördinaten van de blik. Merk op dat dit genormaliseerde coördinaten zijn ten opzichte van de resolutie van de video-opname,
+      \item \texttt{gaze2d}: De 2D-coördinaten van de blik. Merk op dat dit genormaliseerde coördinaten zijn ten opzichte van de resolutie van de video-opna\-me,
       waarbij (0, 0) de linkerbovenhoek van de video-opname is en (1, 1) de rechteronderhoek.
       \item \texttt{gaze3d}: Dit is een 3D-coördinaat in millimeters, dat de positie van de blik in de ruimte weergeeft tegenover de positie van de camera.
       \item \texttt{eyeleft} en \texttt{eyeright}: metadata over het linker en rechter oog, waaronder de oorsprong van de blik, de richting van de blik, en de pupilgrootte.
@@ -584,7 +572,7 @@ Zoals men kan zien bevat elke regel van het bestand de volgende metadata, waarva
 
 \subsubsection{Converteren naar Bruikbare Blikpunten}
 
-Nadat de ruwe blikdata zijn geparsed, worden deze verder verwerkt door de \texttt{get\_gaze\_points} functie.
+Nadat de ruwe blikdata zijn geparsed, worden deze verder verwerkt door de \texttt{get\_\-gaze\_points} functie.
 Het resultaat van deze functie is een lijst van \texttt{GazePoint}-objecten, die elk een x- en y-coördinaat, 
 de geschatte diepte, en de oorspronkelijke tijdstempel bevatten.
 Hoewel de diepte binnen de analyses in Hoofdstuk~\ref{ch:analyse} niet verder wordt gebruikt, kan deze in de 
@@ -637,16 +625,16 @@ toekomst nuttig zijn voor andere analyses.
 
 De functie heeft twee hoofddoelen:
 \begin{enumerate}
-  \item \textbf{Filteren van Ongeldige Data:} Blikregistraties waarbij geen \texttt{gaze2d}-coördinaten beschikbaar zijn, 
+  \item \textbf{Filteren van Ongeldige Data:} Blikregistraties waarbij geen \texttt{gaze2d}-coördina\-ten beschikbaar zijn, 
   worden genegeerd, omdat deze niet bruikbaar zijn voor 2D-analyse in het videobeeld.
   \item \textbf{Denormalisatie en Diepteberekening:}
     \begin{itemize}
       \item Een schatting van de diepte van het blikpunt (\texttt{gaze\_depth}) wordt berekend. 
-        Indien data voor beide ogen beschikbaar zijn, wordt de 3D-oorsprong van de blik benaderd als 
-        het gemiddelde van de \texttt{gazeorigin} van het linker- en rechteroog. 
+        Indien data voor beide ogen beschikbaar zijn, wordt de 3D-oorspr\-ong van de blik benaderd als 
+        het gemiddelde van de \texttt{gazeorigin} van het lin\-ker- en rechteroog. 
         De diepte is dan de Euclidische afstand tussen dit gemiddelde oorsprongspunt en het geregistreerde \texttt{gaze3d}-punt.
       \item De genormaliseerde \texttt{gaze2d}-coördinaten (x, y) worden omgezet naar absolute pixelcoördinaten 
-        ten opzichte van de resolutie van de video-opname. 
+        ten opzichte van de resolutie van de video-opna\-me. 
         Hierbij wordt gebruik gemaakt van de \texttt{clamp}-functie om te verzekeren dat de coördinaten 
         binnen de grenzen van de videoframe blijven alvorens te vermenigvuldigen met de respectievelijke breedte en hoogte.
     \end{itemize}
@@ -743,7 +731,7 @@ Om hier een beter zicht op te krijgen, werd er een Entity-Relationship Diagram (
   Een opname kan ook dienen als kalibratie-opname voor meerdere simulatieruimten. 
   Opnames hebben ook een pad naar hun video- en blikdata bestand. 
   Deze paden worden niet opgeslagen in de database, maar worden gegenereerd op basis van het \texttt{id} van de opname. 
-  \item \textbf{calibration\_recordings} zijn louter een referentie naar de opname die als kalibratie-opname wordt gebruikt 
+  \item \textbf{calibration\_recordings} zijn louter een referentie naar de opname die als kali\-bratie-opname wordt gebruikt 
   voor de simulatieomgeving. Ze kunnen meerdere annotaties bevatten.
   \item \textbf{annotations} worden gemaakt in de labeling-tool en hebben een \texttt{class}, een \texttt{frame index}, 
   een base64-gecodeerde afbeelding van het masker evenals van de regio in de originele frame. Het bevat eveneens een bounding box. Zowel het base64-gecodeerde 
@@ -772,18 +760,17 @@ Ze bevatten de volgende data:
 
 \section{Installatie en Configuratie}
 
-TODO
-% TODO: afwerken
+De instructies voor het installeren en configureren van de applicatie zijn te uitvoerig beschreven in de README\footnote{\url{https://github.com/ilianbronchart/bachelorproef/blob/master/README.md}} file van de Git repository.
 
-\section{Gekende Problemen en Beperkingen}
+% \section{Gekende Problemen en Beperkingen}
 
-Hoewel de kernfunctionaliteit van de applicatie robuust is, zullen we het in deze sectie hebben 
-over enkele gekende problemen en beperkingen die de gebruikerservaring kunnen beïnvloeden.
+% Hoewel de kernfunctionaliteit van de applicatie robuust is, zullen we het in deze sectie hebben 
+% over enkele gekende problemen en beperkingen die de gebruikerservaring kunnen beïnvloeden.
 
-% TODO: afwerken
+% % TODO: afwerken
 
-\paragraph{Importeren van Opnames}
+% \paragraph{Importeren van Opnames}
 
-\paragraph{Labeling Tool}
+% \paragraph{Labeling Tool}
 
-\subsection{}
+% \subsection{}

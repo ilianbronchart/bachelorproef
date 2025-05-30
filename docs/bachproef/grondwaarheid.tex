@@ -4,7 +4,7 @@
 \section{Inleiding}
 
 De evaluatie van elk geautomatiseerd systeem, staat of valt met de beschikbaarheid 
-van een betrouwbare referentiestandaard, ook wel de grondwaarheid genoemd.
+van een betrouwbare referentiestandaard, ook wel de grondwaarheid genoe\-md.
 In de context van deze bachelorproef, is een dergelijke grondwaarheid essentieel om de validiteit  
 van de ontwikkelde methoden (zie Hoofdstuk~\ref{ch:oplossingsstrategieen}, Strategie 4) te kunnen beoordelen.
 De kern van deze grondwaarheid ligt in het van frame-per-frame nauwkeurig vaststellen welke kritische objecten 
@@ -28,10 +28,10 @@ De notebook is opgedeeld in verschillende secties, die elk een specifiek aspect 
     en 2 kalibratieopnames aanwezig was.
     \item Alle relevante opnamedata (afkomstig van de SD-kaart van de Tobii-glasses) werden gekopieerd naar een centrale 
     mapstructuur (\texttt{data/recordings/}) zoals benodigd door de PoC applicatie.
-    Hier werden de gazedata (uitgepakt met gzip) en de video-opnames respectievelijk opgeslagen onder \texttt{<recording\_id>.tsv} 
+    Hier werden de gazedata (uitgepakt met gzip) en de video-opnames respectievelijk opgeslagen onder\\ \texttt{<recording\_id>.tsv} 
     en \texttt{<recording\_id>.mp4}.
     \item Voor elke video-opname werden alle individuele frames geëxtraheerd en opgeslagen 
-    in een aparte submap (\texttt{data/recording\_frames/<recording\_id>/xxxxx.png}).
+    in een aparte submap\\ (\texttt{data/recording\_frames/<recording\_id>/xxxxx.png}).
     \item Tenslotte werd de database van de applicatie geïnitialiseerd met alle nodige data. De metadata van de opnames werden 
     ingelezen en opgeslagen in de database.
     Ook werd er een simulatieruimte aangemaakt met de naam `Controlled Experiment Room' met de 15 objecten. Ook werden de kalibratieopnames toegewezen aan deze simulatieruimte.
@@ -40,8 +40,6 @@ De notebook is opgedeeld in verschillende secties, die elk een specifiek aspect 
 \end{enumerate}
 
 \section{Annotatie van Evaluatieopnames}
-
-% TODO: ergens een flow-diagram toevoegen die het verschil tussen evaluatie- en kalibratieopnames verduidelijkt.
 
 Een accurate en consistente annotatie van de experimentele data vormt de spil voor een accurate grondwaarheid.
 Dit proces werd uitgevoerd met behulp van de in Hoofdstuk~\ref{ch:ontwikkeling} beschreven labeling-tool binnen de ontwikkelde PoC-applicatie. 
@@ -62,18 +60,10 @@ Zodra een fixatie op een van de 15 objecten werd vastgesteld, werd dit specifiek
 Vervolgens werden met behulp van positieve (en eventueel negatieve) interactiepunten de SAM2-segmentatie en de semi-automatische 
 tracking ingezet om het object te volgen. Waar nodig werden manuele correcties of herinitialisaties van de tracking uitgevoerd.
 
-% \subsection{Kalibratieopnames}
-% TODO: verplaatsen naar volgende hoofdstuk
-% Bij de twee kalibratieopnames lag de focus op het verzamelen van visuele voorbeelden van elk van de 15 gedefinieerde objecten. 
-% De onderzoeker doorliep deze opnames en selecteerde frames waarin de objecten duidelijk en vanuit diverse perspectieven 
-% (verschillende hoeken, afstanden) zichtbaar waren.
-% Dit voor zowel de opname waarbij de achtergrond van de objecten hetzelfde was als de evaluatieopnames, 
-% en de opname waarbij de achtergrond verschillend was.
-
 \section{Genereren van de Grondwaarheid}
 
 De resultaten van het annotatieproces werden door de applicatie opgeslagen in de map \texttt{data/labeling\_results}, en werden 
-verder verwerkt in het \texttt{03\_create\_ground\_truth\_dataset.ipynb}-notebook tot een grondwaarheidsdataset.
+verder verwerkt in het \texttt{03\_create\_grou\-nd\_truth\_dataset.ipynb}-notebook tot een grondwaarheidsdataset.
 Merk op dat de output van het annotatieproces van de evaluatieopnames niet direct gelijkgesteld kan worden aan de uiteindelijke grondwaarheid. 
 De trackingfunctionaliteit van de labeling-tool volgt immers objecten zodra ze gemarkeerd zijn, onafhankelijk van de continue blikrichting van de deelnemer. 
 Dit resulteert in een dataset die ook segmentaties bevat van objecten waar de deelnemer op dat specifieke moment niet (meer) naar keek.
@@ -173,7 +163,7 @@ Deze waarde maakt de \texttt{mask\_was\_viewed} functie mogelijk, die controleer
 De werking van deze functie kan als volgt worden samengevat:
 \begin{enumerate}
   \item Eerst wordt een binair masker gegenereerd dat het cirkelvormige kijkgebied rond de \texttt{gaze\_position} representeert, 
-  gebruikmakend van de berekende \texttt{viewed\_radius}. Pixels binnen deze cirkel krijgen de waarde 1, pixels daarbuiten de waarde 0.
+  gebruikmakend van de berekende\\ \texttt{viewed\_radius}. Pixels binnen deze cirkel krijgen de waarde 1, pixels daarbuiten de waarde 0.
   \item Vervolgens wordt een element-wise vermenigvuldiging uitgevoerd tussen dit binaire kijkgebied-masker 
   en het input segmentatiemasker (dat eveneens binair is, waarbij 1 objectpixels en 0 achtergrondpixels aanduidt). 
   \item Het resultaat is een nieuw masker (\texttt{overlapped\_mask}) dat enkel pixels met waarde 1 bevat waar 

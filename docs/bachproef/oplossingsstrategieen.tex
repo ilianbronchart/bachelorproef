@@ -70,7 +70,7 @@ op de voorgedefiniëerde objecten.
     Deze beelden dienen de objecten vanuit verschillende hoeken, onder variërende belichtingscondities en tegen diverse achtergronden te tonen. 
     Elk object in deze trainingsbeelden wordt vervolgens gelabeld met bounding boxes.
     \item \textbf{Modeltraining}: Een objectdetectiemodel wordt getraind op deze dataset.
-    \item \textbf{Analyse van Evaluatieopnames:} Tijdens de analyse van een eyetracking-opname wordt het getrainde model frame-per-frame 
+    \item \textbf{Analyse van Evaluatieopnames:} Tijdens de analyse van een eyetracking-op\-name wordt het getrainde model frame-per-frame 
     toegepast op de videobeelden. 
     \item \textbf{Koppeling met Blikdata}
 \end{enumerate}
@@ -78,7 +78,7 @@ op de voorgedefiniëerde objecten.
 \paragraph{Voordelen:}
 \begin{itemize}
     \item \textbf{Snelheid tijdens Analyse:} Zoals vermeld in de stand van zaken, zijn YOLO-modellen geoptimaliseerd voor snelheid.
-    \item \textbf{Eenvoudige Analyse:} Deze methode maakt gebruik van een enkel model, tegenover andere strategieën die meerdere modellen combineren. % todo "een" accentuering toevoegen
+    \item \textbf{Eenvoudige Analyse:} Deze methode maakt gebruik van een enkel model, tegenover andere strategieën die meerdere modellen combineren.
 \end{itemize}
 
 \paragraph{Nadelen:}
@@ -115,7 +115,7 @@ Met zero-shot wordt bedoeld dat het model geen specifieke training vereist voor 
 
 \subsection{Strategie 3: Handmatige Initialisatie Gevolgd door Tracking}
 
-Deze strategie minimaliseert de afhankelijkheid van automatische objectdetectie, door een menselijke operator de initiële objecten te laten aanwijzen, waarna een trackingalgoritme het overneemt.
+Deze strategie minimaliseert de afhankelijkheid van automatische objectdetec\-tie, door een menselijke operator de initiële objecten te laten aanwijzen, waarna een trackingalgoritme het overneemt.
 
 \paragraph{Conceptuele Werking:}
 \begin{enumerate}
@@ -150,12 +150,12 @@ Het maakt gebruik van de `segment everything' capaciteit van moderne segmentatie
 
 Hier is het mogelijk om verschillende benaderingen te gebruiken voor de classificatie van de segmenten:
 \begin{itemize}
-    \item \textbf{Zero-Shot Classificatie:} Zero-shot classificatiemodellen zoals Grounding DINO kunnen worden toegepast op de gesegmenteerde objecten, waardoor geen specifieke training vereist is.
+    \item \textbf{Zero-Shot Classificatie:} Zero-shot classificatiemodellen zoals Grounding\\ DINO kunnen worden toegepast op de gesegmenteerde objecten, waardoor geen specifieke training vereist is.
     \item \textbf{Getraind Classificatiemodel:} Een specifiek getraind model kan worden ingezet om de gesegmenteerde objecten te classificeren.
-    \item \textbf{Keypoint-gebaseerde Classificatie:} Een keypoint-gebaseerd model, zoals SIFT of ORB, kan worden gebruikt om de segmenten te classificeren op basis van hun visuele kenmerken.
-    \item \textbf{Feature-gebaseerde Classificatie:} Voorgetrainde modellen zoals DINOv2 kunnen in combinatie met een vector-database worden gebruikt om de segmenten te classificeren op basis van hun visuele kenmerken.
+    \item \textbf{Keypoint-gebaseerde Classificatie:} Een keypoint-gebaseerd model, zoals\\ SIFT of ORB, kan worden gebruikt om de segmenten te classificeren op basis van hun visuele kenmerken.
+    \item \textbf{Feature-gebaseerde Classificatie:} Voorgetrainde modellen zoals DINOv2\\ kunnen in combinatie met een vector-database worden gebruikt om de segmenten te classificeren op basis van hun visuele kenmerken.
     Deze modellen genereren een vingerafdruk (feature vector) van elk segment, die vervolgens kan worden vergeleken met een database van gekende objecten.
-    \item \textbf{Classificatie met Vision-API}: Voor classificatie kan ook eventueel gebruik gemaakt worden van bestaande foundation-model gebaseerde computer-vision diensten (Google, OpenAI, ... APIs).
+    \item \textbf{Classificatie met Vision-API}: Voor classificatie kan ook eventueel gebruik gemaakt worden van bestaande foundation-model gebaseerde computer-vis\-ion diensten (Google, OpenAI, ... APIs).
 \end{itemize}
 
 \paragraph{Voordelen:}
@@ -178,7 +178,7 @@ applicatie gekozen voor \textbf{Strategie 4: `Segment Everything' Gevolgd door B
 
 Deze keuze is primair ingegeven door de veelbelovende resultaten uit initiële, exploratieve tests. 
 Waar zero-shot objectdetectie (Grounding DINO), in eerste experimenten nog geen consistent robuuste resultaten opleverde
-(met name wat betreft fout-positieven en generalisatie naar sommige van de specifieke Zorglab-objecten), 
+(met name wat betreft fout-positieven en generalisatie naar sommige van de specifieke Zorglab-objec\-ten), 
 toonde de `segment everything' en tracking-capaciteiten van FastSAM direct indrukwekkende prestaties.
 Veel van de door de eyetracker geregistreerde objecten konden effectief worden gesegmenteerd en gevolgd. 
 De uitdaging verschoof daarmee naar het vinden van een betrouwbare methode om deze dynamisch geïdentificeerde segmenten correct te classificeren.
@@ -186,7 +186,7 @@ De uitdaging verschoof daarmee naar het vinden van een betrouwbare methode om de
 \begin{itemize}
     \item Strategie 1 (Trainen van een Objectdetector) kon op dit punt in het onderzoekproces niet worden overwogen, omdat er nog geen dataset beschikbaar was.
     \item Strategie 2 (Zero-Shot Objectdetectie) werd wel overwogen, maar de initiële resultaten waren niet robuust genoeg voor de beoogde toepassing.
-    \item Strategie 3 (Handmatige Initialisatie) werd als te arbeidsintensief en niet schaalbaar beschouwd.
+    \item Strategie 3 (Handmatige Initialisatie) werd als te arbeidsintensief en niet\\ schaalbaar beschouwd.
 \end{itemize}
 
 De gekozen Strategie 4 biedt de flexibiliteit om verschillende classificatietechnieken te exploreren voor de bekeken segmenten.

@@ -5,27 +5,6 @@
 \chapter{\IfLanguageName{dutch}{Methodologie}{Methodology}}%
 \label{ch:methodologie}
 
-%% In dit hoofstuk geef je een korte toelichting over hoe je te werk bent
-%% gegaan. Verdeel je onderzoek in grote fasen, en licht in elke fase toe wat
-%% de doelstelling was, welke deliverables daar uit gekomen zijn, en welke
-%% onderzoeksmethoden je daarbij toegepast hebt. Verantwoord waarom je
-%% op deze manier te werk gegaan bent.
-%% 
-%% Voorbeelden van zulke fasen zijn: literatuurstudie, opstellen van een
-%% requirements-analyse, opstellen long-list (bij vergelijkende studie),
-%% selectie van geschikte tools (bij vergelijkende studie, "short-list"),
-%% opzetten testopstelling/PoC, uitvoeren testen en verzamelen
-%% van resultaten, analyse van resultaten, ...
-%%
-%% !!!!! LET OP !!!!!
-%%
-%% Het is uitdrukkelijk NIET de bedoeling dat je het grootste deel van de corpus
-%% van je bachelorproef in dit hoofstuk verwerkt! Dit hoofdstuk is eerder een
-%% kort overzicht van je plan van aanpak.
-%%
-%% Maak voor elke fase (behalve het literatuuronderzoek) een NIEUW HOOFDSTUK aan
-%% en geef het een gepaste titel.
-
 Het onderzoek werd uitgevoerd in een iteratieve cyclus, waarbij de verschillende fasen van het project elkaar opvolgden en elkaar beïnvloedden.
 Deze sectie beschrijft in grote lijnen de verschillende fasen van het onderzoek, de doelstellingen en de gebruikte methodologieën.
 Figuur~\ref{fig:methodologie} toont een flowchart van de methodologie, waarin de verschillende fasen en hun onderlinge relaties worden weergegeven.
@@ -42,17 +21,16 @@ De labels op de pijlen geven de belangrijkste deliverables van elke fase aan, di
 De literatuurstudie vormde een iteratief proces gedurende het gehele onderzoek, beginnend met een brede initiële verkenning en 
 later verfijnd en aangevuld naarmate specifieke vragen tijdens het project opdoken. 
 Het overkoepelende doel was een grondig en actueel inzicht te verwerven in de relevante domeinen. 
-Hierbij lag de focus op drie kerngebieden: 
+Hierbij lag de focus op de volgende gebieden: 
 \begin{enumerate}
-\item De huidige stand van zaken in eyetracking-technologie, met specifieke aandacht voor hoofd-gemonteerde systemen zoals de Tobii Pro Glasses 3 en de analyse van de hieruit voortkomende data (fixaties, saccades, AOI's).
-\item State-of-the-art technieken binnen Computer Vision, waaronder objectdetectie (bv. YOLO, DETR, Grounding DINO), segmentatie (bv. Mask R-CNN, SAM, FastSAM) en image embedding (bv. CLIP, DINOv2).
-\item Bestaande integraties van eyetracking en Computer Vision.
+  \item Onderzoeken hoe de evaluatie van observatieprestaties momenteel wordt uitgevoerd, met bijzondere aandacht aan de nood aan een geautomatiseerde aanpak.
+  \item De huidige stand van zaken in eyetracking-technologie, met aandacht voor hoofd-gemonteerde systemen zoals de Tobii Pro Glasses 3 en de analyse van de hieruit voortkomende data.
+  \item State-of-the-art technieken binnen Computer Vision, waaronder objectdetectie (bv. YOLO, DETR, Grounding DINO), segmentatie (bv. Mask R-CNN, SAM, FastSAM) en image embedding (bv. CLIP, DINOv2).
+  \item Bestaande integraties van eyetracking en Computer Vision.
 \end{enumerate}
-Wetenschappelijke publicaties, technische documentatie en relevante open-source projecten werden hiervoor systematisch 
+Wetenschappelijke publicaties, technische documentatie en relevante open-sour\-ce projecten werden hiervoor systematisch 
 geraadpleegd en kritisch geanalyseerd.
 Hoofdstuk~\ref{ch:stand-van-zaken} beschrijft uitvoerig de bevindingen van deze literatuurstudie.
-
-% TODO in de literatuurstudie ook over het probleemdomein hebben (toevoegen in enumeratie hierboven)
 
 \section{Oplossingsverkenning}
 
@@ -114,16 +92,27 @@ Dit resulteerde in een dataset die per frame de bekeken objecten, hun bounding b
 De correctheid werd manueel gevalideerd. De gedetailleerde stappen van dit proces zijn beschreven in Hoofdstuk~\ref{ch:grondwaarheid}.
 
 \section{Analyse van Observatieprestaties}
-% TODO aanpassen op het einde
 
-De laatste fase van het onderzoek focuste op het implementeren en evalueren van een geautomatiseerde analysepipeline om observatieprestaties te meten, conform de gekozen oplossingsstrategie (Strategie 4 uit Hoofdstuk~\ref{ch:oplossingsstrategieen}). Het doel was om automatisch te bepalen welke kritische objecten werden waargenomen en hoe lang, en dit te vergelijken met de grondwaarheidsdataset. De methodologie omvatte:
+De laatste fase van het onderzoek focuste op het implementeren en evalueren van een geautomatiseerde analysepipeline om observatieprestaties te meten, 
+conform de gekozen oplossingsstrategie (Strategie 4 uit Hoofdstuk~\ref{ch:oplossingsstrategieen}). 
+Het doel was om automatisch te bepalen welke kritische objecten werden waargenomen en hoe lang, en dit te vergelijken met de grondwaarheidsdataset. 
+De methodologie omvatte:
 \begin{enumerate}
   \item Het toepassen van ``everything-segmentation'' en tracking met FastSAM op de evaluatieopnames.
   \item Het filteren van de resulterende segmenten op basis van objectgrootte en de geregistreerde 
   blikdata (overlap met het blikpunt), wat resulteerde in de te classificeren object ROIs (Regions of Interest).
-  \item Het classificeren van deze ROIs met twee verschillende methoden: de eerste gebaseerd op DINOv2 image 
-  embeddings in combinatie met een Faiss vector-index voor similariteitsmatching tegenover voorbeelden uit de kalibratieopnames, 
-  en de tweede gebaseerd op een YOLO-classificatiemodel getraind op dezelfde voorbeelden.
+  \item Het classificeren van deze ROIs met drie verschillende methoden: 
+  \begin{itemize}
+    \item Een DINOv2 image embedding model, dat de ROIs omzet naar vectorrepresentaties en deze vergelijkt met een Faiss vector-index van de kalibratieopnames.
+    \item Een YOLOv11-classificatiemodel, dat specifiek getraind is op de objecten uit de kalibratieopnames.
+    \item Het toepassen van een YOLOv11-objectdetectiemodel, dat de ROIs detecteert en de voorspellingen combineert met de eerdere FastSAM-segmen\-taties.
+  \end{itemize}
 \end{enumerate}
-De prestaties van beide methoden werden kwantitatief beoordeeld ten opzichte van de grondwaarheid. 
-Dit proces en de resultaten worden gedetailleerd beschreven in Hoofdstuk~\ref{ch:analyse}.
+De prestaties van deze geautomatiseerde analysepipeline werden kwantitatief beoordeeld aan de hand van precisie, 
+recall en F1-score ten opzichte van de grondwaarheidsdataset. 
+De evaluatie ging echter verder dan deze kernmetrieken. 
+Er werd een systematische hyperparameteroptimalisatie via een grid search uitgevoerd en modellen 
+getraind met verschillende hoeveelheden data werden vergeleken. 
+Bovendien vond een diepgaande analyse plaats van de aard van vals-positieve en vals-negatieve detecties, 
+waarbij ook de invloed van factoren zoals objectgrootte werd onderzocht. 
+Dit proces, inclusief de gedetailleerde methodologie en resultaten, wordt uitvoerig beschreven in Hoofdstuk~\ref{ch:analyse}.
