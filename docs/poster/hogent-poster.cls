@@ -248,57 +248,75 @@
 %%============================================================================
 
 \usepackage{multicol} % This is so we can have multiple columns of text side-by-side
-\columnsep=100pt % This is the amount of white space between the columns in the poster
+\columnsep=80pt % This is the amount of white space between the columns in the poster
 \columnseprule=3pt % This is the thickness of the black line between the columns in the poster
 
 %% -----------------------------------------------------------------------------
 %% Titel
 
+% You'll need to define the logo dimensions or use existing ones if hogent-poster.cls provides them
+% For example, if \logopart is defined as 2cm height in hogent-poster.cls:
+% \newlength{\titleblocklogowidth} % If you want to scale by width
+\newlength{\titleblocklogoheight}
+\setlength{\titleblocklogoheight}{8cm} % Adjust this height as desired for the title block
+
 \renewcommand{\@maketitle}{%
+  % --- Course, Study Programme, Academic Year ---
   \begingroup
   \raggedright\titlefont\color{title}\Large
   \textsc{\@course\ \@studyprogramme\ (\@academicyear)}
   \endgroup
 
+  % --- Title and Subtitle ---
   \begingroup
   \medskip
   \raggedright\titlefont\color{title}\VeryHuge\@title
-
   \if\@subtitle\@empty\else
-    \raggedright\titlefont\Huge\textit{\@subtitle}
+    \par\raggedright\titlefont\Huge\textit{\@subtitle}
   \fi
   \endgroup
 
-  \begingroup
-  \bigskip
-  \raggedright\huge\textbf{\@author}
+  \par\bigskip % Space after title before author/logo block
 
-  \if\@email\@empty\else
-    \medskip
-    \raggedright\@email
-  \fi
-  \endgroup
+  % --- Author/Supervisor Info and Logo Block ---
+  \noindent
+  \begin{minipage}[c]{0.72\linewidth} % Changed [t] to [c] for center, adjust width
+    \vspace{0pt} % Ensures the minipage starts with content for alignment
+    \raggedright
+    \begingroup
+    \huge\textbf{\@author}
+    \if\@email\@empty\else
+      \par\medskip
+      \@email
+    \fi
+    \endgroup
 
-  \begingroup
-  \if\@supervisor\@empty\else
-    \medskip
-    \raggedright\Large Promotor: \@supervisor
-  \fi
+    \begingroup
+    \if\@supervisor\@empty\else
+      \par\medskip
+      \Large Promotor: \@supervisor
+    \fi
+    \if\@cosupervisor\@empty\else
+      \par\medskip
+      \Large Co-promotor: \@cosupervisor
+    \fi
+    \endgroup
 
-  \if\@cosupervisor\@empty\else
-    \medskip
-    \raggedright\Large Co-promotor: \@cosupervisor
-  \fi
-  \endgroup
-
-  \begingroup
-  \bigskip
-  \raggedright\Large\@institution
-  \endgroup
-
-  \bigskip
+    \begingroup
+    \par\bigskip
+    \Large\@institution
+    \endgroup
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[c]{0.25\linewidth} % Changed [t] to [c], adjust width
+    \vspace{0pt} % Ensures the minipage starts with content for alignment
+    \centering % Or \raggedleft, depending on desired logo alignment within its box
+    \includegraphics[height=\titleblocklogoheight, width=\linewidth, keepaspectratio]{hogent_logo}%
+  \end{minipage}
+  \par
+  \bigskip % Space after the entire title block
 }
-
+\makeatother
 %%============================================================================
 %% Header/footer
 %%============================================================================
@@ -318,20 +336,20 @@
 \savebox{\logopart}{\includegraphics[height=7cm]{logopart}}
 
 % First page footer
-\fancypagestyle{plain}{%
-  %\newgeometry{bottom=\wd\logopart}
-  \fancyhf{}%
-  \fancyfoot[L]{}%
-  \fancyfoot[C]{}
-  \fancyfoot[R]{%
-    \begin{tikzpicture}[remember picture, overlay]
-      \node [anchor=south east, shift={(-\the\wd\logopart, \the\wd\logopart)}, inner sep=0, outer sep=0] (logo) at (current page.south east)%
-      {%
-        \includegraphics[height=\the\ht\logopart]{hogent_logo}%
-      };%
-    \end{tikzpicture}
-  }%
-}
+% \fancypagestyle{plain}{%
+%   %\newgeometry{bottom=\wd\logopart}
+%   \fancyhf{}%
+%   \fancyfoot[L]{}%
+%   \fancyfoot[C]{}
+%   \fancyfoot[R]{%
+%     \begin{tikzpicture}[remember picture, overlay]
+%       \node [anchor=south east, shift={(-\the\wd\logopart, \the\wd\logopart)}, inner sep=0, outer sep=0] (logo) at (current page.south east)%
+%       {%
+%         \includegraphics[height=\the\ht\logopart]{hogent_logo}%
+%       };%
+%     \end{tikzpicture}
+%   }%
+% }
 
 %%============================================================================
 %% Lettertypes
@@ -362,7 +380,7 @@
 \renewcommand{\huge}{\fontsize{51.6}{64}\selectfont}
 \renewcommand{\Huge}{\fontsize{61.92}{77}\selectfont}
 \newcommand{\veryHuge}{\fontsize{74.3}{93}\selectfont}
-\newcommand{\VeryHuge}{\fontsize{89.16}{112}\selectfont}
+\newcommand{\VeryHuge}{\fontsize{89.16}{90}\selectfont}
 \newcommand{\VERYHuge}{\fontsize{107}{134}\selectfont}
 
 \setlength\smallskipamount{6pt plus 2pt minus 2pt}
